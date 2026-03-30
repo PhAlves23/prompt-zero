@@ -1,0 +1,52 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back",
+    "search": "Search",
+    "loading": "Loading",
+    "error": "Error",
+    "success": "Success"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "prompts": "Prompts",
+    "playground": "Playground",
+    "settings": "Settings",
+    "docs": "Documentation"
+  },
+  "prompts": {
+    "title": "My prompts",
+    "create": "Create prompt",
+    "empty": "No prompts yet. Create your first.",
+    "version": "Version",
+    "executions": "executions",
+    "lastEdit": "Last edited",
+    "tokens": "tokens",
+    "cost": "estimated cost"
+  },
+  "auth": {
+    "login": "Sign in",
+    "logout": "Sign out",
+    "signup": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?"
+  },
+  "settings": {
+    "title": "Settings",
+    "apiKey": "API Key",
+    "configureApiKey": "Configure your API key to test prompts.",
+    "profile": "Profile",
+    "preferences": "Preferences",
+    "language": "Language"
+  },
+  "meta": {
+    "title": "PromptZero — Version, test and evolve your AI prompts",
+    "description": "AI prompt management platform with automatic versioning. Zero loss. Total control.",
+    "tagline": "Stop losing your best prompts."
+  }
+}

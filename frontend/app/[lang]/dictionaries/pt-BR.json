@@ -1,0 +1,52 @@
+{
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Deletar",
+    "edit": "Editar",
+    "create": "Criar",
+    "back": "Voltar",
+    "search": "Buscar",
+    "loading": "Carregando",
+    "error": "Erro",
+    "success": "Sucesso"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "prompts": "Prompts",
+    "playground": "Playground",
+    "settings": "Configurações",
+    "docs": "Documentação"
+  },
+  "prompts": {
+    "title": "Meus prompts",
+    "create": "Criar prompt",
+    "empty": "Nenhum prompt ainda. Crie o primeiro.",
+    "version": "Versão",
+    "executions": "execuções",
+    "lastEdit": "Última edição",
+    "tokens": "tokens",
+    "cost": "custo estimado"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "signup": "Criar conta",
+    "email": "E-mail",
+    "password": "Senha",
+    "forgotPassword": "Esqueceu a senha?"
+  },
+  "settings": {
+    "title": "Configurações",
+    "apiKey": "Chave API",
+    "configureApiKey": "Configure sua API key para testar prompts.",
+    "profile": "Perfil",
+    "preferences": "Preferências",
+    "language": "Idioma"
+  },
+  "meta": {
+    "title": "PromptZero — Versione, teste e evolua seus prompts de IA",
+    "description": "Plataforma de gerenciamento de prompts de IA com versionamento automático. Zero perda. Total controle.",
+    "tagline": "Pare de perder seus melhores prompts."
+  }
+}

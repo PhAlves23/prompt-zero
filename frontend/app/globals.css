@@ -159,6 +159,12 @@
   .font-mono {
     font-family: var(--font-mono);
   }
+  .text-pz-black {
+    color: var(--pz-black);
+  }
+  .text-pz-white {
+    color: var(--pz-white);
+  }
   .text-pz-lime {
     color: var(--pz-lime);
   }
@@ -191,5 +197,14 @@
   }
   .border-pz-border {
     border-color: var(--pz-border);
+  }
+  .text-pz-muted {
+    color: var(--pz-muted);
+  }
+  .hover\:bg-pz-lime\/90:hover {
+    background-color: oklch(from var(--pz-lime) l c h / 0.9);
+  }
+  .hover\:shadow-pz-lime:hover {
+    box-shadow: 0 4px 20px var(--pz-lime-glow);
   }
 }
