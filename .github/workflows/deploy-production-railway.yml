@@ -88,19 +88,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: yarn
-          cache-dependency-path: frontend/yarn.lock
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Install dependencies
-        run: yarn --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prefer-offline
         working-directory: frontend
 
       - name: Lint
-        run: yarn lint
+        run: pnpm lint
         working-directory: frontend
 
       - name: Build
-        run: yarn build
+        run: pnpm build
         working-directory: frontend
 
   backend-migrate-and-deploy:
@@ -150,8 +155,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: yarn
-          cache-dependency-path: frontend/yarn.lock
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli

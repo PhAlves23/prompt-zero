@@ -5,7 +5,7 @@ Este projeto está configurado com dois workflows no GitHub Actions:
 - `.github/workflows/ci.yml`
   - Roda em `pull_request` e `push` na `main`
   - Backend: `lint`, `test`, `test:e2e`, `build` (com Postgres de serviço)
-  - Frontend: `lint`, `build`
+  - Frontend: `pnpm install --frozen-lockfile`, `lint`, `build`
 
 - `.github/workflows/deploy-production-railway.yml`
   - Roda em `push` na `main` e manualmente (`workflow_dispatch`)
@@ -36,4 +36,6 @@ Configure estes secrets no repositório (`Settings > Secrets and variables > Act
 
 - O backend só faz deploy após passar em `lint/test/test:e2e/build`.
 - O frontend só faz deploy após passar em `lint/build`.
+- O frontend usa `pnpm` (há `frontend/pnpm-lock.yaml`).
+- O arquivo `frontend/pnpm-workspace.yaml` precisa conter `packages: ["."]` para evitar erro `packages field missing or empty` no Railway.
 - O deploy usa `railway up --ci` com identificação explícita de projeto/serviço/ambiente.
