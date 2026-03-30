@@ -1,4 +1,22 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="180" height="180" rx="40" fill="#0A0A0B"/>
-  <text x="90" y="130" font-family="'Space Mono', monospace" font-size="120" font-weight="700" fill="#BEFF00" text-anchor="middle">0</text>
+  <defs>
+    <style type="text/css"><![CDATA[
+      @font-face {
+        font-family: 'Space Mono';
+        font-style: normal;
+        font-weight: 700;
+        font-display: swap;
+        src: url(https://fonts.gstatic.com/s/spacemono/v17/i7dMIFZifjKcF5UAWdDRaPpZUFWaHg.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      .mark-bg { fill: #0A0A0B; }
+      .mark-fg { fill: #BEFF00; }
+      @media (prefers-color-scheme: dark) {
+        .mark-bg { fill: #BEFF00; }
+        .mark-fg { fill: #0A0A0B; }
+      }
+    ]]></style>
+  </defs>
+  <rect class="mark-bg" width="180" height="180" rx="40"/>
+  <text class="mark-fg" x="90" y="130" font-family="'Space Mono', monospace" font-size="120" font-weight="700" font-style="normal" text-anchor="middle">0</text>
 </svg>
