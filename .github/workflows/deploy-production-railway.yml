@@ -84,17 +84,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate pnpm availability
+        run: pnpm --version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
@@ -129,6 +130,11 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
+      - name: Validate required deploy secrets
+        run: |
+          [ -n "${RAILWAY_TOKEN}" ] || (echo "Missing secret: RAILWAY_TOKEN" && exit 1)
+          [ -n "${DATABASE_URL}" ] || (echo "Missing secret: RAILWAY_BACKEND_DATABASE_URL_PROD" && exit 1)
+
       - name: Install backend dependencies
         run: yarn --frozen-lockfile
         working-directory: backend
@@ -151,12 +157,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Validate pnpm availability
+        run: pnpm --version
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
