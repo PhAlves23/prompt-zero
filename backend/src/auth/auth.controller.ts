@@ -14,6 +14,7 @@ import { AuthResponseDto } from './dto/auth-response.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../common/interfaces/auth-user.interface';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -21,6 +22,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Registrar novo usuário' })
   @ApiResponse({ status: 201, type: AuthResponseDto })
   register(@Body() dto: RegisterDto) {
@@ -28,6 +30,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Autenticar usuário' })
   @ApiResponse({ status: 201, type: AuthResponseDto })
   login(@Body() dto: LoginDto) {
@@ -35,6 +38,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Renovar tokens com refresh token' })
   @ApiBody({ type: RefreshTokenDto })
   @ApiResponse({ status: 201, type: AuthResponseDto })

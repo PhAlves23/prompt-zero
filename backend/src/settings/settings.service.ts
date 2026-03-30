@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { encryptText } from '../common/utils/crypto.util';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { getEnvSecret } from '../common/utils/env.util';
 
 @Injectable()
 export class SettingsService {
@@ -20,7 +21,8 @@ export class SettingsService {
   }
 
   async updateApiKeys(userId: string, dto: UpdateApiKeysDto) {
-    const encryptionSecret = this.configService.get<string>(
+    const encryptionSecret = getEnvSecret(
+      this.configService,
       'ENCRYPTION_SECRET',
       'dev-encryption-secret',
     );

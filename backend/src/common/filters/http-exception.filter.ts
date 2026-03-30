@@ -4,15 +4,19 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { RequestWithContext } from '../interfaces/request-context.interface';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const request = ctx.getRequest<RequestWithContext>();
 
     const status =
       exception instanceof HttpException
@@ -35,13 +39,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message = payloadMessage;
       }
     } else if (exception instanceof Error) {
-      message = exception.message;
+      const isProduction = process.env.NODE_ENV === 'production';
+      message = isProduction ? 'Internal server error' : exception.message;
+      this.logger.error(exception.message, exception.stack);
     }
 
     response.status(status).json({
       code: status,
       message,
       path: request.url,
+      requestId: request.requestId ?? null,
       timestamp: new Date().toISOString(),
     });
   }

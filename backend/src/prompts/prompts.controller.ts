@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -22,6 +23,7 @@ import type { AuthUser } from '../common/interfaces/auth-user.interface';
 import { CreatePromptDto } from './dto/create-prompt.dto';
 import { UpdatePromptDto } from './dto/update-prompt.dto';
 import { ListPromptsQueryDto } from './dto/list-prompts-query.dto';
+import { SyncTemplateVariablesDto } from './dto/sync-template-variables.dto';
 
 @ApiTags('prompts')
 @ApiBearerAuth()
@@ -91,5 +93,27 @@ export class PromptsController {
     @Param('versionId') versionId: string,
   ) {
     return this.promptsService.restoreVersion(user.sub, id, versionId);
+  }
+
+  @Get(':id/variables')
+  @ApiOperation({ summary: 'Listar variáveis de template de um prompt' })
+  getTemplateVariables(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.promptsService.getTemplateVariables(user.sub, id);
+  }
+
+  @Put(':id/variables')
+  @ApiOperation({ summary: 'Sincronizar variáveis de template de um prompt' })
+  syncTemplateVariables(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: SyncTemplateVariablesDto,
+  ) {
+    return this.promptsService.syncTemplateVariables(user.sub, id, dto);
+  }
+
+  @Post(':id/fork')
+  @ApiOperation({ summary: 'Fazer fork de um prompt público' })
+  forkPrompt(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.promptsService.forkPrompt(user.sub, id);
   }
 }

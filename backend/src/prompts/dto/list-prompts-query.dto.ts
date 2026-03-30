@@ -52,6 +52,11 @@ export class ListPromptsQueryDto {
   @IsBooleanString()
   isFavorite?: string;
 
+  @ApiPropertyOptional({ description: 'true|false' })
+  @IsOptional()
+  @IsBooleanString()
+  isTemplate?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

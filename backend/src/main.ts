@@ -4,10 +4,26 @@ import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { requestIdMiddleware } from './common/middleware/request-id.middleware';
+import { structuredLoggerMiddleware } from './common/middleware/structured-logger.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+
+  if (configService.get<string>('NODE_ENV') === 'production') {
+    const requiredSecrets = [
+      'JWT_ACCESS_SECRET',
+      'JWT_REFRESH_SECRET',
+      'ENCRYPTION_SECRET',
+      'DATABASE_URL',
+    ];
+    for (const key of requiredSecrets) {
+      if (!configService.get<string>(key)) {
+        throw new Error(`Variável de ambiente obrigatória ausente: ${key}`);
+      }
+    }
+  }
 
   app.setGlobalPrefix('api');
   app.enableVersioning({
@@ -29,10 +45,12 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.use(requestIdMiddleware);
+  app.use(structuredLoggerMiddleware);
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Prompt Vault Pro API')
-    .setDescription('API backend do Prompt Vault Pro')
+    .setTitle('PromptZero API')
+    .setDescription('API backend do PromptZero')
     .setVersion('1.0.0')
     .addBearerAuth()
     .build();

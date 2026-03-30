@@ -34,6 +34,7 @@ model User {
   prompts    Prompt[]
   tags       Tag[]
   executions Execution[]
+  refreshSessions RefreshTokenSession[]
 }
 
 model Workspace {
@@ -165,4 +166,22 @@ model Execution {
   @@index([userId, createdAt])
   @@index([promptId, createdAt])
   @@index([model, createdAt])
+}
+
+model RefreshTokenSession {
+  id               String   @id @default(uuid())
+  tokenHash        String
+  familyId         String
+  parentTokenId    String?
+  revokedAt        DateTime?
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+  userId           String
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent           RefreshTokenSession? @relation("RefreshTokenParent", fields: [parentTokenId], references: [id], onDelete: SetNull)
+  children         RefreshTokenSession[] @relation("RefreshTokenParent")
+
+  @@index([userId, familyId])
+  @@index([expiresAt])
 }

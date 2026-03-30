@@ -1,14 +1,16 @@
-# Prompt Vault Pro API (Backend)
+# PromptZero API (Backend)
 
-API backend em NestJS para autenticação, CRUD/versionamento de prompts, tags, workspaces e settings.
+API backend em NestJS para autenticação, CRUD/versionamento de prompts, templates dinâmicos, execução com streaming (SSE), analytics e explore/fork.
 
 ## Stack
 
 - `NestJS` (arquitetura modular, DI, decorators)
 - `Prisma + PostgreSQL` (ORM e persistência)
-- `JWT + Passport` (auth com access token + refresh token)
+- `JWT + Passport` (auth com access token + refresh token family)
 - `Swagger` (`/api/docs`)
 - `class-validator` e `ValidationPipe` (validação de DTO)
+- `OpenAI` e `Anthropic SDK` (execução real de prompts)
+- `@nestjs/throttler` (rate limit)
 
 ## Requisitos
 
@@ -65,6 +67,27 @@ yarn start:dev
 - UI: `http://localhost:3001/api/docs`
 - JSON OpenAPI: `http://localhost:3001/api/docs-json`
 
+## Funcionalidades implementadas
+
+- Auth: `register`, `login`, `refresh`, `me`.
+- Prompt CRUD com soft delete e versionamento (`v1`, `v2`, ...).
+- Templates com parsing de `{{variavel}}` e sincronização de `TemplateVariable`.
+- Execução real de prompt com SSE:
+  - `POST /api/v1/prompts/:id/execute`
+  - `GET /api/v1/prompts/:id/executions`
+- Analytics por período:
+  - `/api/v1/analytics/overview`
+  - `/api/v1/analytics/executions-per-day`
+  - `/api/v1/analytics/cost-per-model`
+  - `/api/v1/analytics/top-prompts`
+- Explore/Fork:
+  - `GET /api/v1/explore`
+  - `GET /api/v1/explore/:id`
+  - `POST /api/v1/prompts/:id/fork`
+- Settings:
+  - perfil do usuário
+  - API keys criptografadas e mascaradas
+
 ## Scripts
 
 - `yarn start:dev`: servidor em watch
@@ -84,19 +107,26 @@ yarn start:dev
 - API versionada com prefixo global `/api/v1` para facilitar evolução sem quebra.
 - `ValidationPipe` global com `transform`, `whitelist` e `forbidNonWhitelisted` para hardening de entrada.
 - Filtro global de exceções com payload padronizado para erros HTTP.
-- Refresh token armazenado com hash (`bcrypt`) para reduzir impacto de vazamento.
+- Refresh token com **token family**:
+  - cada refresh gera nova sessão/token
+  - token anterior é revogado
+  - tentativa de reuse revoga a família
 - Soft delete em `Prompt` (`deletedAt`) para preservar histórico de auditoria.
 - Versionamento de prompts imutável: editar gera nova versão; restore cria `N+1`.
 - Swagger mantido como contrato de integração entre backend e frontend.
+- Middleware de `X-Request-Id` e log estruturado por request.
+- Rate limit global + thresholds mais restritos em auth.
 
 ## Dependências e justificativas
 
 - `@nestjs/config`: centralização de env vars.
 - `@nestjs/swagger` + `swagger-ui-express`: documentação OpenAPI com UI.
 - `@nestjs/passport` + `@nestjs/jwt` + `passport-jwt`: autenticação JWT padrão no ecossistema Nest.
+- `@nestjs/throttler`: limitação de taxa para proteção contra brute force.
 - `bcrypt`: hash de senhas e refresh tokens.
 - `class-validator` + `class-transformer`: validação declarativa de DTO.
 - `@prisma/client` + `prisma`: ORM tipado, migrations e seed.
+- `openai` + `@anthropic-ai/sdk`: execução real de prompts com provedores LLM.
 - `husky` + `lint-staged`: validação automática de qualidade antes de commit.
 - `@commitlint/cli` + `@commitlint/config-conventional`: padronização de commits (Conventional Commits).
 - `tsx`: execução de seed em TypeScript.
@@ -107,3 +137,50 @@ yarn start:dev
 - Hook de `pre-commit` roda `lint-staged`.
 - Hook de `commit-msg` valida padrão de commit.
 - Regra ativa contra `any` explícito sem necessidade.
+- Testes e2e com cenários de erro/autorização (401, 403, 404, 409).
+
+## Runbook de produção
+
+### Variáveis obrigatórias em produção
+
+- `NODE_ENV=production`
+- `DATABASE_URL`
+- `JWT_ACCESS_SECRET`
+- `JWT_REFRESH_SECRET`
+- `ENCRYPTION_SECRET`
+
+Em produção, o bootstrap falha se essas variáveis não existirem.
+
+### Deploy (ordem recomendada)
+
+1. Build da aplicação:
+
+```bash
+yarn build
+```
+
+2. Aplicar migrations:
+
+```bash
+yarn prisma:migrate:deploy
+```
+
+3. Subir API:
+
+```bash
+yarn start:prod
+```
+
+### Healthcheck e smoke test
+
+- Healthcheck: `GET /api/v1` deve retornar status `ok`.
+- Swagger UI: `/api/docs`.
+- Swagger JSON: `/api/docs-json`.
+
+Smoke mínimo pós-deploy:
+
+1. `POST /api/v1/auth/register` ou `login`
+2. `GET /api/v1/auth/me` com Bearer token
+3. `POST /api/v1/prompts`
+4. `POST /api/v1/prompts/:id/execute`
+5. `GET /api/v1/analytics/overview?period=30d`
