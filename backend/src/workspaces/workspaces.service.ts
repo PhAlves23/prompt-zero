@@ -31,7 +31,7 @@ export class WorkspacesService {
       where: { id, userId },
     });
     if (!workspace) {
-      throw new NotFoundException('Workspace não encontrado');
+      throw new NotFoundException('errors.workspaceNotFound');
     }
 
     return this.prisma.workspace.update({
@@ -49,12 +49,10 @@ export class WorkspacesService {
       where: { id, userId },
     });
     if (!workspace) {
-      throw new NotFoundException('Workspace não encontrado');
+      throw new NotFoundException('errors.workspaceNotFound');
     }
     if (workspace.isDefault) {
-      throw new BadRequestException(
-        'Não é possível remover o workspace padrão',
-      );
+      throw new BadRequestException('errors.cannotRemoveDefaultWorkspace');
     }
 
     await this.prisma.workspace.delete({

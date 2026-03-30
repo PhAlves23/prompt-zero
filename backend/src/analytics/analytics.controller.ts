@@ -17,13 +17,13 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get('overview')
-  @ApiOperation({ summary: 'Métricas resumidas por período' })
+  @ApiOperation({ summary: 'Summary metrics by period' })
   overview(@CurrentUser() user: AuthUser, @Query() query: AnalyticsQueryDto) {
     return this.analyticsService.getOverview(user.sub, query.period);
   }
 
   @Get('executions-per-day')
-  @ApiOperation({ summary: 'Quantidade de execuções por dia' })
+  @ApiOperation({ summary: 'Execution count per day' })
   executionsPerDay(
     @CurrentUser() user: AuthUser,
     @Query() query: AnalyticsQueryDto,
@@ -32,7 +32,7 @@ export class AnalyticsController {
   }
 
   @Get('cost-per-model')
-  @ApiOperation({ summary: 'Custo e tokens por modelo' })
+  @ApiOperation({ summary: 'Cost and tokens by model' })
   costPerModel(
     @CurrentUser() user: AuthUser,
     @Query() query: AnalyticsQueryDto,
@@ -41,7 +41,7 @@ export class AnalyticsController {
   }
 
   @Get('top-prompts')
-  @ApiOperation({ summary: 'Top prompts por número de execuções' })
+  @ApiOperation({ summary: 'Top prompts by execution count' })
   topPrompts(
     @CurrentUser() user: AuthUser,
     @Query() query: TopPromptsQueryDto,

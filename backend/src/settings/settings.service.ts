@@ -7,6 +7,8 @@ import { encryptText } from '../common/utils/crypto.util';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { getEnvSecret } from '../common/utils/env.util';
+import { ProviderType } from '@prisma/client';
+import { UpsertProviderCredentialDto } from './dto/upsert-provider-credential.dto';
 
 @Injectable()
 export class SettingsService {
@@ -21,20 +23,27 @@ export class SettingsService {
   }
 
   async updateApiKeys(userId: string, dto: UpdateApiKeysDto) {
-    const encryptionSecret = getEnvSecret(
-      this.configService,
-      'ENCRYPTION_SECRET',
-      'dev-encryption-secret',
-    );
+    const providersToUpsert: Array<{
+      provider: ProviderType;
+      apiKey?: string;
+    }> = [
+      { provider: ProviderType.openai, apiKey: dto.openaiApiKey },
+      { provider: ProviderType.anthropic, apiKey: dto.anthropicApiKey },
+      { provider: ProviderType.google, apiKey: dto.googleApiKey },
+      { provider: ProviderType.openrouter, apiKey: dto.openrouterApiKey },
+    ];
 
-    await this.usersService.updateApiKeys(userId, {
-      openaiApiKeyEnc: dto.openaiApiKey
-        ? encryptText(dto.openaiApiKey, encryptionSecret)
-        : undefined,
-      anthropicApiKeyEnc: dto.anthropicApiKey
-        ? encryptText(dto.anthropicApiKey, encryptionSecret)
-        : undefined,
-    });
+    for (const item of providersToUpsert) {
+      if (item.apiKey) {
+        await this.upsertProviderCredential(userId, {
+          provider: item.provider,
+          apiKey: item.apiKey,
+          label: 'default',
+          isDefault: true,
+          isActive: true,
+        });
+      }
+    }
 
     return this.getApiKeysStatus(userId);
   }
@@ -49,12 +58,101 @@ export class SettingsService {
     });
 
     if (!user) {
-      throw new NotFoundException('Usuário não encontrado');
+      throw new NotFoundException('errors.userNotFound');
     }
 
     return {
       openaiConfigured: Boolean(user.openaiApiKeyEnc),
       anthropicConfigured: Boolean(user.anthropicApiKeyEnc),
+      providers: await this.listProviderCredentials(userId),
     };
+  }
+
+  async listProviderCredentials(userId: string) {
+    const credentials = await this.prisma.providerCredential.findMany({
+      where: { userId },
+      orderBy: [{ provider: 'asc' }, { createdAt: 'desc' }],
+      select: {
+        id: true,
+        provider: true,
+        label: true,
+        baseUrl: true,
+        organizationId: true,
+        isDefault: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return credentials;
+  }
+
+  async upsertProviderCredential(
+    userId: string,
+    dto: UpsertProviderCredentialDto,
+    credentialId?: string,
+  ) {
+    const encryptionSecret = getEnvSecret(
+      this.configService,
+      'ENCRYPTION_SECRET',
+      'dev-encryption-secret',
+    );
+    const apiKeyEnc = encryptText(dto.apiKey, encryptionSecret);
+
+    if (dto.isDefault) {
+      await this.prisma.providerCredential.updateMany({
+        where: { userId, provider: dto.provider, isDefault: true },
+        data: { isDefault: false },
+      });
+    }
+
+    if (credentialId) {
+      const existing = await this.prisma.providerCredential.findFirst({
+        where: { id: credentialId, userId },
+      });
+      if (!existing) {
+        throw new NotFoundException('errors.providerCredentialNotFound');
+      }
+
+      return this.prisma.providerCredential.update({
+        where: { id: credentialId },
+        data: {
+          provider: dto.provider,
+          apiKeyEnc,
+          label: dto.label,
+          baseUrl: dto.baseUrl,
+          organizationId: dto.organizationId,
+          isDefault: dto.isDefault,
+          isActive: dto.isActive,
+        },
+      });
+    }
+
+    return this.prisma.providerCredential.create({
+      data: {
+        userId,
+        provider: dto.provider,
+        apiKeyEnc,
+        label: dto.label,
+        baseUrl: dto.baseUrl,
+        organizationId: dto.organizationId,
+        isDefault: dto.isDefault ?? false,
+        isActive: dto.isActive ?? true,
+      },
+    });
+  }
+
+  async removeProviderCredential(userId: string, credentialId: string) {
+    const existing = await this.prisma.providerCredential.findFirst({
+      where: { id: credentialId, userId },
+    });
+    if (!existing) {
+      throw new NotFoundException('errors.providerCredentialNotFound');
+    }
+
+    await this.prisma.providerCredential.delete({
+      where: { id: credentialId },
+    });
+    return { deleted: true };
   }
 }

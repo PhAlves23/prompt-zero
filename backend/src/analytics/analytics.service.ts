@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { getPeriodStartDate, parsePeriod } from '../common/utils/period.util';
+import { I18nContext } from 'nestjs-i18n';
 
 @Injectable()
 export class AnalyticsService {
@@ -97,7 +98,10 @@ export class AnalyticsService {
 
     return grouped.map((item) => ({
       promptId: item.promptId,
-      promptTitle: byId.get(item.promptId) ?? 'Prompt removido',
+      promptTitle:
+        byId.get(item.promptId) ??
+        I18nContext.current()?.t('responses.promptRemoved') ??
+        'Removed prompt',
       executions: item._count.promptId,
     }));
   }

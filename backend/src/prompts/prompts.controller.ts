@@ -33,26 +33,26 @@ export class PromptsController {
   constructor(private readonly promptsService: PromptsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Criar prompt (gera versão v1 automaticamente)' })
+  @ApiOperation({ summary: 'Create prompt (automatically creates v1)' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreatePromptDto) {
     return this.promptsService.create(user.sub, dto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar prompts do usuário' })
+  @ApiOperation({ summary: 'List user prompts' })
   findAll(@CurrentUser() user: AuthUser, @Query() query: ListPromptsQueryDto) {
     return this.promptsService.findAll(user.sub, query);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Detalhe de um prompt' })
+  @ApiOperation({ summary: 'Get prompt details' })
   findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.promptsService.findOne(user.sub, id);
   }
 
   @Patch(':id')
   @ApiOperation({
-    summary: 'Atualizar prompt (gera nova versão se content mudar)',
+    summary: 'Update prompt (creates new version when content changes)',
   })
   update(
     @CurrentUser() user: AuthUser,
@@ -63,19 +63,19 @@ export class PromptsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Soft delete de prompt' })
+  @ApiOperation({ summary: 'Soft delete prompt' })
   remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.promptsService.remove(user.sub, id);
   }
 
   @Get(':id/versions')
-  @ApiOperation({ summary: 'Listar versões de um prompt' })
+  @ApiOperation({ summary: 'List prompt versions' })
   listVersions(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.promptsService.listVersions(user.sub, id);
   }
 
   @Get(':id/versions/:versionId')
-  @ApiOperation({ summary: 'Detalhe de uma versão' })
+  @ApiOperation({ summary: 'Get version details' })
   @ApiParam({ name: 'versionId' })
   getVersion(
     @CurrentUser() user: AuthUser,
@@ -86,7 +86,7 @@ export class PromptsController {
   }
 
   @Post(':id/versions/:versionId/restore')
-  @ApiOperation({ summary: 'Restaurar versão criando nova N+1' })
+  @ApiOperation({ summary: 'Restore version by creating new N+1 version' })
   restoreVersion(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
@@ -96,13 +96,13 @@ export class PromptsController {
   }
 
   @Get(':id/variables')
-  @ApiOperation({ summary: 'Listar variáveis de template de um prompt' })
+  @ApiOperation({ summary: 'List prompt template variables' })
   getTemplateVariables(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.promptsService.getTemplateVariables(user.sub, id);
   }
 
   @Put(':id/variables')
-  @ApiOperation({ summary: 'Sincronizar variáveis de template de um prompt' })
+  @ApiOperation({ summary: 'Sync prompt template variables' })
   syncTemplateVariables(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
@@ -112,7 +112,7 @@ export class PromptsController {
   }
 
   @Post(':id/fork')
-  @ApiOperation({ summary: 'Fazer fork de um prompt público' })
+  @ApiOperation({ summary: 'Fork a public prompt' })
   forkPrompt(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.promptsService.forkPrompt(user.sub, id);
   }

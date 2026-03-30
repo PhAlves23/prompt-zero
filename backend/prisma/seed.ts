@@ -20,13 +20,13 @@ async function main() {
     where: {
       userId_name: {
         userId: user.id,
-        name: 'Padrão',
+        name: 'Default',
       },
     },
     update: {},
     create: {
-      name: 'Padrão',
-      description: 'Workspace padrão do usuário',
+      name: 'Default',
+      description: 'User default workspace',
       color: '#4F46E5',
       isDefault: true,
       userId: user.id,
@@ -80,6 +80,67 @@ async function main() {
       promptId: prompt.id,
       tagId: marketingTag.id,
     },
+  });
+
+  await prisma.providerModelPricing.deleteMany({
+    where: {
+      OR: [
+        { provider: 'openai', model: 'gpt-4o-mini' },
+        { provider: 'openai', model: 'gpt-4o' },
+        { provider: 'anthropic', model: 'claude-3-5-sonnet' },
+        { provider: 'anthropic', model: 'claude-3-haiku' },
+        { provider: 'google', model: 'gemini-1.5-pro' },
+        { provider: 'google', model: 'gemini-1.5-flash' },
+        { provider: 'openrouter', model: 'openrouter/default' },
+      ],
+    },
+  });
+
+  await prisma.providerModelPricing.createMany({
+    data: [
+      {
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        inputCostPer1k: '0.000150',
+        outputCostPer1k: '0.000600',
+      },
+      {
+        provider: 'openai',
+        model: 'gpt-4o',
+        inputCostPer1k: '0.005000',
+        outputCostPer1k: '0.015000',
+      },
+      {
+        provider: 'anthropic',
+        model: 'claude-3-5-sonnet',
+        inputCostPer1k: '0.003000',
+        outputCostPer1k: '0.015000',
+      },
+      {
+        provider: 'anthropic',
+        model: 'claude-3-haiku',
+        inputCostPer1k: '0.000250',
+        outputCostPer1k: '0.001250',
+      },
+      {
+        provider: 'google',
+        model: 'gemini-1.5-pro',
+        inputCostPer1k: '0.003500',
+        outputCostPer1k: '0.010500',
+      },
+      {
+        provider: 'google',
+        model: 'gemini-1.5-flash',
+        inputCostPer1k: '0.000350',
+        outputCostPer1k: '0.001050',
+      },
+      {
+        provider: 'openrouter',
+        model: 'openrouter/default',
+        inputCostPer1k: '0.001000',
+        outputCostPer1k: '0.002000',
+      },
+    ],
   });
 }
 

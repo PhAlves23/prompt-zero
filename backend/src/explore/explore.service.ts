@@ -85,7 +85,7 @@ export class ExploreService {
     });
 
     if (!prompt) {
-      throw new NotFoundException('Prompt público não encontrado');
+      throw new NotFoundException('errors.publicPromptNotFound');
     }
     return prompt;
   }

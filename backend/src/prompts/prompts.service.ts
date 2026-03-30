@@ -118,7 +118,7 @@ export class PromptsService {
     });
 
     if (!prompt) {
-      throw new NotFoundException('Prompt não encontrado');
+      throw new NotFoundException('errors.promptNotFound');
     }
 
     return prompt;
@@ -130,10 +130,10 @@ export class PromptsService {
     });
 
     if (!prompt || prompt.deletedAt) {
-      throw new NotFoundException('Prompt não encontrado');
+      throw new NotFoundException('errors.promptNotFound');
     }
     if (prompt.userId !== userId) {
-      throw new ForbiddenException('Sem permissão para editar este prompt');
+      throw new ForbiddenException('errors.promptEditForbidden');
     }
     if (dto.tagIds) {
       await this.assertTagOwnership(userId, dto.tagIds);
@@ -188,10 +188,10 @@ export class PromptsService {
       where: { id: promptId },
     });
     if (!prompt || prompt.deletedAt) {
-      throw new NotFoundException('Prompt não encontrado');
+      throw new NotFoundException('errors.promptNotFound');
     }
     if (prompt.userId !== userId) {
-      throw new ForbiddenException('Sem permissão para remover este prompt');
+      throw new ForbiddenException('errors.promptRemoveForbidden');
     }
 
     await this.prisma.prompt.update({
@@ -217,7 +217,7 @@ export class PromptsService {
     });
 
     if (!version) {
-      throw new NotFoundException('Versão não encontrada');
+      throw new NotFoundException('errors.versionNotFound');
     }
     return version;
   }
@@ -228,7 +228,7 @@ export class PromptsService {
       where: { id: versionId, promptId },
     });
     if (!version) {
-      throw new NotFoundException('Versão não encontrada');
+      throw new NotFoundException('errors.versionNotFound');
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -268,10 +268,10 @@ export class PromptsService {
       where: { id: promptId },
     });
     if (!prompt || prompt.deletedAt) {
-      throw new NotFoundException('Prompt não encontrado');
+      throw new NotFoundException('errors.promptNotFound');
     }
     if (prompt.userId !== userId) {
-      throw new ForbiddenException('Sem permissão para este prompt');
+      throw new ForbiddenException('errors.promptForbidden');
     }
 
     const detectedVariables = extractTemplateVariables(prompt.content);
@@ -282,9 +282,7 @@ export class PromptsService {
       (name) => !providedNames.has(name),
     );
     if (missing.length > 0) {
-      throw new NotFoundException(
-        `Variáveis ausentes na sincronização: ${missing.join(', ')}`,
-      );
+      throw new NotFoundException('errors.templateSyncMissingVariables');
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -326,13 +324,13 @@ export class PromptsService {
       },
     });
     if (!original || original.deletedAt || !original.isPublic) {
-      throw new NotFoundException('Prompt público não encontrado');
+      throw new NotFoundException('errors.publicPromptNotFound');
     }
 
     const workspaceId = await this.resolveWorkspaceId(userId);
     const latestVersion = original.versions[0];
     if (!latestVersion) {
-      throw new NotFoundException('Prompt sem versões para fork');
+      throw new NotFoundException('errors.promptWithoutVersionsForFork');
     }
 
     const forkedPrompt = await this.prisma.$transaction(async (tx) => {
@@ -407,10 +405,10 @@ export class PromptsService {
       where: { id: promptId },
     });
     if (!prompt || prompt.deletedAt) {
-      throw new NotFoundException('Prompt não encontrado');
+      throw new NotFoundException('errors.promptNotFound');
     }
     if (prompt.userId !== userId) {
-      throw new ForbiddenException('Sem permissão para este prompt');
+      throw new ForbiddenException('errors.promptForbidden');
     }
   }
 
@@ -420,7 +418,7 @@ export class PromptsService {
         where: { id: workspaceId, userId },
       });
       if (!workspace) {
-        throw new NotFoundException('Workspace não encontrado');
+        throw new NotFoundException('errors.workspaceNotFound');
       }
       return workspace.id;
     }
@@ -429,7 +427,7 @@ export class PromptsService {
       where: { userId, isDefault: true },
     });
     if (!defaultWorkspace) {
-      throw new NotFoundException('Workspace padrão não encontrado');
+      throw new NotFoundException('errors.defaultWorkspaceNotFound');
     }
     return defaultWorkspace.id;
   }
@@ -442,7 +440,7 @@ export class PromptsService {
       },
     });
     if (tagsCount !== tagIds.length) {
-      throw new ForbiddenException('Uma ou mais tags não pertencem ao usuário');
+      throw new ForbiddenException('errors.tagsOwnershipInvalid');
     }
   }
 }

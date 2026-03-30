@@ -20,7 +20,7 @@ async function bootstrap() {
     ];
     for (const key of requiredSecrets) {
       if (!configService.get<string>(key)) {
-        throw new Error(`Variável de ambiente obrigatória ausente: ${key}`);
+        throw new Error(`Required environment variable is missing: ${key}`);
       }
     }
   }
@@ -50,7 +50,7 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('PromptZero API')
-    .setDescription('API backend do PromptZero')
+    .setDescription('PromptZero backend API')
     .setVersion('1.0.0')
     .addBearerAuth()
     .build();

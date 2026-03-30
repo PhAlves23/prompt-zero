@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ProviderType } from '@prisma/client';
 import {
+  IsEnum,
   IsNumber,
   IsObject,
   IsOptional,
@@ -9,6 +11,18 @@ import {
 } from 'class-validator';
 
 export class ExecutePromptDto {
+  @ApiPropertyOptional({ enum: ProviderType })
+  @IsOptional()
+  @IsEnum(ProviderType)
+  provider?: ProviderType;
+
+  @ApiPropertyOptional({
+    description: 'Specific provider credential ID',
+  })
+  @IsOptional()
+  @IsString()
+  credentialId?: string;
+
   @ApiProperty({ example: 'gpt-4o-mini' })
   @IsString()
   model!: string;
@@ -28,8 +42,7 @@ export class ExecutePromptDto {
   maxTokens?: number;
 
   @ApiPropertyOptional({
-    description:
-      'Valores para placeholders em templates, ex: {"produto":"PromptZero"}',
+    description: 'Template placeholder values, e.g. {"product":"PromptZero"}',
   })
   @IsOptional()
   @IsObject()

@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { RequestWithContext } from '../interfaces/request-context.interface';
+import { I18nContext } from 'nestjs-i18n';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -26,7 +27,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const payload =
       exception instanceof HttpException ? exception.getResponse() : null;
 
-    let message = 'Internal server error';
+    let message = 'errors.internalServerError';
     if (typeof payload === 'string') {
       message = payload;
     } else if (payload && typeof payload === 'object' && 'message' in payload) {
@@ -40,9 +41,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     } else if (exception instanceof Error) {
       const isProduction = process.env.NODE_ENV === 'production';
-      message = isProduction ? 'Internal server error' : exception.message;
+      message = isProduction ? 'errors.internalServerError' : exception.message;
       this.logger.error(exception.message, exception.stack);
     }
+
+    message = this.translateMessage(host, message);
 
     response.status(status).json({
       code: status,
@@ -51,5 +54,26 @@ export class HttpExceptionFilter implements ExceptionFilter {
       requestId: request.requestId ?? null,
       timestamp: new Date().toISOString(),
     });
+  }
+
+  private translateMessage(host: ArgumentsHost, message: string): string {
+    if (!message) {
+      return message;
+    }
+
+    const i18n = I18nContext.current(host);
+    if (!i18n) {
+      return message;
+    }
+
+    if (!message.includes('.')) {
+      return message;
+    }
+
+    const translated = i18n.t(message);
+    if (typeof translated === 'string' && translated !== message) {
+      return translated;
+    }
+    return message;
   }
 }

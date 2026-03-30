@@ -23,7 +23,7 @@ export class AuthController {
 
   @Post('register')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({ summary: 'Registrar novo usuário' })
+  @ApiOperation({ summary: 'Register new user' })
   @ApiResponse({ status: 201, type: AuthResponseDto })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
@@ -31,7 +31,7 @@ export class AuthController {
 
   @Post('login')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({ summary: 'Autenticar usuário' })
+  @ApiOperation({ summary: 'Authenticate user' })
   @ApiResponse({ status: 201, type: AuthResponseDto })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
@@ -39,7 +39,7 @@ export class AuthController {
 
   @Post('refresh')
   @Throttle({ default: { limit: 20, ttl: 60000 } })
-  @ApiOperation({ summary: 'Renovar tokens com refresh token' })
+  @ApiOperation({ summary: 'Refresh access and refresh tokens' })
   @ApiBody({ type: RefreshTokenDto })
   @ApiResponse({ status: 201, type: AuthResponseDto })
   refresh(@Body() dto: RefreshTokenDto) {
@@ -49,7 +49,7 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Dados do usuário autenticado' })
+  @ApiOperation({ summary: 'Get authenticated user profile' })
   me(@CurrentUser() user: AuthUser) {
     return this.authService.me(user.sub);
   }

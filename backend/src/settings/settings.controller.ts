@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Patch, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -6,6 +16,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../common/interfaces/auth-user.interface';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateApiKeysDto } from './dto/update-api-keys.dto';
+import { UpsertProviderCredentialDto } from './dto/upsert-provider-credential.dto';
 
 @ApiTags('settings')
 @ApiBearerAuth()
@@ -15,23 +26,56 @@ export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Patch('profile')
-  @ApiOperation({ summary: 'Atualizar perfil do usuário' })
+  @ApiOperation({ summary: 'Update user profile' })
   updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
     return this.settingsService.updateProfile(user.sub, dto);
   }
 
   @Put('api-keys')
-  @ApiOperation({ summary: 'Salvar/atualizar API keys do usuário' })
+  @ApiOperation({ summary: 'Save or update user API keys' })
   updateApiKeys(@CurrentUser() user: AuthUser, @Body() dto: UpdateApiKeysDto) {
     return this.settingsService.updateApiKeys(user.sub, dto);
   }
 
   @Get('api-keys')
   @ApiOperation({
-    summary:
-      'Verificar status de API keys cadastradas (sem expor valor completo)',
+    summary: 'Get API key configuration status (without exposing key values)',
   })
   getApiKeys(@CurrentUser() user: AuthUser) {
     return this.settingsService.getApiKeysStatus(user.sub);
+  }
+
+  @Get('provider-credentials')
+  @ApiOperation({ summary: 'List user provider credentials' })
+  listProviderCredentials(@CurrentUser() user: AuthUser) {
+    return this.settingsService.listProviderCredentials(user.sub);
+  }
+
+  @Post('provider-credentials')
+  @ApiOperation({ summary: 'Create provider credential' })
+  createProviderCredential(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpsertProviderCredentialDto,
+  ) {
+    return this.settingsService.upsertProviderCredential(user.sub, dto);
+  }
+
+  @Patch('provider-credentials/:id')
+  @ApiOperation({ summary: 'Update provider credential' })
+  updateProviderCredential(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: UpsertProviderCredentialDto,
+  ) {
+    return this.settingsService.upsertProviderCredential(user.sub, dto, id);
+  }
+
+  @Delete('provider-credentials/:id')
+  @ApiOperation({ summary: 'Delete provider credential' })
+  removeProviderCredential(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+  ) {
+    return this.settingsService.removeProviderCredential(user.sub, id);
   }
 }

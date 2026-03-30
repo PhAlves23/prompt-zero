@@ -19,6 +19,7 @@ describe('AppController', () => {
       expect(appController.getHealth()).toEqual({
         status: 'ok',
         service: 'prompt-vault-backend',
+        message: 'API is healthy',
       });
     });
   });

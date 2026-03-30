@@ -249,4 +249,32 @@ describe('Auth + Prompts (e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
   });
+
+  it('POST /api/v1/prompts/:id/execute envia provider e credentialId para o serviço', async () => {
+    const token = sign(
+      { sub: 'user-1', email: 'user@test.com' },
+      'dev-access-secret',
+    );
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .post('/api/v1/prompts/prompt-1/execute')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        model: 'openrouter/openai/gpt-4o-mini',
+        provider: 'openrouter',
+        credentialId: 'cred-1',
+      })
+      .expect(201);
+
+    expect(executionsServiceMock.executePrompt).toHaveBeenCalledWith(
+      'user-1',
+      'prompt-1',
+      expect.objectContaining({
+        model: 'openrouter/openai/gpt-4o-mini',
+        provider: 'openrouter',
+        credentialId: 'cred-1',
+      }),
+    );
+  });
 });

@@ -14,6 +14,14 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { ExploreModule } from './explore/explore.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import {
+  AcceptLanguageResolver,
+  HeaderResolver,
+  I18nJsonLoader,
+  I18nModule,
+  QueryResolver,
+} from 'nestjs-i18n';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -28,6 +36,19 @@ import { APP_GUARD } from '@nestjs/core';
     ExecutionsModule,
     AnalyticsModule,
     ExploreModule,
+    I18nModule.forRoot({
+      fallbackLanguage: 'pt',
+      loader: I18nJsonLoader,
+      loaderOptions: {
+        path: join(__dirname, 'i18n'),
+        watch: true,
+      },
+      resolvers: [
+        { use: QueryResolver, options: ['lang'] },
+        new HeaderResolver(['x-lang']),
+        AcceptLanguageResolver,
+      ],
+    }),
     ThrottlerModule.forRoot([
       {
         ttl: 60000,

@@ -9,8 +9,9 @@ API backend em NestJS para autenticação, CRUD/versionamento de prompts, templa
 - `JWT + Passport` (auth com access token + refresh token family)
 - `Swagger` (`/api/docs`)
 - `class-validator` e `ValidationPipe` (validação de DTO)
-- `OpenAI` e `Anthropic SDK` (execução real de prompts)
+- `OpenAI`, `Anthropic`, `Google Gemini` e `OpenRouter` (execução real de prompts)
 - `@nestjs/throttler` (rate limit)
+- `nestjs-i18n` (internacionalização de respostas e erros)
 
 ## Requisitos
 
@@ -75,6 +76,16 @@ yarn start:dev
 - Execução real de prompt com SSE:
   - `POST /api/v1/prompts/:id/execute`
   - `GET /api/v1/prompts/:id/executions`
+- Multi-provedor:
+  - credenciais por usuário em `ProviderCredential` (`openai`, `anthropic`, `google`, `openrouter`)
+  - fallback para credenciais legadas de OpenAI/Anthropic quando necessário
+- Pricing dinâmico por provedor/modelo:
+  - tabela `ProviderModelPricing` com vigência (`effectiveFrom`, `effectiveTo`)
+  - fallback automático para tabela estática quando não houver preço cadastrado
+- Resiliência de chamadas LLM:
+  - timeout configurável
+  - retries com backoff exponencial
+  - circuit breaker por provedor (abertura temporária após falhas consecutivas)
 - Analytics por período:
   - `/api/v1/analytics/overview`
   - `/api/v1/analytics/executions-per-day`
@@ -86,7 +97,10 @@ yarn start:dev
   - `POST /api/v1/prompts/:id/fork`
 - Settings:
   - perfil do usuário
-  - API keys criptografadas e mascaradas
+  - API keys/credenciais criptografadas e mascaradas
+- i18n backend completo:
+  - resolução por `Accept-Language`, `x-lang` e `?lang=`
+  - traduções em `pt`, `en`, `es` para erros e respostas textuais
 
 ## Scripts
 
@@ -107,6 +121,7 @@ yarn start:dev
 - API versionada com prefixo global `/api/v1` para facilitar evolução sem quebra.
 - `ValidationPipe` global com `transform`, `whitelist` e `forbidNonWhitelisted` para hardening de entrada.
 - Filtro global de exceções com payload padronizado para erros HTTP.
+- Filtro global de exceções traduz mensagens por idioma da requisição.
 - Refresh token com **token family**:
   - cada refresh gera nova sessão/token
   - token anterior é revogado
@@ -116,6 +131,8 @@ yarn start:dev
 - Swagger mantido como contrato de integração entre backend e frontend.
 - Middleware de `X-Request-Id` e log estruturado por request.
 - Rate limit global + thresholds mais restritos em auth.
+- Custo de execução com prioridade para pricing dinâmico (`ProviderModelPricing`) e fallback estático.
+- Camada de resiliência LLM centralizada no `LlmService` (retry, backoff, timeout e circuit breaker por provedor).
 
 ## Dependências e justificativas
 
@@ -127,6 +144,7 @@ yarn start:dev
 - `class-validator` + `class-transformer`: validação declarativa de DTO.
 - `@prisma/client` + `prisma`: ORM tipado, migrations e seed.
 - `openai` + `@anthropic-ai/sdk`: execução real de prompts com provedores LLM.
+- `nestjs-i18n`: i18n no backend com fallback e resolvers de idioma.
 - `husky` + `lint-staged`: validação automática de qualidade antes de commit.
 - `@commitlint/cli` + `@commitlint/config-conventional`: padronização de commits (Conventional Commits).
 - `tsx`: execução de seed em TypeScript.
@@ -148,6 +166,14 @@ yarn start:dev
 - `JWT_ACCESS_SECRET`
 - `JWT_REFRESH_SECRET`
 - `ENCRYPTION_SECRET`
+
+Opcional (resiliência LLM):
+
+- `LLM_MAX_RETRIES` (default: `2`)
+- `LLM_BACKOFF_MS` (default: `300`)
+- `LLM_TIMEOUT_MS` (default: `30000`)
+- `LLM_CIRCUIT_FAILURE_THRESHOLD` (default: `3`)
+- `LLM_CIRCUIT_COOLDOWN_MS` (default: `30000`)
 
 Em produção, o bootstrap falha se essas variáveis não existirem.
 

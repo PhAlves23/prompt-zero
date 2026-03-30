@@ -33,7 +33,7 @@ export class AuthService {
   async register(dto: RegisterDto) {
     const existingUser = await this.usersService.findByEmail(dto.email);
     if (existingUser) {
-      throw new ConflictException('Email já está em uso');
+      throw new ConflictException('errors.emailInUse');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -49,12 +49,12 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException('errors.invalidCredentials');
     }
 
     const passwordValid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!passwordValid) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException('errors.invalidCredentials');
     }
 
     return this.issueTokens(user.id, user.email);
@@ -74,7 +74,7 @@ export class AuthService {
         },
       );
     } catch {
-      throw new UnauthorizedException('Refresh token inválido');
+      throw new UnauthorizedException('errors.invalidRefreshToken');
     }
 
     const session = await this.prisma.refreshTokenSession.findFirst({
@@ -87,13 +87,13 @@ export class AuthService {
 
     if (!session || session.revokedAt || session.expiresAt < new Date()) {
       await this.revokeTokenFamily(payload.sub, payload.fid);
-      throw new UnauthorizedException('Refresh token inválido');
+      throw new UnauthorizedException('errors.invalidRefreshToken');
     }
 
     const refreshValid = await bcrypt.compare(refreshToken, session.tokenHash);
     if (!refreshValid) {
       await this.revokeTokenFamily(payload.sub, payload.fid);
-      throw new UnauthorizedException('Refresh token inválido');
+      throw new UnauthorizedException('errors.invalidRefreshToken');
     }
 
     return this.issueTokens(payload.sub, payload.email, {
@@ -105,7 +105,7 @@ export class AuthService {
   async me(userId: string) {
     const profile = await this.usersService.getProfile(userId);
     if (!profile) {
-      throw new UnauthorizedException('Usuário não encontrado');
+      throw new UnauthorizedException('errors.userNotFound');
     }
     return profile;
   }

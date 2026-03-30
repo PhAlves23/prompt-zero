@@ -19,6 +19,13 @@ enum VariableType {
   select
 }
 
+enum ProviderType {
+  openai
+  anthropic
+  google
+  openrouter
+}
+
 model User {
   id                 String   @id @default(uuid())
   name               String
@@ -35,6 +42,7 @@ model User {
   tags       Tag[]
   executions Execution[]
   refreshSessions RefreshTokenSession[]
+  providerCredentials ProviderCredential[]
 }
 
 model Workspace {
@@ -143,9 +151,11 @@ model TemplateVariable {
 
 model Execution {
   id              String   @id @default(uuid())
+  provider        ProviderType @default(openai)
   input           String
   output          String
   model           String
+  credentialId    String?
   temperature     Float
   maxTokens       Int
   inputTokens     Int
@@ -162,10 +172,12 @@ model Execution {
   prompt        Prompt        @relation(fields: [promptId], references: [id], onDelete: Cascade)
   promptVersion PromptVersion @relation(fields: [promptVersionId], references: [id], onDelete: Cascade)
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credential    ProviderCredential? @relation(fields: [credentialId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([promptId, createdAt])
   @@index([model, createdAt])
+  @@index([provider, model, createdAt])
 }
 
 model RefreshTokenSession {
@@ -184,4 +196,40 @@ model RefreshTokenSession {
 
   @@index([userId, familyId])
   @@index([expiresAt])
+}
+
+model ProviderCredential {
+  id             String       @id @default(uuid())
+  userId         String
+  provider       ProviderType
+  label          String?
+  apiKeyEnc      String
+  baseUrl        String?
+  organizationId String?
+  isDefault      Boolean      @default(false)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  executions     Execution[]
+
+  @@index([userId, provider, isActive])
+}
+
+model ProviderModelPricing {
+  id              String       @id @default(uuid())
+  provider        ProviderType
+  model           String
+  inputCostPer1k  Decimal      @db.Decimal(10, 6)
+  outputCostPer1k Decimal      @db.Decimal(10, 6)
+  currency        String       @default("USD")
+  isActive        Boolean      @default(true)
+  effectiveFrom   DateTime     @default(now())
+  effectiveTo     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([provider, model, isActive])
+  @@index([effectiveFrom, effectiveTo])
 }

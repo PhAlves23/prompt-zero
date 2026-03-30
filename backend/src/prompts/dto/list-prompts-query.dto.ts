@@ -42,17 +42,17 @@ export class ListPromptsQueryDto {
   @IsString()
   model?: string;
 
-  @ApiPropertyOptional({ description: 'true|false' })
+  @ApiPropertyOptional({ description: 'Boolean string: true|false' })
   @IsOptional()
   @IsBooleanString()
   isPublic?: string;
 
-  @ApiPropertyOptional({ description: 'true|false' })
+  @ApiPropertyOptional({ description: 'Boolean string: true|false' })
   @IsOptional()
   @IsBooleanString()
   isFavorite?: string;
 
-  @ApiPropertyOptional({ description: 'true|false' })
+  @ApiPropertyOptional({ description: 'Boolean string: true|false' })
   @IsOptional()
   @IsBooleanString()
   isTemplate?: string;

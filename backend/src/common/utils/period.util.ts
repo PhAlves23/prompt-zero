@@ -17,5 +17,5 @@ export function parsePeriod(period: string | undefined): AnalyticsPeriod {
   if (period === '7d' || period === '30d' || period === '90d') {
     return period;
   }
-  throw new BadRequestException('Período inválido. Use 7d, 30d ou 90d.');
+  throw new BadRequestException('errors.invalidPeriod');
 }

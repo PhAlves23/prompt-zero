@@ -1,0 +1,249 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
+import { ProviderType } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
+import { ExecutionsService } from './executions.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { LlmService } from './llm.service';
+import { encryptText } from '../common/utils/crypto.util';
+import { ProviderPricingService } from './provider-pricing.service';
+
+describe('ExecutionsService', () => {
+  let service: ExecutionsService;
+
+  const prismaServiceMock = {
+    prompt: {
+      findUnique: jest.fn(),
+    },
+    providerCredential: {
+      findFirst: jest.fn(),
+    },
+    execution: {
+      create: jest.fn(),
+    },
+    $transaction: jest.fn(),
+  };
+
+  const llmServiceMock = {
+    execute: jest.fn(),
+  };
+
+  const configServiceMock = {
+    get: jest.fn(() => undefined),
+  };
+
+  const providerPricingServiceMock = {
+    getPricing: jest.fn().mockResolvedValue({
+      input: 0.001,
+      output: 0.002,
+      source: 'fallback',
+    }),
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ExecutionsService,
+        { provide: PrismaService, useValue: prismaServiceMock },
+        { provide: LlmService, useValue: llmServiceMock },
+        { provide: ConfigService, useValue: configServiceMock },
+        {
+          provide: ProviderPricingService,
+          useValue: providerPricingServiceMock,
+        },
+      ],
+    }).compile();
+
+    service = module.get<ExecutionsService>(ExecutionsService);
+  });
+
+  it('deve retornar 400 quando credentialId não existe para o usuário/provedor', async () => {
+    prismaServiceMock.prompt.findUnique.mockResolvedValue({
+      id: 'prompt-1',
+      userId: 'user-1',
+      deletedAt: null,
+      content: 'Escreva um texto sobre produtividade',
+      isTemplate: false,
+      variables: [],
+      versions: [{ id: 'version-1', versionNumber: 1 }],
+      user: {
+        id: 'user-1',
+        openaiApiKeyEnc: null,
+        anthropicApiKeyEnc: null,
+      },
+    });
+    prismaServiceMock.providerCredential.findFirst.mockResolvedValue(null);
+
+    await expect(
+      service.executePrompt('user-1', 'prompt-1', {
+        model: 'gpt-4o-mini',
+        provider: ProviderType.openai,
+        credentialId: 'cred-inexistente',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(llmServiceMock.execute).not.toHaveBeenCalled();
+  });
+
+  it('deve inferir provider=openrouter a partir do model e executar com credencial default', async () => {
+    const encryptedKey = encryptText('openrouter-key', 'dev-encryption-secret');
+
+    prismaServiceMock.prompt.findUnique.mockResolvedValue({
+      id: 'prompt-1',
+      userId: 'user-1',
+      deletedAt: null,
+      content: 'Gere um texto para anúncio',
+      isTemplate: false,
+      variables: [],
+      versions: [{ id: 'version-1', versionNumber: 1 }],
+      user: {
+        id: 'user-1',
+        openaiApiKeyEnc: null,
+        anthropicApiKeyEnc: null,
+      },
+    });
+    prismaServiceMock.providerCredential.findFirst.mockResolvedValue({
+      id: 'cred-openrouter',
+      provider: ProviderType.openrouter,
+      apiKeyEnc: encryptedKey,
+      baseUrl: 'https://openrouter.ai/api/v1',
+      organizationId: null,
+      isActive: true,
+      isDefault: true,
+    });
+    llmServiceMock.execute.mockResolvedValue({
+      output: 'Texto gerado',
+      inputTokens: 20,
+      outputTokens: 30,
+    });
+    prismaServiceMock.execution.create.mockResolvedValue({ id: 'exec-1' });
+
+    await service.executePrompt('user-1', 'prompt-1', {
+      model: 'openrouter/openai/gpt-4o-mini',
+    });
+
+    expect(prismaServiceMock.providerCredential.findFirst).toHaveBeenCalledWith(
+      {
+        where: {
+          userId: 'user-1',
+          provider: ProviderType.openrouter,
+          isActive: true,
+        },
+        orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
+      },
+    );
+    expect(llmServiceMock.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: ProviderType.openrouter,
+        model: 'openrouter/openai/gpt-4o-mini',
+      }),
+    );
+  });
+
+  it('deve inferir provider=google a partir de model gemini e usar credencial default', async () => {
+    const encryptedKey = encryptText('google-key', 'dev-encryption-secret');
+
+    prismaServiceMock.prompt.findUnique.mockResolvedValue({
+      id: 'prompt-1',
+      userId: 'user-1',
+      deletedAt: null,
+      content: 'Resuma este conteúdo',
+      isTemplate: false,
+      variables: [],
+      versions: [{ id: 'version-1', versionNumber: 1 }],
+      user: {
+        id: 'user-1',
+        openaiApiKeyEnc: null,
+        anthropicApiKeyEnc: null,
+      },
+    });
+    prismaServiceMock.providerCredential.findFirst.mockResolvedValue({
+      id: 'cred-google',
+      provider: ProviderType.google,
+      apiKeyEnc: encryptedKey,
+      baseUrl: null,
+      organizationId: null,
+      isActive: true,
+      isDefault: true,
+    });
+    llmServiceMock.execute.mockResolvedValue({
+      output: 'Resumo gerado',
+      inputTokens: 12,
+      outputTokens: 18,
+    });
+    prismaServiceMock.execution.create.mockResolvedValue({ id: 'exec-2' });
+
+    await service.executePrompt('user-1', 'prompt-1', {
+      model: 'gemini-1.5-flash',
+    });
+
+    expect(prismaServiceMock.providerCredential.findFirst).toHaveBeenCalledWith(
+      {
+        where: {
+          userId: 'user-1',
+          provider: ProviderType.google,
+          isActive: true,
+        },
+        orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
+      },
+    );
+    expect(llmServiceMock.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: ProviderType.google,
+        model: 'gemini-1.5-flash',
+      }),
+    );
+  });
+
+  it('deve inferir provider=anthropic a partir de model claude e usar fallback legado no user', async () => {
+    const encryptedAnthropicKey = encryptText(
+      'anthropic-key',
+      'dev-encryption-secret',
+    );
+
+    prismaServiceMock.prompt.findUnique.mockResolvedValue({
+      id: 'prompt-1',
+      userId: 'user-1',
+      deletedAt: null,
+      content: 'Escreva uma proposta comercial',
+      isTemplate: false,
+      variables: [],
+      versions: [{ id: 'version-1', versionNumber: 1 }],
+      user: {
+        id: 'user-1',
+        openaiApiKeyEnc: null,
+        anthropicApiKeyEnc: encryptedAnthropicKey,
+      },
+    });
+    prismaServiceMock.providerCredential.findFirst.mockResolvedValue(null);
+    llmServiceMock.execute.mockResolvedValue({
+      output: 'Proposta gerada',
+      inputTokens: 40,
+      outputTokens: 55,
+    });
+    prismaServiceMock.execution.create.mockResolvedValue({ id: 'exec-3' });
+
+    await service.executePrompt('user-1', 'prompt-1', {
+      model: 'claude-3-5-sonnet',
+    });
+
+    expect(prismaServiceMock.providerCredential.findFirst).toHaveBeenCalledWith(
+      {
+        where: {
+          userId: 'user-1',
+          provider: ProviderType.anthropic,
+          isActive: true,
+        },
+        orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
+      },
+    );
+    expect(llmServiceMock.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: ProviderType.anthropic,
+        model: 'claude-3-5-sonnet',
+      }),
+    );
+  });
+});

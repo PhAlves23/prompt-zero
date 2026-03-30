@@ -9,13 +9,13 @@ export class ExploreController {
   constructor(private readonly exploreService: ExploreService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar prompts públicos para exploração' })
+  @ApiOperation({ summary: 'List public prompts for exploration' })
   list(@Query() query: ListExploreQueryDto) {
     return this.exploreService.listPublicPrompts(query);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Detalhe de prompt público' })
+  @ApiOperation({ summary: 'Get public prompt details' })
   getOne(@Param('id') id: string) {
     return this.exploreService.getPublicPrompt(id);
   }

@@ -15,6 +15,8 @@ import {
 } from '../common/utils/template.util';
 import { ListExecutionsQueryDto } from './dto/list-executions-query.dto';
 import { getEnvSecret } from '../common/utils/env.util';
+import { ProviderType, User } from '@prisma/client';
+import { ProviderPricingService } from './provider-pricing.service';
 
 @Injectable()
 export class ExecutionsService {
@@ -22,6 +24,7 @@ export class ExecutionsService {
     private readonly prisma: PrismaService,
     private readonly llmService: LlmService,
     private readonly configService: ConfigService,
+    private readonly providerPricingService: ProviderPricingService,
   ) {}
 
   async executePrompt(userId: string, promptId: string, dto: ExecutePromptDto) {
@@ -35,10 +38,10 @@ export class ExecutionsService {
     });
 
     if (!prompt || prompt.deletedAt) {
-      throw new NotFoundException('Prompt não encontrado');
+      throw new NotFoundException('errors.promptNotFound');
     }
     if (prompt.userId !== userId) {
-      throw new ForbiddenException('Sem permissão para executar este prompt');
+      throw new ForbiddenException('errors.promptExecuteForbidden');
     }
 
     const templateVariables = extractTemplateVariables(prompt.content);
@@ -51,18 +54,14 @@ export class ExecutionsService {
         (variableName) => !configured.has(variableName),
       );
       if (unconfigured.length > 0) {
-        throw new BadRequestException(
-          `Template sem configuração para variáveis: ${unconfigured.join(', ')}`,
-        );
+        throw new BadRequestException('errors.templateVariablesNotConfigured');
       }
 
       const missing = templateVariables.filter(
         (name) => !providedVariables[name],
       );
       if (missing.length > 0) {
-        throw new BadRequestException(
-          `Variáveis obrigatórias ausentes: ${missing.join(', ')}`,
-        );
+        throw new BadRequestException('errors.requiredVariablesMissing');
       }
     }
 
@@ -70,8 +69,17 @@ export class ExecutionsService {
       ? applyTemplateVariables(prompt.content, providedVariables)
       : prompt.content;
 
-    const provider = this.resolveProvider(dto.model);
-    const apiKey = this.resolveApiKey(provider, prompt.user);
+    const provider = this.resolveProvider(dto.model, dto.provider);
+    const credential = await this.resolveCredential(
+      userId,
+      provider,
+      dto.credentialId,
+    );
+    const apiKey = this.resolveApiKey(
+      provider,
+      prompt.user,
+      credential?.apiKeyEnc,
+    );
     const temperature = dto.temperature ?? 0.7;
     const maxTokens = dto.maxTokens ?? 512;
 
@@ -83,10 +91,13 @@ export class ExecutionsService {
       prompt: finalPrompt,
       temperature,
       maxTokens,
+      baseUrl: credential?.baseUrl,
+      organizationId: credential?.organizationId,
     });
     const latencyMs = Date.now() - startedAt;
     const totalTokens = llmResult.inputTokens + llmResult.outputTokens;
-    const estimatedCost = this.calculateEstimatedCost(
+    const { estimatedCost, pricingSource } = await this.calculateEstimatedCost(
+      provider,
       dto.model,
       llmResult.inputTokens,
       llmResult.outputTokens,
@@ -94,14 +105,16 @@ export class ExecutionsService {
 
     const latestVersion = prompt.versions[0];
     if (!latestVersion) {
-      throw new NotFoundException('Nenhuma versão encontrada para este prompt');
+      throw new NotFoundException('errors.promptVersionNotFound');
     }
 
     const execution = await this.prisma.execution.create({
       data: {
+        provider,
         input: finalPrompt,
         output: llmResult.output,
         model: dto.model,
+        credentialId: credential?.id,
         temperature,
         maxTokens,
         inputTokens: llmResult.inputTokens,
@@ -126,6 +139,7 @@ export class ExecutionsService {
         totalTokens,
         latencyMs,
         estimatedCost: Number(estimatedCost),
+        pricingSource,
       },
     };
   }
@@ -141,10 +155,10 @@ export class ExecutionsService {
     });
 
     if (!prompt || prompt.deletedAt) {
-      throw new NotFoundException('Prompt não encontrado');
+      throw new NotFoundException('errors.promptNotFound');
     }
     if (prompt.userId !== userId) {
-      throw new ForbiddenException('Sem permissão para este prompt');
+      throw new ForbiddenException('errors.promptForbidden');
     }
 
     const [data, total] = await this.prisma.$transaction([
@@ -170,17 +184,64 @@ export class ExecutionsService {
     };
   }
 
-  private resolveProvider(model: string): 'openai' | 'anthropic' {
-    const normalized = model.toLowerCase();
-    if (normalized.includes('claude')) {
-      return 'anthropic';
+  private resolveProvider(
+    model: string,
+    providerFromPayload?: ProviderType,
+  ): ProviderType {
+    if (providerFromPayload) {
+      return providerFromPayload;
     }
-    return 'openai';
+
+    const normalized = model.toLowerCase();
+    if (
+      normalized.startsWith('openrouter/') ||
+      normalized.includes('openrouter')
+    ) {
+      return ProviderType.openrouter;
+    }
+    if (normalized.includes('gemini')) {
+      return ProviderType.google;
+    }
+    if (normalized.includes('claude')) {
+      return ProviderType.anthropic;
+    }
+    return ProviderType.openai;
+  }
+
+  private async resolveCredential(
+    userId: string,
+    provider: ProviderType,
+    credentialId?: string,
+  ) {
+    if (credentialId) {
+      const credential = await this.prisma.providerCredential.findFirst({
+        where: {
+          id: credentialId,
+          userId,
+          provider,
+          isActive: true,
+        },
+      });
+      if (!credential) {
+        throw new BadRequestException('errors.providerCredentialNotFound');
+      }
+      return credential;
+    }
+
+    return this.prisma.providerCredential.findFirst({
+      where: {
+        userId,
+        provider,
+        isActive: true,
+      },
+      orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
+    });
   }
 
   private resolveApiKey(
-    provider: 'openai' | 'anthropic',
-    user: { openaiApiKeyEnc: string | null; anthropicApiKeyEnc: string | null },
+    provider: ProviderType,
+    user: User,
+    credentialApiKeyEnc?: string | null,
   ): string {
     const encryptionSecret = getEnvSecret(
       this.configService,
@@ -188,50 +249,42 @@ export class ExecutionsService {
       'dev-encryption-secret',
     );
 
-    if (provider === 'openai') {
+    if (credentialApiKeyEnc) {
+      return decryptText(credentialApiKeyEnc, encryptionSecret);
+    }
+
+    if (provider === ProviderType.openai) {
       if (!user.openaiApiKeyEnc) {
-        throw new BadRequestException(
-          'API key da OpenAI não configurada para este usuário',
-        );
+        throw new BadRequestException('errors.openaiApiKeyNotConfigured');
       }
       return decryptText(user.openaiApiKeyEnc, encryptionSecret);
     }
 
-    if (!user.anthropicApiKeyEnc) {
-      throw new BadRequestException(
-        'API key da Anthropic não configurada para este usuário',
-      );
+    if (provider === ProviderType.anthropic) {
+      if (!user.anthropicApiKeyEnc) {
+        throw new BadRequestException('errors.anthropicApiKeyNotConfigured');
+      }
+      return decryptText(user.anthropicApiKeyEnc, encryptionSecret);
     }
-    return decryptText(user.anthropicApiKeyEnc, encryptionSecret);
+
+    throw new BadRequestException('errors.providerApiKeyNotConfigured');
   }
 
-  private calculateEstimatedCost(
+  private async calculateEstimatedCost(
+    provider: ProviderType,
     model: string,
     inputTokens: number,
     outputTokens: number,
-  ): number {
-    const pricingPer1k = this.getModelPricing(model);
+  ): Promise<{ estimatedCost: number; pricingSource: 'dynamic' | 'fallback' }> {
+    const pricingPer1k = await this.providerPricingService.getPricing(
+      provider,
+      model,
+    );
     const inputCost = (inputTokens / 1000) * pricingPer1k.input;
     const outputCost = (outputTokens / 1000) * pricingPer1k.output;
-    return Number((inputCost + outputCost).toFixed(6));
-  }
-
-  private getModelPricing(model: string): { input: number; output: number } {
-    const normalized = model.toLowerCase();
-
-    if (normalized.includes('gpt-4o-mini')) {
-      return { input: 0.00015, output: 0.0006 };
-    }
-    if (normalized.includes('gpt-4o')) {
-      return { input: 0.005, output: 0.015 };
-    }
-    if (normalized.includes('claude-3-5-sonnet')) {
-      return { input: 0.003, output: 0.015 };
-    }
-    if (normalized.includes('claude-3-haiku')) {
-      return { input: 0.00025, output: 0.00125 };
-    }
-
-    return { input: 0.001, output: 0.002 };
+    return {
+      estimatedCost: Number((inputCost + outputCost).toFixed(6)),
+      pricingSource: pricingPer1k.source,
+    };
   }
 }

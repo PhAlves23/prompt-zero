@@ -4,10 +4,11 @@ import { ExecutionsController } from './executions.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { LlmService } from './llm.service';
+import { ProviderPricingService } from './provider-pricing.service';
 
 @Module({
   imports: [PrismaModule, ConfigModule],
-  providers: [ExecutionsService, LlmService],
+  providers: [ExecutionsService, LlmService, ProviderPricingService],
   controllers: [ExecutionsController],
   exports: [ExecutionsService],
 })

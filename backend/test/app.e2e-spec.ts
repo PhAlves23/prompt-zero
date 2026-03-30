@@ -36,6 +36,7 @@ describe('AppController (e2e)', () => {
     return request(server).get('/api/v1').expect(200).expect({
       status: 'ok',
       service: 'prompt-vault-backend',
+      message: 'API is healthy',
     });
   });
 });

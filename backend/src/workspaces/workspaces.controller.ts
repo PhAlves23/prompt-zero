@@ -24,19 +24,19 @@ export class WorkspacesController {
   constructor(private readonly workspacesService: WorkspacesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar workspaces do usuário' })
+  @ApiOperation({ summary: 'List user workspaces' })
   findAll(@CurrentUser() user: AuthUser) {
     return this.workspacesService.findAll(user.sub);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Criar workspace' })
+  @ApiOperation({ summary: 'Create workspace' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateWorkspaceDto) {
     return this.workspacesService.create(user.sub, dto);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Editar workspace' })
+  @ApiOperation({ summary: 'Update workspace' })
   update(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
@@ -46,7 +46,7 @@ export class WorkspacesController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Deletar workspace' })
+  @ApiOperation({ summary: 'Delete workspace' })
   remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.workspacesService.remove(user.sub, id);
   }

@@ -26,8 +26,8 @@ export class UsersService {
 
       await tx.workspace.create({
         data: {
-          name: 'Padrão',
-          description: 'Workspace padrão do usuário',
+          name: 'Default',
+          description: 'User default workspace',
           color: '#6366F1',
           isDefault: true,
           userId: user.id,

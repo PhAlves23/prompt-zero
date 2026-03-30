@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
   Param,
   Post,
   Query,
@@ -22,6 +23,7 @@ import type { AuthUser } from '../common/interfaces/auth-user.interface';
 import { ExecutePromptDto } from './dto/execute-prompt.dto';
 import { ExecutionsService } from './executions.service';
 import { ListExecutionsQueryDto } from './dto/list-executions-query.dto';
+import { I18nContext } from 'nestjs-i18n';
 
 @ApiTags('executions')
 @ApiBearerAuth()
@@ -32,7 +34,7 @@ export class ExecutionsController {
 
   @Post(':id/execute')
   @ApiOperation({
-    summary: 'Executa prompt com streaming SSE e persiste execution',
+    summary: 'Execute prompt with SSE streaming and persist execution',
   })
   @ApiProduces('text/event-stream')
   @ApiBody({ type: ExecutePromptDto })
@@ -66,8 +68,13 @@ export class ExecutionsController {
         meta: result.meta,
       });
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Erro ao executar prompt';
+      const i18n = I18nContext.current();
+      let message = this.translateMessage(i18n, 'responses.executionFailed');
+      if (error instanceof HttpException) {
+        message = this.translateMessage(i18n, this.extractErrorMessage(error));
+      } else if (error instanceof Error) {
+        message = this.translateMessage(i18n, error.message);
+      }
       this.writeSseEvent(response, 'error', { message });
     } finally {
       response.end();
@@ -75,7 +82,7 @@ export class ExecutionsController {
   }
 
   @Get(':id/executions')
-  @ApiOperation({ summary: 'Lista histórico de execuções de um prompt' })
+  @ApiOperation({ summary: 'List execution history for a prompt' })
   listExecutions(
     @CurrentUser() user: AuthUser,
     @Param('id') promptId: string,
@@ -95,6 +102,41 @@ export class ExecutionsController {
   ) {
     response.write(`event: ${event}\n`);
     response.write(`data: ${JSON.stringify(payload)}\n\n`);
+  }
+
+  private extractErrorMessage(error: HttpException): string {
+    const response = error.getResponse();
+    if (typeof response === 'string') {
+      return response;
+    }
+
+    if (response && typeof response === 'object' && 'message' in response) {
+      const payloadMessage = response.message;
+      if (Array.isArray(payloadMessage)) {
+        return payloadMessage
+          .filter((item): item is string => typeof item === 'string')
+          .join(', ');
+      }
+      if (typeof payloadMessage === 'string') {
+        return payloadMessage;
+      }
+    }
+
+    return 'errors.internalServerError';
+  }
+
+  private translateMessage(
+    i18n: I18nContext | undefined,
+    message: string,
+  ): string {
+    if (!i18n || !message.includes('.')) {
+      return message;
+    }
+    const translated = i18n.t(message);
+    if (typeof translated === 'string' && translated !== message) {
+      return translated;
+    }
+    return message;
   }
 
   private chunkText(text: string): string[] {

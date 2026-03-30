@@ -32,7 +32,7 @@ export class TagsService {
       where: { id, userId },
     });
     if (!tag) {
-      throw new NotFoundException('Tag não encontrada');
+      throw new NotFoundException('errors.tagNotFound');
     }
 
     return this.prisma.tag.update({
@@ -50,7 +50,7 @@ export class TagsService {
       where: { id, userId },
     });
     if (!tag) {
-      throw new NotFoundException('Tag não encontrada');
+      throw new NotFoundException('errors.tagNotFound');
     }
     await this.prisma.tag.delete({
       where: { id },

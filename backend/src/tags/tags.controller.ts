@@ -24,19 +24,19 @@ export class TagsController {
   constructor(private readonly tagsService: TagsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar tags do usuário' })
+  @ApiOperation({ summary: 'List user tags' })
   findAll(@CurrentUser() user: AuthUser) {
     return this.tagsService.findAll(user.sub);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Criar tag' })
+  @ApiOperation({ summary: 'Create tag' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateTagDto) {
     return this.tagsService.create(user.sub, dto);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Editar tag' })
+  @ApiOperation({ summary: 'Update tag' })
   update(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
@@ -46,7 +46,7 @@ export class TagsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Deletar tag' })
+  @ApiOperation({ summary: 'Delete tag' })
   remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.tagsService.remove(user.sub, id);
   }

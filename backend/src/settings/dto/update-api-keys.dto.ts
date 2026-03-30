@@ -13,4 +13,16 @@ export class UpdateApiKeysDto {
   @IsString()
   @MinLength(10)
   anthropicApiKey?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MinLength(10)
+  googleApiKey?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MinLength(10)
+  openrouterApiKey?: string;
 }
