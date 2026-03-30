@@ -4,6 +4,7 @@ import "../globals.css";
 import { cn } from "@/lib/utils";
 import { getDictionary, hasLocale, type Locale } from "./dictionaries";
 import { notFound } from "next/navigation";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const spaceMono = Space_Mono({
   weight: ['400', '700'],
@@ -65,9 +66,19 @@ export default async function RootLayout({
   return (
     <html
       lang={lang}
-      className={cn("h-full", "antialiased", "dark", spaceMono.variable, jetBrainsMono.variable, dmSans.variable)}
+      suppressHydrationWarning
+      className={cn("h-full", "antialiased", spaceMono.variable, jetBrainsMono.variable, dmSans.variable)}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
