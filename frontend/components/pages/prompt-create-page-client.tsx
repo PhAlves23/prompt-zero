@@ -1,0 +1,484 @@
+"use client"
+
+import { useMutation, useQuery } from "@tanstack/react-query"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
+import { useFieldArray, useForm, useWatch } from "react-hook-form"
+import { ArrowLeft, Plus, Trash2 } from "lucide-react"
+import { z } from "zod/v4"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
+import { bffFetch, ClientHttpError } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/query-keys"
+import type { Prompt, Workspace } from "@/lib/api/types"
+
+const languageByLocalePrefix = {
+  pt: "pt",
+  en: "en",
+  es: "es",
+} as const
+
+type PromptLanguage = (typeof languageByLocalePrefix)[keyof typeof languageByLocalePrefix]
+
+const createPromptSchema = z.object({
+  title: z.string().min(3),
+  description: z.string().optional(),
+  content: z.string().min(10),
+  workspaceId: z.string().optional(),
+  isPublic: z.boolean(),
+  language: z.enum(["pt", "en", "es"]),
+  model: z.string().min(1),
+  temperature: z.number().min(0).max(2),
+  topP: z.number().min(0).max(1),
+  topK: z.number().int().min(1).max(200),
+  maxTokens: z.number().int().min(1).max(4000),
+  variables: z.array(
+    z.object({
+      name: z.string().min(1),
+      type: z.enum(["text", "textarea", "select"]),
+      defaultValue: z.string().optional(),
+      description: z.string().optional(),
+      optionsText: z.string().optional(),
+    }),
+  ),
+})
+
+type CreatePromptValues = z.infer<typeof createPromptSchema>
+type CreatePromptPayload = Pick<
+  CreatePromptValues,
+  "title" | "description" | "content" | "workspaceId" | "isPublic" | "language" | "model"
+>
+type SyncVariablePayload = {
+  name: string
+  type: "text" | "textarea" | "select"
+  defaultValue?: string
+  description?: string
+  options?: string[]
+}
+
+function extractVariableNames(content: string): string[] {
+  const matches = [...content.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g)]
+  const unique = new Set(matches.map((match) => match[1]))
+  return Array.from(unique)
+}
+
+export function PromptCreatePageClient({ lang }: { lang: string }) {
+  const router = useRouter()
+  const localePrefix = (lang.split("-")[0] ?? "pt") as keyof typeof languageByLocalePrefix
+  const defaultLanguage: PromptLanguage = languageByLocalePrefix[localePrefix] ?? "pt"
+
+  const form = useForm<CreatePromptValues>({
+    defaultValues: {
+      title: "",
+      description: "",
+      content: "",
+      workspaceId: "",
+      isPublic: false,
+      language: defaultLanguage,
+      model: "gpt-4o-mini",
+      temperature: 0.7,
+      topP: 0.95,
+      topK: 40,
+      maxTokens: 2048,
+      variables: [],
+    },
+  })
+  const createIsPublic = useWatch({
+    control: form.control,
+    name: "isPublic",
+  })
+  const createLanguage = useWatch({
+    control: form.control,
+    name: "language",
+  })
+  const createModel = useWatch({
+    control: form.control,
+    name: "model",
+  })
+  const createContent = useWatch({
+    control: form.control,
+    name: "content",
+  })
+  const createWorkspaceId = useWatch({
+    control: form.control,
+    name: "workspaceId",
+  })
+  const { fields, append, remove, replace } = useFieldArray({
+    control: form.control,
+    name: "variables",
+  })
+  const watchedVariables = useWatch({
+    control: form.control,
+    name: "variables",
+  })
+
+  useEffect(() => {
+    const detectedNames = extractVariableNames(createContent ?? "")
+    if (detectedNames.length === 0) {
+      return
+    }
+
+    const currentVariables = form.getValues("variables")
+    const currentByName = new Map(currentVariables.map((variable) => [variable.name, variable]))
+    const nextVariables = detectedNames.map((name) => {
+      const existing = currentByName.get(name)
+      return {
+        name,
+        type: existing?.type ?? "text",
+        defaultValue: existing?.defaultValue ?? "",
+        description: existing?.description ?? "",
+        optionsText: existing?.optionsText ?? "",
+      }
+    })
+    const hasSameShape =
+      currentVariables.length === nextVariables.length &&
+      currentVariables.every((variable, index) => variable.name === nextVariables[index]?.name)
+    if (!hasSameShape) {
+      replace(nextVariables)
+    }
+  }, [createContent, form, replace])
+
+  const createPrompt = useMutation({
+    mutationFn: async (values: { prompt: CreatePromptPayload; variables: SyncVariablePayload[] }) => {
+      const createdPrompt = await bffFetch<Prompt>("/prompts", {
+        method: "POST",
+        body: values.prompt,
+      })
+      if (values.variables.length > 0) {
+        await bffFetch(`/prompts/${createdPrompt.id}/variables`, {
+          method: "PUT",
+          body: { variables: values.variables },
+        })
+      }
+      return createdPrompt
+    },
+    onSuccess: () => {
+      toast.success("Prompt criado")
+      router.push(`/${lang}/prompts`)
+      router.refresh()
+    },
+    onError: (error) => {
+      if (error instanceof ClientHttpError) {
+        toast.error(error.payload.message)
+        return
+      }
+      toast.error("Nao foi possivel criar o prompt")
+    },
+  })
+  const workspacesQuery = useQuery({
+    queryKey: queryKeys.workspaces.list,
+    queryFn: () => bffFetch<Workspace[]>("/workspaces"),
+  })
+
+  return (
+    <div className="grid gap-4 px-4 lg:px-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle>Novo prompt</CardTitle>
+            <Button asChild variant="outline" className="cursor-pointer">
+              <Link href={`/${lang}/prompts`}>
+                <ArrowLeft className="h-4 w-4" />
+                Voltar para listagem
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="grid gap-4"
+            onSubmit={form.handleSubmit((values) => {
+              const parsed = createPromptSchema.safeParse(values)
+              if (!parsed.success) {
+                parsed.error.issues.forEach((issue) => {
+                  const field = issue.path[0]
+                  if (
+                    field === "title" ||
+                    field === "description" ||
+                    field === "content" ||
+                    field === "isPublic"
+                  ) {
+                    form.setError(field, { message: issue.message })
+                  }
+                })
+                return
+              }
+              createPrompt.mutate({
+                prompt: {
+                  title: parsed.data.title,
+                  description: parsed.data.description,
+                  content: parsed.data.content,
+                  workspaceId: parsed.data.workspaceId?.trim() ? parsed.data.workspaceId : undefined,
+                  isPublic: parsed.data.isPublic,
+                  language: parsed.data.language,
+                  model: parsed.data.model,
+                },
+                variables: parsed.data.variables.map((variable) => ({
+                  name: variable.name,
+                  type: variable.type,
+                  defaultValue: variable.defaultValue?.trim() || undefined,
+                  description: variable.description?.trim() || undefined,
+                  options:
+                    variable.type === "select"
+                      ? (variable.optionsText ?? "")
+                          .split(",")
+                          .map((item) => item.trim())
+                          .filter(Boolean)
+                      : undefined,
+                })),
+              })
+            })}
+          >
+            <div className="grid gap-2">
+              <Label htmlFor="title">Titulo</Label>
+              <Input id="title" {...form.register("title")} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="description">Descricao</Label>
+              <Input id="description" {...form.register("description")} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="content">Conteudo</Label>
+              <Textarea id="content" rows={8} {...form.register("content")} />
+            </div>
+            <div className="grid gap-4 rounded-lg border p-4">
+              <p className="text-sm font-medium">Configuracoes do prompt</p>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-2">
+                  <Label htmlFor="language">Idioma</Label>
+                  <Select
+                    value={createLanguage}
+                    onValueChange={(value) => {
+                      if (value === "pt" || value === "en" || value === "es") {
+                        form.setValue("language", value)
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="language" className="cursor-pointer">
+                      <SelectValue placeholder="Selecione o idioma" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pt" className="cursor-pointer">Portugues</SelectItem>
+                      <SelectItem value="en" className="cursor-pointer">English</SelectItem>
+                      <SelectItem value="es" className="cursor-pointer">Espanol</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="model">Modelo</Label>
+                  <Select
+                    value={createModel}
+                    onValueChange={(value) => form.setValue("model", value)}
+                  >
+                    <SelectTrigger id="model" className="cursor-pointer">
+                      <SelectValue placeholder="Selecione o modelo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gpt-4o-mini" className="cursor-pointer">gpt-4o-mini</SelectItem>
+                      <SelectItem value="gpt-4o" className="cursor-pointer">gpt-4o</SelectItem>
+                      <SelectItem value="claude-3-5-sonnet" className="cursor-pointer">claude-3-5-sonnet</SelectItem>
+                      <SelectItem value="gemini-1.5-flash" className="cursor-pointer">gemini-1.5-flash</SelectItem>
+                      <SelectItem value="openrouter/default" className="cursor-pointer">openrouter/default</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="workspace">Workspace</Label>
+                  <Select
+                    value={createWorkspaceId?.trim() ? createWorkspaceId : "__none"}
+                    onValueChange={(value) => form.setValue("workspaceId", value === "__none" ? "" : value)}
+                  >
+                    <SelectTrigger id="workspace" className="cursor-pointer">
+                      <SelectValue placeholder="Selecione um workspace (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none" className="cursor-pointer">
+                        Sem workspace
+                      </SelectItem>
+                      {(workspacesQuery.data ?? []).map((workspace) => (
+                        <SelectItem key={workspace.id} value={workspace.id} className="cursor-pointer">
+                          {workspace.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {workspacesQuery.isPending ? (
+                    <p className="text-xs text-muted-foreground">Carregando workspaces...</p>
+                  ) : null}
+                  {workspacesQuery.isError ? (
+                    <p className="text-xs text-destructive">Nao foi possivel carregar os workspaces.</p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-3 rounded-lg border p-4 md:grid-cols-2">
+              <p className="md:col-span-2 text-sm font-medium">Configuracoes avancadas</p>
+              <div className="grid gap-1.5">
+                <Label htmlFor="temperature">Temperature</Label>
+                <Input
+                  id="temperature"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  max={2}
+                  {...form.register("temperature", { valueAsNumber: true })}
+                />
+                <p className="text-xs text-muted-foreground">Controla a aleatoriedade (0-2)</p>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="top-p">Top P</Label>
+                <Input
+                  id="top-p"
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  max={1}
+                  {...form.register("topP", { valueAsNumber: true })}
+                />
+                <p className="text-xs text-muted-foreground">Nucleus sampling (0-1)</p>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="top-k">Top K</Label>
+                <Input
+                  id="top-k"
+                  type="number"
+                  min={1}
+                  max={200}
+                  {...form.register("topK", { valueAsNumber: true })}
+                />
+                <p className="text-xs text-muted-foreground">Limita o numero de tokens considerados</p>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="max-tokens">Max Tokens</Label>
+                <Input
+                  id="max-tokens"
+                  type="number"
+                  min={1}
+                  max={4000}
+                  {...form.register("maxTokens", { valueAsNumber: true })}
+                />
+                <p className="text-xs text-muted-foreground">Numero maximo de tokens na resposta</p>
+              </div>
+            </div>
+            <div className="grid gap-3 rounded-lg border p-4">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium">Variaveis do template (passo unico)</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="cursor-pointer"
+                  onClick={() =>
+                    append({
+                      name: "",
+                      type: "text",
+                      defaultValue: "",
+                      description: "",
+                      optionsText: "",
+                    })
+                  }
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar variavel
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Dica: use placeholders no conteudo como {"{{produto}}"} para auto-detectar variaveis.
+              </p>
+              {fields.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma variavel detectada/adicionada.</p>
+              ) : (
+                <div className="grid gap-3">
+                  {fields.map((field, index) => {
+                    const variableType = watchedVariables?.[index]?.type ?? field.type
+                    return (
+                      <div key={field.id} className="grid gap-3 rounded-md border p-3 md:grid-cols-2">
+                        <div className="grid gap-1.5">
+                          <Label htmlFor={`variable-name-${field.id}`}>Nome</Label>
+                          <Input id={`variable-name-${field.id}`} {...form.register(`variables.${index}.name`)} />
+                        </div>
+                        <div className="grid gap-1.5">
+                          <Label htmlFor={`variable-type-${field.id}`}>Tipo</Label>
+                          <Select
+                            value={variableType}
+                            onValueChange={(value) => {
+                              if (value === "text" || value === "textarea" || value === "select") {
+                                form.setValue(`variables.${index}.type`, value)
+                              }
+                            }}
+                          >
+                            <SelectTrigger id={`variable-type-${field.id}`} className="cursor-pointer">
+                              <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="text" className="cursor-pointer">Text</SelectItem>
+                              <SelectItem value="textarea" className="cursor-pointer">Textarea</SelectItem>
+                              <SelectItem value="select" className="cursor-pointer">Select</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-1.5">
+                          <Label htmlFor={`variable-default-${field.id}`}>Default</Label>
+                          <Input id={`variable-default-${field.id}`} {...form.register(`variables.${index}.defaultValue`)} />
+                        </div>
+                        <div className="grid gap-1.5">
+                          <Label htmlFor={`variable-description-${field.id}`}>Descricao</Label>
+                          <Input
+                            id={`variable-description-${field.id}`}
+                            {...form.register(`variables.${index}.description`)}
+                          />
+                        </div>
+                        {variableType === "select" ? (
+                          <div className="grid gap-1.5 md:col-span-2">
+                            <Label htmlFor={`variable-options-${field.id}`}>Opcoes (separadas por virgula)</Label>
+                            <Input
+                              id={`variable-options-${field.id}`}
+                              placeholder="casual, formal, tecnico"
+                              {...form.register(`variables.${index}.optionsText`)}
+                            />
+                          </div>
+                        ) : null}
+                        <div className="md:col-span-2">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            className="cursor-pointer"
+                            onClick={() => remove(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Remover variavel
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={createIsPublic}
+                onCheckedChange={(checked) => form.setValue("isPublic", checked)}
+                aria-label="Definir prompt como publico"
+              />
+              <span className="text-sm text-muted-foreground">Prompt publico</span>
+            </div>
+            <Button
+              type="submit"
+              className="w-fit cursor-pointer"
+              disabled={createPrompt.isPending || form.formState.isSubmitting}
+            >
+              {createPrompt.isPending ? "Criando..." : "Criar prompt"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

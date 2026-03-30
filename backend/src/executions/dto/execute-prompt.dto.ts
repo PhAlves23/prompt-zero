@@ -41,6 +41,20 @@ export class ExecutePromptDto {
   @Max(4000)
   maxTokens?: number;
 
+  @ApiPropertyOptional({ default: 0.95 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  topP?: number;
+
+  @ApiPropertyOptional({ default: 40 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(200)
+  topK?: number;
+
   @ApiPropertyOptional({
     description: 'Template placeholder values, e.g. {"product":"PromptZero"}',
   })

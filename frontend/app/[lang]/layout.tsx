@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { getDictionary, hasLocale, type Locale } from "./dictionaries";
 import { notFound } from "next/navigation";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AppProviders } from "@/components/app-providers";
 
 const spaceMono = Space_Mono({
   weight: ['400', '700'],
@@ -71,12 +72,8 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans">
         <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
         >
-          {children}
+          <AppProviders>{children}</AppProviders>
         </ThemeProvider>
       </body>
     </html>

@@ -1,0 +1,85 @@
+"use client"
+
+import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { z } from "zod/v4"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+
+const schema = z.object({
+  name: z.string().min(2),
+  email: z.email(),
+  password: z.string().min(8),
+})
+
+type RegisterFormValues = z.infer<typeof schema>
+
+export function RegisterForm({ lang }: { lang: string }) {
+  const router = useRouter()
+  const form = useForm<RegisterFormValues>({
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+    },
+  })
+
+  async function onSubmit(values: RegisterFormValues) {
+    const parsed = schema.safeParse(values)
+    if (!parsed.success) {
+      parsed.error.issues.forEach((issue) => {
+        const field = issue.path[0]
+        if (field === "name" || field === "email" || field === "password") {
+          form.setError(field, { message: issue.message })
+        }
+      })
+      return
+    }
+
+    const response = await fetch("/api/session/register", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(parsed.data),
+    })
+
+    if (!response.ok) {
+      toast.error("Falha ao criar conta")
+      return
+    }
+
+    toast.success("Conta criada com sucesso")
+    router.push(`/${lang}/dashboard`)
+    router.refresh()
+  }
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">Nome</Label>
+        <Input id="name" autoComplete="name" {...form.register("name")} />
+        {form.formState.errors.name ? (
+          <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+        ) : null}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="email">E-mail</Label>
+        <Input id="email" type="email" autoComplete="email" {...form.register("email")} />
+        {form.formState.errors.email ? (
+          <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
+        ) : null}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Senha</Label>
+        <Input id="password" type="password" autoComplete="new-password" {...form.register("password")} />
+        {form.formState.errors.password ? (
+          <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
+        ) : null}
+      </div>
+      <Button type="submit" className="w-full cursor-pointer" disabled={form.formState.isSubmitting}>
+        {form.formState.isSubmitting ? "Criando..." : "Criar conta"}
+      </Button>
+    </form>
+  )
+}

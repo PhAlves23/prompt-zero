@@ -1,85 +1,54 @@
 "use client"
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  SidebarGroupAction,
+} from "@/components/ui/sidebar"
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { MoreHorizontalCircle01Icon, Folder01Icon, Share01Icon, Delete02Icon } from "@hugeicons/core-free-icons"
+import { PlusSignCircleIcon } from "@hugeicons/core-free-icons"
+import Link from "next/link"
 
 export function NavDocuments({
+  title = "Documents",
+  actionHref,
   items,
 }: {
+  title?: string
+  actionHref?: string
   items: {
     name: string
     url: string
-    icon: React.ReactNode
+    icon?: React.ReactNode
   }[]
 }) {
-  const { isMobile } = useSidebar()
-
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Documents</SidebarGroupLabel>
+      <SidebarGroupLabel>{title}</SidebarGroupLabel>
+      {actionHref ? (
+        <SidebarGroupAction title="Novo prompt" asChild>
+          <Link href={actionHref} className="cursor-pointer">
+            <HugeiconsIcon icon={PlusSignCircleIcon} strokeWidth={2} />
+            <span className="sr-only">Novo prompt</span>
+          </Link>
+        </SidebarGroupAction>
+      ) : null}
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
-              <a href={item.url}>
-                {item.icon}
+              <Link href={item.url} className="cursor-pointer">
+                {item.icon ?? null}
                 <span>{item.name}</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction
-                  showOnHover
-                  className="rounded-sm data-[state=open]:bg-accent"
-                >
-                  <HugeiconsIcon icon={MoreHorizontalCircle01Icon} strokeWidth={2} />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-24 rounded-lg"
-                side={isMobile ? "bottom" : "right"}
-                align={isMobile ? "end" : "start"}
-              >
-                <DropdownMenuItem>
-                  <HugeiconsIcon icon={Folder01Icon} strokeWidth={2} />
-                  <span>Open</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <HugeiconsIcon icon={Share01Icon} strokeWidth={2} />
-                  <span>Share</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive">
-                  <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
-                  <span>Delete</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </SidebarMenuItem>
         ))}
-        <SidebarMenuItem>
-          <SidebarMenuButton className="text-sidebar-foreground/70">
-            <HugeiconsIcon icon={MoreHorizontalCircle01Icon} strokeWidth={2} className="text-sidebar-foreground/70" />
-            <span>More</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
       </SidebarMenu>
     </SidebarGroup>
   )

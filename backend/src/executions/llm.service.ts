@@ -26,6 +26,8 @@ export class LlmService {
     prompt: string;
     temperature: number;
     maxTokens: number;
+    topP: number;
+    topK: number;
     baseUrl?: string | null;
     organizationId?: string | null;
   }): Promise<LlmExecutionResult> {
@@ -189,6 +191,7 @@ export class LlmService {
     prompt: string;
     temperature: number;
     maxTokens: number;
+    topP: number;
     baseUrl?: string | null;
     organizationId?: string | null;
   }): Promise<LlmExecutionResult> {
@@ -202,6 +205,7 @@ export class LlmService {
         model: params.model,
         messages: [{ role: 'user', content: params.prompt }],
         temperature: params.temperature,
+        top_p: params.topP,
         max_tokens: params.maxTokens,
       });
 
@@ -223,6 +227,8 @@ export class LlmService {
     prompt: string;
     temperature: number;
     maxTokens: number;
+    topP: number;
+    topK: number;
   }): Promise<LlmExecutionResult> {
     try {
       const client = new Anthropic({ apiKey: params.apiKey });
@@ -230,6 +236,8 @@ export class LlmService {
         model: params.model,
         max_tokens: params.maxTokens,
         temperature: params.temperature,
+        top_p: params.topP,
+        top_k: params.topK,
         messages: [{ role: 'user', content: params.prompt }],
       });
 
@@ -253,6 +261,8 @@ export class LlmService {
     prompt: string;
     temperature: number;
     maxTokens: number;
+    topP: number;
+    topK: number;
   }): Promise<LlmExecutionResult> {
     try {
       const endpoint =
@@ -269,6 +279,8 @@ export class LlmService {
           contents: [{ parts: [{ text: params.prompt }] }],
           generationConfig: {
             temperature: params.temperature,
+            topP: params.topP,
+            topK: params.topK,
             maxOutputTokens: params.maxTokens,
           },
         }),

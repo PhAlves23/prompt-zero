@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { PlusSignCircleIcon, Mail01Icon } from "@hugeicons/core-free-icons"
+import Link from "next/link"
 
 export function NavMain({
   items,
@@ -26,11 +27,14 @@ export function NavMain({
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-2">
             <SidebarMenuButton
+              asChild
               tooltip="Quick Create"
               className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
             >
-              <HugeiconsIcon icon={PlusSignCircleIcon} strokeWidth={2} />
-              <span>Quick Create</span>
+              <Link href={items[1]?.url ?? "#"} className="cursor-pointer">
+                <HugeiconsIcon icon={PlusSignCircleIcon} strokeWidth={2} />
+                <span>Quick Create</span>
+              </Link>
             </SidebarMenuButton>
             <Button
               size="icon"
@@ -45,9 +49,11 @@ export function NavMain({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon}
-                <span>{item.title}</span>
+              <SidebarMenuButton tooltip={item.title} asChild>
+                <Link href={item.url} className="cursor-pointer">
+                  {item.icon}
+                  <span>{item.title}</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

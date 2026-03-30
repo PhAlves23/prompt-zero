@@ -1,5 +1,6 @@
 import { getDictionary, hasLocale, type Locale } from "./dictionaries";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 
 type PageProps = {
   params: Promise<{ lang: string }>;
@@ -33,18 +34,20 @@ export default async function Home({ params }: PageProps) {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button 
+            <Link
+              href={`/${lang}/auth/register`}
               className="px-7 py-3 bg-pz-lime text-pz-black font-semibold rounded-lg hover:bg-pz-lime/90 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-pz-lime-glow cursor-pointer active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pz-lime focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               aria-label={dict.prompts.create}
             >
               {dict.prompts.create}
-            </button>
-            <button 
+            </Link>
+            <Link
+              href={`/${lang}/auth/login`}
               className="px-7 py-3 border border-border bg-transparent text-foreground rounded-lg hover:bg-surface transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               aria-label={dict.nav.docs}
             >
-              {dict.nav.docs}
-            </button>
+              {dict.auth.login}
+            </Link>
           </div>
         </div>
 

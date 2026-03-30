@@ -95,6 +95,8 @@ export class ExecutionsService {
     );
     const temperature = dto.temperature ?? 0.7;
     const maxTokens = dto.maxTokens ?? 512;
+    const topP = dto.topP ?? 0.95;
+    const topK = dto.topK ?? 40;
 
     const startedAt = Date.now();
     let llmResult: Awaited<ReturnType<LlmService['execute']>>;
@@ -106,6 +108,8 @@ export class ExecutionsService {
         prompt: finalPrompt,
         temperature,
         maxTokens,
+        topP,
+        topK,
         baseUrl: credential?.baseUrl,
         organizationId: credential?.organizationId,
       });

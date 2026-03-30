@@ -2,11 +2,16 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { localeNames, localeFlags } from '@/lib/i18n'
-import { type Locale } from '@/app/[lang]/dictionaries'
+import { type Locale, isLocale } from '@/lib/locales'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Languages } from 'lucide-react'
 
-export function LanguageSwitcher({ currentLang }: { currentLang: Locale }) {
+export function LanguageSwitcher({ currentLang }: { currentLang?: Locale }) {
   const pathname = usePathname()
   const router = useRouter()
+  const segment = pathname.split('/')[1] ?? "pt-BR"
+  const detectedLang: Locale = isLocale(segment) ? segment : "pt-BR"
+  const activeLang = currentLang ?? detectedLang
 
   const switchLanguage = (newLang: Locale) => {
     const segments = pathname.split('/')
@@ -15,26 +20,30 @@ export function LanguageSwitcher({ currentLang }: { currentLang: Locale }) {
   }
 
   return (
-    <div className="flex gap-2" role="group" aria-label="Language selector">
-      {(Object.keys(localeNames) as Locale[]).map((locale) => (
-        <button
-          key={locale}
-          onClick={() => switchLanguage(locale)}
-          className={`
-            px-3 py-1.5 rounded-lg font-mono text-xs transition-all cursor-pointer
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background
-            ${currentLang === locale 
-              ? 'bg-pz-lime text-pz-black focus-visible:ring-pz-lime' 
-              : 'bg-surface border border-border text-muted-foreground hover:border-pz-lime/30 hover:text-foreground hover:bg-surface/80 focus-visible:ring-border'
-            }
-          `}
-          aria-label={`Switch to ${localeNames[locale]}`}
-          aria-current={currentLang === locale ? 'true' : 'false'}
-        >
-          <span className="mr-1.5" aria-hidden="true">{localeFlags[locale]}</span>
-          {locale.split('-')[0].toUpperCase()}
-        </button>
-      ))}
-    </div>
+    <Select
+      value={activeLang}
+      onValueChange={(value) => {
+        if (isLocale(value)) {
+          switchLanguage(value)
+        }
+      }}
+    >
+      <SelectTrigger className="w-[170px] cursor-pointer">
+        <div className="flex items-center gap-2">
+          <Languages className="h-4 w-4" />
+          <SelectValue />
+        </div>
+      </SelectTrigger>
+      <SelectContent>
+        {(Object.keys(localeNames) as Locale[]).map((locale) => (
+          <SelectItem key={locale} value={locale} className="cursor-pointer">
+            <span className="mr-2" aria-hidden="true">
+              {localeFlags[locale]}
+            </span>
+            {localeNames[locale]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   )
 }

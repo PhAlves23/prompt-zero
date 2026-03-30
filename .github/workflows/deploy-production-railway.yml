@@ -116,6 +116,7 @@ jobs:
     environment: fantastic-bravery / production
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
       DATABASE_URL: ${{ secrets.RAILWAY_BACKEND_DATABASE_URL_PROD }}
     steps:
       - name: Checkout
@@ -136,6 +137,11 @@ jobs:
           [ -n "${RAILWAY_TOKEN}" ] || (echo "Missing secret: RAILWAY_TOKEN" && exit 1)
           [ -n "${DATABASE_URL}" ] || (echo "Missing secret: RAILWAY_BACKEND_DATABASE_URL_PROD" && exit 1)
 
+      - name: Validate Railway token and project access
+        run: |
+          railway whoami
+          railway status --project "${{ secrets.RAILWAY_PROJECT_ID }}"
+
       - name: Install backend dependencies
         run: yarn --frozen-lockfile
         working-directory: backend
@@ -155,6 +161,7 @@ jobs:
     environment: fantastic-bravery / production
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -174,6 +181,11 @@ jobs:
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
+
+      - name: Validate Railway token and project access
+        run: |
+          railway whoami
+          railway status --project "${{ secrets.RAILWAY_PROJECT_ID }}"
 
       - name: Deploy frontend service
         run: railway up --ci --service "${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}" --environment "${{ secrets.RAILWAY_ENVIRONMENT_ID }}" --project "${{ secrets.RAILWAY_PROJECT_ID }}"

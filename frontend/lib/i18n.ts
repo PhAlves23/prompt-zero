@@ -1,4 +1,4 @@
-import { type Locale, locales, defaultLocale } from "@/app/[lang]/dictionaries";
+import { type Locale, locales, defaultLocale } from "@/lib/locales";
 
 export const i18n = {
   locales,

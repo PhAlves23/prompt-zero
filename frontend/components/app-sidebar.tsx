@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
+import { useQuery } from "@tanstack/react-query"
 
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
@@ -17,154 +19,120 @@ import {
 } from "@/components/ui/sidebar"
 import { BrandMark } from "@/components/brand-mark"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { DashboardSquare01Icon, Menu01Icon, ChartHistogramIcon, Folder01Icon, UserGroupIcon, Camera01Icon, File01Icon, Settings05Icon, HelpCircleIcon, SearchIcon, Database01Icon, Analytics01Icon } from "@hugeicons/core-free-icons"
+import { DashboardSquare01Icon, Menu01Icon, Folder01Icon, UserGroupIcon, Settings05Icon, HelpCircleIcon, SearchIcon, Database01Icon, Compass01Icon, File01Icon } from "@hugeicons/core-free-icons"
+import { bffFetch } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/query-keys"
+import type { PaginatedResult, Prompt, SessionUser, UserProfile } from "@/lib/api/types"
 
-const data = {
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+  lang: string
+  user: SessionUser | null
+}
+
+const buildSidebarData = (lang: string, user: SessionUser | null) => ({
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: user?.name ?? "Guest",
+    email: user?.email ?? "guest@promptzero.app",
+    avatar: "",
   },
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: `/${lang}/dashboard`,
       icon: (
         <HugeiconsIcon icon={DashboardSquare01Icon} strokeWidth={2} />
       ),
     },
     {
-      title: "Lifecycle",
-      url: "#",
+      title: "Prompts",
+      url: `/${lang}/prompts`,
       icon: (
         <HugeiconsIcon icon={Menu01Icon} strokeWidth={2} />
       ),
     },
     {
-      title: "Analytics",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={ChartHistogramIcon} strokeWidth={2} />
-      ),
-    },
-    {
-      title: "Projects",
-      url: "#",
+      title: "Workspaces",
+      url: `/${lang}/workspaces`,
       icon: (
         <HugeiconsIcon icon={Folder01Icon} strokeWidth={2} />
       ),
     },
     {
-      title: "Team",
-      url: "#",
+      title: "Tags",
+      url: `/${lang}/tags`,
       icon: (
         <HugeiconsIcon icon={UserGroupIcon} strokeWidth={2} />
       ),
     },
-  ],
-  navClouds: [
     {
-      title: "Capture",
+      title: "Explore",
+      url: `/${lang}/explore`,
       icon: (
-        <HugeiconsIcon icon={Camera01Icon} strokeWidth={2} />
+        <HugeiconsIcon icon={Compass01Icon} strokeWidth={2} />
       ),
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: (
-        <HugeiconsIcon icon={File01Icon} strokeWidth={2} />
-      ),
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: (
-        <HugeiconsIcon icon={File01Icon} strokeWidth={2} />
-      ),
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
     },
   ],
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: `/${lang}/settings`,
       icon: (
         <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />
       ),
     },
     {
+      title: "API Keys",
+      url: `/${lang}/settings?tab=api-keys`,
+      icon: (
+        <HugeiconsIcon icon={File01Icon} strokeWidth={2} />
+      ),
+    },
+    {
       title: "Get Help",
-      url: "#",
+      url: `/${lang}`,
       icon: (
         <HugeiconsIcon icon={HelpCircleIcon} strokeWidth={2} />
       ),
     },
     {
       title: "Search",
-      url: "#",
+      url: `/${lang}/explore`,
       icon: (
         <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
       ),
     },
   ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={Database01Icon} strokeWidth={2} />
-      ),
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={Analytics01Icon} strokeWidth={2} />
-      ),
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: (
-        <HugeiconsIcon icon={File01Icon} strokeWidth={2} />
-      ),
-    },
-  ],
-}
+})
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ lang, user, ...props }: AppSidebarProps) {
+  const profileQuery = useQuery({
+    queryKey: queryKeys.auth.me,
+    queryFn: () => bffFetch<UserProfile>("/auth/me"),
+  })
+  const sidebarUser: SessionUser | null = profileQuery.data
+    ? { name: profileQuery.data.name, email: profileQuery.data.email }
+    : user
+  const recentPromptsQuery = useQuery({
+    queryKey: queryKeys.prompts.list("sidebar-recent"),
+    queryFn: () => bffFetch<PaginatedResult<Prompt>>("/prompts?page=1&limit=5"),
+  })
+  const data = buildSidebarData(lang, sidebarUser)
+  const recentPrompts = recentPromptsQuery.data?.data ?? []
+  const documentItems =
+    recentPrompts.length > 0
+      ? recentPrompts.map((prompt) => ({
+          name: prompt.title,
+          url: `/${lang}/prompts/${prompt.id}`,
+          icon: <HugeiconsIcon icon={File01Icon} strokeWidth={2} />,
+        }))
+      : [
+          {
+            name: "Nenhum prompt recente",
+            url: `/${lang}/prompts`,
+            icon: <HugeiconsIcon icon={Database01Icon} strokeWidth={2} />,
+          },
+        ]
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -173,23 +141,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton
               asChild
               size="lg"
-              className="data-[slot=sidebar-menu-button]:p-1.5! [&_svg]:size-10!"
+              className="data-[slot=sidebar-menu-button]:px-2 data-[slot=sidebar-menu-button]:py-1.5!"
             >
-              <a href="#">
-                <BrandMark />
-                <span className="text-base font-semibold">PromptZero</span>
-              </a>
+              <Link href={`/${lang}/dashboard`} className="flex items-center gap-2">
+                <BrandMark className="[&_svg]:h-8 [&_svg]:w-8" />
+                <span className="font-heading text-xl font-bold tracking-tight leading-none text-zinc-800 dark:text-foreground">
+                  prompt<span className="text-black dark:text-[#BFFF0A]">zero</span>
+                </span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
+        <NavDocuments
+          title="Recentes"
+          actionHref={`/${lang}/prompts/new`}
+          items={documentItems}
+        />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={data.user} lang={lang} />
       </SidebarFooter>
     </Sidebar>
   )
