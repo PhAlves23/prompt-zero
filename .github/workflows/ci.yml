@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend Lint/Test/Build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: promptzero
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d promptzero"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      PORT: 3001
+      FRONTEND_URL: http://localhost:3000
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/promptzero
+      JWT_ACCESS_SECRET: dev-access-secret
+      JWT_REFRESH_SECRET: dev-refresh-secret
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      ENCRYPTION_SECRET: dev-encryption-secret
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: backend/yarn.lock
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+        working-directory: backend
+
+      - name: Generate Prisma Client
+        run: yarn prisma:generate
+        working-directory: backend
+
+      - name: Apply migrations
+        run: yarn prisma:migrate:deploy
+        working-directory: backend
+
+      - name: Lint
+        run: yarn lint
+        working-directory: backend
+
+      - name: Unit tests
+        run: yarn test
+        working-directory: backend
+
+      - name: E2E tests
+        run: yarn test:e2e
+        working-directory: backend
+
+      - name: Build
+        run: yarn build
+        working-directory: backend
+
+  frontend:
+    name: Frontend Lint/Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+        working-directory: frontend
+
+      - name: Lint
+        run: yarn lint
+        working-directory: frontend
+
+      - name: Build
+        run: yarn build
+        working-directory: frontend

@@ -12,7 +12,8 @@ import { SettingsModule } from './settings/settings.module';
 import { ExecutionsModule } from './executions/executions.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ExploreModule } from './explore/explore.module';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { MetricsModule } from './metrics/metrics.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import {
   AcceptLanguageResolver,
@@ -22,6 +23,7 @@ import {
   QueryResolver,
 } from 'nestjs-i18n';
 import { join } from 'path';
+import { AppThrottlerGuard } from './common/guards/app-throttler.guard';
 
 @Module({
   imports: [
@@ -36,6 +38,7 @@ import { join } from 'path';
     ExecutionsModule,
     AnalyticsModule,
     ExploreModule,
+    MetricsModule,
     I18nModule.forRoot({
       fallbackLanguage: 'pt',
       loader: I18nJsonLoader,
@@ -61,7 +64,7 @@ import { join } from 'path';
     AppService,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: AppThrottlerGuard,
     },
   ],
 })

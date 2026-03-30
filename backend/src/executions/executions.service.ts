@@ -17,6 +17,13 @@ import { ListExecutionsQueryDto } from './dto/list-executions-query.dto';
 import { getEnvSecret } from '../common/utils/env.util';
 import { ProviderType, User } from '@prisma/client';
 import { ProviderPricingService } from './provider-pricing.service';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import { Counter, Histogram } from 'prom-client';
+import {
+  LLM_EXECUTION_DURATION_METRIC,
+  LLM_EXECUTIONS_TOTAL_METRIC,
+  LLM_TOKENS_TOTAL_METRIC,
+} from '../metrics/metrics.constants';
 
 @Injectable()
 export class ExecutionsService {
@@ -25,6 +32,12 @@ export class ExecutionsService {
     private readonly llmService: LlmService,
     private readonly configService: ConfigService,
     private readonly providerPricingService: ProviderPricingService,
+    @InjectMetric(LLM_EXECUTIONS_TOTAL_METRIC)
+    private readonly llmExecutionsTotal: Counter<string>,
+    @InjectMetric(LLM_EXECUTION_DURATION_METRIC)
+    private readonly llmExecutionDuration: Histogram<string>,
+    @InjectMetric(LLM_TOKENS_TOTAL_METRIC)
+    private readonly llmTokensTotal: Counter<string>,
   ) {}
 
   async executePrompt(userId: string, promptId: string, dto: ExecutePromptDto) {
@@ -84,18 +97,43 @@ export class ExecutionsService {
     const maxTokens = dto.maxTokens ?? 512;
 
     const startedAt = Date.now();
-    const llmResult = await this.llmService.execute({
-      provider,
-      apiKey,
-      model: dto.model,
-      prompt: finalPrompt,
-      temperature,
-      maxTokens,
-      baseUrl: credential?.baseUrl,
-      organizationId: credential?.organizationId,
-    });
+    let llmResult: Awaited<ReturnType<LlmService['execute']>>;
+    try {
+      llmResult = await this.llmService.execute({
+        provider,
+        apiKey,
+        model: dto.model,
+        prompt: finalPrompt,
+        temperature,
+        maxTokens,
+        baseUrl: credential?.baseUrl,
+        organizationId: credential?.organizationId,
+      });
+    } catch (error) {
+      this.recordExecutionMetrics(
+        provider,
+        dto.model,
+        'error',
+        Date.now() - startedAt,
+      );
+      throw error;
+    }
+
     const latencyMs = Date.now() - startedAt;
+    this.recordExecutionMetrics(provider, dto.model, 'success', latencyMs);
     const totalTokens = llmResult.inputTokens + llmResult.outputTokens;
+    this.llmTokensTotal.inc(
+      { provider, model: dto.model, type: 'input' },
+      llmResult.inputTokens,
+    );
+    this.llmTokensTotal.inc(
+      { provider, model: dto.model, type: 'output' },
+      llmResult.outputTokens,
+    );
+    this.llmTokensTotal.inc(
+      { provider, model: dto.model, type: 'total' },
+      totalTokens,
+    );
     const { estimatedCost, pricingSource } = await this.calculateEstimatedCost(
       provider,
       dto.model,
@@ -286,5 +324,16 @@ export class ExecutionsService {
       estimatedCost: Number((inputCost + outputCost).toFixed(6)),
       pricingSource: pricingPer1k.source,
     };
+  }
+
+  private recordExecutionMetrics(
+    provider: ProviderType,
+    model: string,
+    status: 'success' | 'error',
+    latencyMs: number,
+  ): void {
+    const labels = { provider, model, status };
+    this.llmExecutionsTotal.inc(labels);
+    this.llmExecutionDuration.observe(labels, latencyMs / 1000);
   }
 }

@@ -12,6 +12,7 @@ API backend em NestJS para autenticação, CRUD/versionamento de prompts, templa
 - `OpenAI`, `Anthropic`, `Google Gemini` e `OpenRouter` (execução real de prompts)
 - `@nestjs/throttler` (rate limit)
 - `nestjs-i18n` (internacionalização de respostas e erros)
+- `Prometheus` (`/metrics`) para métricas técnicas
 
 ## Requisitos
 
@@ -67,6 +68,7 @@ yarn start:dev
 
 - UI: `http://localhost:3001/api/docs`
 - JSON OpenAPI: `http://localhost:3001/api/docs-json`
+- Metrics Prometheus: `http://localhost:3001/metrics`
 
 ## Funcionalidades implementadas
 
@@ -174,6 +176,11 @@ Opcional (resiliência LLM):
 - `LLM_TIMEOUT_MS` (default: `30000`)
 - `LLM_CIRCUIT_FAILURE_THRESHOLD` (default: `3`)
 - `LLM_CIRCUIT_COOLDOWN_MS` (default: `30000`)
+
+Opcional (métricas Prometheus):
+
+- `METRICS_ENABLED` (default: `true`)
+- `METRICS_PATH` (default: `/metrics`)
 
 Em produção, o bootstrap falha se essas variáveis não existirem.
 

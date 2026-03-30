@@ -7,6 +7,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { LlmService } from './llm.service';
 import { encryptText } from '../common/utils/crypto.util';
 import { ProviderPricingService } from './provider-pricing.service';
+import { getToken } from '@willsoto/nestjs-prometheus';
+import {
+  LLM_EXECUTION_DURATION_METRIC,
+  LLM_EXECUTIONS_TOTAL_METRIC,
+  LLM_TOKENS_TOTAL_METRIC,
+} from '../metrics/metrics.constants';
 
 describe('ExecutionsService', () => {
   let service: ExecutionsService;
@@ -40,6 +46,18 @@ describe('ExecutionsService', () => {
     }),
   };
 
+  const llmExecutionsTotalMetricMock = {
+    inc: jest.fn(),
+  };
+
+  const llmExecutionDurationMetricMock = {
+    observe: jest.fn(),
+  };
+
+  const llmTokensTotalMetricMock = {
+    inc: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -52,6 +70,18 @@ describe('ExecutionsService', () => {
         {
           provide: ProviderPricingService,
           useValue: providerPricingServiceMock,
+        },
+        {
+          provide: getToken(LLM_EXECUTIONS_TOTAL_METRIC),
+          useValue: llmExecutionsTotalMetricMock,
+        },
+        {
+          provide: getToken(LLM_EXECUTION_DURATION_METRIC),
+          useValue: llmExecutionDurationMetricMock,
+        },
+        {
+          provide: getToken(LLM_TOKENS_TOTAL_METRIC),
+          useValue: llmTokensTotalMetricMock,
         },
       ],
     }).compile();
@@ -140,6 +170,22 @@ describe('ExecutionsService', () => {
         model: 'openrouter/openai/gpt-4o-mini',
       }),
     );
+    expect(llmExecutionsTotalMetricMock.inc).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: ProviderType.openrouter,
+        model: 'openrouter/openai/gpt-4o-mini',
+        status: 'success',
+      }),
+    );
+    expect(llmExecutionDurationMetricMock.observe).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: ProviderType.openrouter,
+        model: 'openrouter/openai/gpt-4o-mini',
+        status: 'success',
+      }),
+      expect.any(Number),
+    );
+    expect(llmTokensTotalMetricMock.inc).toHaveBeenCalledTimes(3);
   });
 
   it('deve inferir provider=google a partir de model gemini e usar credencial default', async () => {

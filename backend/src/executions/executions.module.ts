@@ -5,10 +5,40 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { LlmService } from './llm.service';
 import { ProviderPricingService } from './provider-pricing.service';
+import {
+  makeCounterProvider,
+  makeHistogramProvider,
+} from '@willsoto/nestjs-prometheus';
+import { MetricsModule } from '../metrics/metrics.module';
+import {
+  LLM_EXECUTION_DURATION_METRIC,
+  LLM_EXECUTIONS_TOTAL_METRIC,
+  LLM_TOKENS_TOTAL_METRIC,
+} from '../metrics/metrics.constants';
 
 @Module({
-  imports: [PrismaModule, ConfigModule],
-  providers: [ExecutionsService, LlmService, ProviderPricingService],
+  imports: [PrismaModule, ConfigModule, MetricsModule],
+  providers: [
+    ExecutionsService,
+    LlmService,
+    ProviderPricingService,
+    makeCounterProvider({
+      name: LLM_EXECUTIONS_TOTAL_METRIC,
+      help: 'Total number of LLM executions',
+      labelNames: ['provider', 'model', 'status'],
+    }),
+    makeHistogramProvider({
+      name: LLM_EXECUTION_DURATION_METRIC,
+      help: 'Duration of LLM executions in seconds',
+      labelNames: ['provider', 'model', 'status'],
+      buckets: [0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 30, 60],
+    }),
+    makeCounterProvider({
+      name: LLM_TOKENS_TOTAL_METRIC,
+      help: 'Total number of processed LLM tokens',
+      labelNames: ['provider', 'model', 'type'],
+    }),
+  ],
   controllers: [ExecutionsController],
   exports: [ExecutionsService],
 })

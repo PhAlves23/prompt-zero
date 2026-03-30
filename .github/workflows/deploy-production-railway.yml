@@ -1,0 +1,161 @@
+name: Deploy Production (Railway)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  backend-validate:
+    name: Backend Validate
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: promptzero
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d promptzero"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      PORT: 3001
+      FRONTEND_URL: http://localhost:3000
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/promptzero
+      JWT_ACCESS_SECRET: dev-access-secret
+      JWT_REFRESH_SECRET: dev-refresh-secret
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      ENCRYPTION_SECRET: dev-encryption-secret
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: backend/yarn.lock
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+        working-directory: backend
+
+      - name: Generate Prisma Client
+        run: yarn prisma:generate
+        working-directory: backend
+
+      - name: Apply migrations
+        run: yarn prisma:migrate:deploy
+        working-directory: backend
+
+      - name: Lint
+        run: yarn lint
+        working-directory: backend
+
+      - name: Unit tests
+        run: yarn test
+        working-directory: backend
+
+      - name: E2E tests
+        run: yarn test:e2e
+        working-directory: backend
+
+      - name: Build
+        run: yarn build
+        working-directory: backend
+
+  frontend-validate:
+    name: Frontend Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+        working-directory: frontend
+
+      - name: Lint
+        run: yarn lint
+        working-directory: frontend
+
+      - name: Build
+        run: yarn build
+        working-directory: frontend
+
+  backend-migrate-and-deploy:
+    name: Backend Migrate + Deploy Railway
+    runs-on: ubuntu-latest
+    needs: [backend-validate]
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      DATABASE_URL: ${{ secrets.RAILWAY_BACKEND_DATABASE_URL_PROD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: backend/yarn.lock
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Install backend dependencies
+        run: yarn --frozen-lockfile
+        working-directory: backend
+
+      - name: Run production migrations
+        run: yarn prisma:migrate:deploy
+        working-directory: backend
+
+      - name: Deploy backend service
+        run: railway up --ci --service "${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}" --environment "${{ secrets.RAILWAY_ENVIRONMENT_ID }}" --project "${{ secrets.RAILWAY_PROJECT_ID }}"
+        working-directory: backend
+
+  frontend-deploy:
+    name: Frontend Deploy Railway
+    runs-on: ubuntu-latest
+    needs: [frontend-validate]
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy frontend service
+        run: railway up --ci --service "${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}" --environment "${{ secrets.RAILWAY_ENVIRONMENT_ID }}" --project "${{ secrets.RAILWAY_PROJECT_ID }}"
+        working-directory: frontend
