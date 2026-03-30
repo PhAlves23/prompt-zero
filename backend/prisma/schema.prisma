@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Language {
+  pt
+  en
+  es
+}
+
+enum VariableType {
+  text
+  textarea
+  select
+}
+
+model User {
+  id                 String   @id @default(uuid())
+  name               String
+  email              String   @unique
+  passwordHash       String
+  refreshTokenHash   String?
+  openaiApiKeyEnc    String?
+  anthropicApiKeyEnc String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  workspaces Workspace[]
+  prompts    Prompt[]
+  tags       Tag[]
+  executions Execution[]
+}
+
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  color       String   @default("#6366F1")
+  isDefault   Boolean  @default(false)
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompts Prompt[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Prompt {
+  id           String    @id @default(uuid())
+  title        String
+  description  String?
+  content      String
+  language     Language  @default(pt)
+  model        String
+  isPublic     Boolean   @default(false)
+  isTemplate   Boolean   @default(false)
+  isFavorite   Boolean   @default(false)
+  forkCount    Int       @default(0)
+  forkedFromId String?
+  userId       String
+  workspaceId  String?
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace  Workspace?         @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  versions   PromptVersion[]
+  tags       PromptTag[]
+  variables  TemplateVariable[]
+  executions Execution[]
+  forkedFrom Prompt?            @relation("PromptFork", fields: [forkedFromId], references: [id], onDelete: SetNull)
+  forks      Prompt[]           @relation("PromptFork")
+
+  @@index([userId, deletedAt, updatedAt])
+  @@index([workspaceId])
+}
+
+model PromptVersion {
+  id            String   @id @default(uuid())
+  versionNumber Int
+  content       String
+  promptId      String
+  createdAt     DateTime @default(now())
+
+  prompt     Prompt      @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  executions Execution[]
+
+  @@unique([promptId, versionNumber])
+  @@index([promptId, createdAt])
+}
+
+model Tag {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String
+  color     String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompts PromptTag[]
+
+  @@unique([userId, slug])
+  @@index([userId])
+}
+
+model PromptTag {
+  promptId String
+  tagId    String
+
+  prompt Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([promptId, tagId])
+}
+
+model TemplateVariable {
+  id           String       @id @default(uuid())
+  name         String
+  type         VariableType @default(text)
+  defaultValue String?
+  options      Json?
+  description  String?
+  promptId     String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  prompt Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@index([promptId])
+}
+
+model Execution {
+  id              String   @id @default(uuid())
+  input           String
+  output          String
+  model           String
+  temperature     Float
+  maxTokens       Int
+  inputTokens     Int
+  outputTokens    Int
+  totalTokens     Int
+  latencyMs       Int
+  estimatedCost   Decimal  @db.Decimal(10, 6)
+  variables       Json?
+  promptId        String
+  promptVersionId String
+  userId          String
+  createdAt       DateTime @default(now())
+
+  prompt        Prompt        @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  promptVersion PromptVersion @relation(fields: [promptVersionId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([promptId, createdAt])
+  @@index([model, createdAt])
+}

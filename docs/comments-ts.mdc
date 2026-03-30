@@ -1,0 +1,1561 @@
+---
+alwaysApply: true
+---
+
+---
+description: Padrão de documentação JSDoc para JavaScript e TypeScript - Guia completo de uso e exemplos
+globs: **/*.js, **/*.jsx, **/*.ts, **/*.tsx, **/*.mjs, **/*.cjs
+---
+
+# JSDoc Documentation Standards
+
+## Princípios Fundamentais
+
+- **SEMPRE** documente todas as funções, classes, métodos e propriedades públicas
+- **TODOS os comentários e exemplos devem estar em INGLÊS** - isso é um padrão da indústria e facilita colaboração
+- Use JSDoc para fornecer informações de tipo quando TypeScript não estiver disponível
+- Mantenha a documentação atualizada com o código
+- Seja claro e conciso na descrição
+- Documente parâmetros, retornos e exceções
+- Use exemplos quando apropriado
+- Prefira código autoexplicativo antes de adicionar comentários
+
+## Por que documentar em inglês?
+
+1. **Padrão da indústria**: bibliotecas, frameworks e projetos open-source documentam em inglês
+2. **Consistência com o código**: variáveis, funções e classes já estão em inglês
+3. **Ferramentas de desenvolvimento**: IDEs, linters e geradores de documentação funcionam melhor com inglês
+4. **Escalabilidade do time**: facilita onboarding e colaboração internacional
+5. **Busca e referência**: facilita encontrar soluções e compartilhar conhecimento
+
+## Estrutura Básica
+
+### Funções Simples
+
+```typescript
+/**
+ * Calculates the sum of two numbers.
+ *
+ * @param {number} a - The first number
+ * @param {number} b - The second number
+ * @returns {number} The sum of both numbers
+ *
+ * @example
+ * const result = sum(5, 3);
+ * console.log(result); // 8
+ */
+function sum(a: number, b: number): number {
+  return a + b;
+}
+```
+
+### Funções Assíncronas
+
+```typescript
+/**
+ * Fetches user data by ID from the database.
+ *
+ * @param {string} userId - The unique user identifier
+ * @returns {Promise<User>} A promise that resolves with the user data
+ * @throws {NotFoundError} When the user is not found
+ * @throws {DatabaseError} When there's a database connection error
+ *
+ * @example
+ * try {
+ *   const user = await fetchUserById('user-123');
+ *   console.log(user.name);
+ * } catch (error) {
+ *   console.error('Error fetching user:', error);
+ * }
+ */
+async function fetchUserById(userId: string): Promise<User> {
+  const user = await db.users.findOne({ id: userId });
+  if (!user) {
+    throw new NotFoundError(`User ${userId} not found`);
+  }
+  return user;
+}
+```
+
+### Classes
+
+```typescript
+/**
+ * Represents a system user with authentication capabilities.
+ *
+ * @class User
+ * @property {string} id - Unique user identifier (UUID)
+ * @property {string} name - User's full name
+ * @property {string} email - User's email address (unique)
+ * @property {Date} createdAt - Account creation timestamp
+ * @property {string[]} roles - User's assigned roles
+ */
+class User {
+  /**
+   * Creates a new User instance.
+   *
+   * @param {Object} data - User initialization data
+   * @param {string} data.id - User ID
+   * @param {string} data.name - User name
+   * @param {string} data.email - User email
+   * @param {string[]} [data.roles=[]] - User roles
+   */
+  constructor(data: { 
+    id: string; 
+    name: string; 
+    email: string; 
+    roles?: string[] 
+  }) {
+    this.id = data.id;
+    this.name = data.name;
+    this.email = data.email;
+    this.roles = data.roles || [];
+    this.createdAt = new Date();
+  }
+
+  /**
+   * Returns the user's full name.
+   *
+   * @returns {string} Full name
+   */
+  getFullName(): string {
+    return this.name;
+  }
+
+  /**
+   * Updates the user's email address.
+   *
+   * @param {string} newEmail - New email address to set
+   * @returns {Promise<void>} Promise that resolves when update completes
+   * @throws {ValidationError} When email format is invalid
+   * @throws {EmailAlreadyExistsError} When email is already in use
+   */
+  async updateEmail(newEmail: string): Promise<void> {
+    if (!this.validateEmail(newEmail)) {
+      throw new ValidationError('Invalid email format');
+    }
+    await db.users.update(this.id, { email: newEmail });
+  }
+
+  /**
+   * Checks if user has a specific role.
+   *
+   * @param {string} role - Role to check
+   * @returns {boolean} True if user has the role
+   *
+   * @example
+   * if (user.hasRole('admin')) {
+   *   console.log('User is an admin');
+   * }
+   */
+  hasRole(role: string): boolean {
+    return this.roles.includes(role);
+  }
+}
+```
+
+### Interfaces e Types
+
+```typescript
+/**
+ * Configuration options for API initialization.
+ *
+ * @interface ApiConfig
+ * @property {string} baseUrl - Base URL for API requests
+ * @property {number} timeout - Request timeout in milliseconds (default: 5000)
+ * @property {Object} headers - Custom HTTP headers
+ * @property {boolean} [retry] - Whether to retry failed requests (optional)
+ * @property {number} [retryCount=3] - Number of retry attempts
+ */
+interface ApiConfig {
+  baseUrl: string;
+  timeout: number;
+  headers: Record<string, string>;
+  retry?: boolean;
+  retryCount?: number;
+}
+
+/**
+ * Generic result type for operations that can succeed or fail.
+ *
+ * @typedef {Object} Result
+ * @property {boolean} success - Indicates if operation succeeded
+ * @property {T} [data] - Returned data (only if success = true)
+ * @property {string} [error] - Error message (only if success = false)
+ * @property {ErrorCode} [errorCode] - Machine-readable error code
+ * @template T - Type of returned data
+ *
+ * @example
+ * const result: Result<User> = await createUser(userData);
+ * if (result.success) {
+ *   console.log('User created:', result.data);
+ * } else {
+ *   console.error('Error:', result.error);
+ * }
+ */
+type Result<T> = {
+  success: boolean;
+  data?: T;
+  error?: string;
+  errorCode?: ErrorCode;
+};
+
+/**
+ * Pagination metadata for list responses.
+ *
+ * @typedef {Object} PaginationMeta
+ * @property {number} page - Current page number (1-indexed)
+ * @property {number} limit - Items per page
+ * @property {number} total - Total number of items
+ * @property {number} totalPages - Total number of pages
+ * @property {boolean} hasNext - Whether there's a next page
+ * @property {boolean} hasPrev - Whether there's a previous page
+ */
+type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+};
+```
+
+### Métodos de Classe com Generics
+
+```typescript
+/**
+ * Generic service for managing CRUD operations on entities.
+ *
+ * @template T - Entity type being managed
+ */
+class CrudService<T> {
+  /**
+   * Fetches all records with optional pagination and filtering.
+   *
+   * @param {Object} [options] - Query options
+   * @param {number} [options.limit=10] - Maximum number of results
+   * @param {number} [options.offset=0] - Offset for pagination
+   * @param {Partial<T>} [options.filter] - Filter criteria
+   * @param {string} [options.sortBy] - Field to sort by
+   * @param {'asc' | 'desc'} [options.sortOrder='asc'] - Sort direction
+   * @returns {Promise<T[]>} Array of found records
+   *
+   * @example
+   * const users = await userService.findAll({
+   *   limit: 20,
+   *   filter: { isActive: true },
+   *   sortBy: 'createdAt',
+   *   sortOrder: 'desc'
+   * });
+   */
+  async findAll(options?: {
+    limit?: number;
+    offset?: number;
+    filter?: Partial<T>;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<T[]> {
+    // implementation
+    return [];
+  }
+
+  /**
+   * Finds a single record by ID.
+   *
+   * @param {string | number} id - Record ID
+   * @returns {Promise<T | null>} Found record or null
+   *
+   * @example
+   * const user = await userService.findById('user-123');
+   * if (!user) {
+   *   throw new NotFoundError('User not found');
+   * }
+   */
+  async findById(id: string | number): Promise<T | null> {
+    // implementation
+    return null;
+  }
+
+  /**
+   * Creates a new record.
+   *
+   * @param {Partial<T>} data - Data for the new record
+   * @returns {Promise<T>} Created record with generated ID
+   * @throws {ValidationError} When data is invalid
+   * @throws {DuplicateError} When record already exists
+   */
+  async create(data: Partial<T>): Promise<T> {
+    // implementation
+    return {} as T;
+  }
+
+  /**
+   * Updates an existing record.
+   *
+   * @param {string | number} id - Record ID
+   * @param {Partial<T>} data - Data to update
+   * @returns {Promise<T>} Updated record
+   * @throws {NotFoundError} When record is not found
+   * @throws {ValidationError} When update data is invalid
+   */
+  async update(id: string | number, data: Partial<T>): Promise<T> {
+    // implementation
+    return {} as T;
+  }
+
+  /**
+   * Deletes a record by ID.
+   *
+   * @param {string | number} id - Record ID
+   * @returns {Promise<boolean>} True if deleted successfully
+   * @throws {NotFoundError} When record is not found
+   */
+  async delete(id: string | number): Promise<boolean> {
+    // implementation
+    return true;
+  }
+}
+```
+
+### Funções com Callbacks
+
+```typescript
+/**
+ * Processes an array of items using a transformation function.
+ *
+ * @param {T[]} items - Array of items to process
+ * @param {(item: T, index: number) => R} transform - Transformation function
+ * @returns {R[]} Array of transformed items
+ * @template T - Input item type
+ * @template R - Output item type
+ *
+ * @example
+ * const numbers = [1, 2, 3, 4, 5];
+ * const doubled = processItems(numbers, (n) => n * 2);
+ * // doubled = [2, 4, 6, 8, 10]
+ *
+ * @example
+ * const users = [{ name: 'John' }, { name: 'Jane' }];
+ * const names = processItems(users, (u) => u.name);
+ * // names = ['John', 'Jane']
+ */
+function processItems<T, R>(
+  items: T[],
+  transform: (item: T, index: number) => R,
+): R[] {
+  return items.map(transform);
+}
+
+/**
+ * Filters array based on async predicate function.
+ *
+ * @param {T[]} items - Array to filter
+ * @param {(item: T) => Promise<boolean>} predicate - Async filter function
+ * @returns {Promise<T[]>} Filtered array
+ * @template T - Item type
+ *
+ * @example
+ * const users = await asyncFilter(allUsers, async (user) => {
+ *   const hasPermission = await checkPermission(user.id);
+ *   return hasPermission;
+ * });
+ */
+async function asyncFilter<T>(
+  items: T[],
+  predicate: (item: T) => Promise<boolean>,
+): Promise<T[]> {
+  const results = await Promise.all(items.map(predicate));
+  return items.filter((_, index) => results[index]);
+}
+```
+
+### Módulos e Exports
+
+```typescript
+/**
+ * @module userService
+ * @description Service for managing user-related operations including
+ * authentication, authorization, and profile management.
+ */
+
+/**
+ * Creates a new user in the system.
+ *
+ * @function createUser
+ * @memberof module:userService
+ * @param {CreateUserDto} userData - User creation data
+ * @returns {Promise<User>} Created user with generated ID
+ * @throws {ValidationError} When user data is invalid
+ * @throws {EmailAlreadyExistsError} When email is already registered
+ *
+ * @example
+ * const newUser = await createUser({
+ *   name: 'John Doe',
+ *   email: 'john@example.com',
+ *   password: 'securePassword123'
+ * });
+ */
+export async function createUser(userData: CreateUserDto): Promise<User> {
+  // implementation
+  return {} as User;
+}
+
+/**
+ * Authenticates a user with email and password.
+ *
+ * @function authenticateUser
+ * @memberof module:userService
+ * @param {string} email - User email
+ * @param {string} password - User password
+ * @returns {Promise<AuthToken>} Authentication token
+ * @throws {InvalidCredentialsError} When credentials are invalid
+ * @throws {AccountLockedError} When account is locked
+ */
+export async function authenticateUser(
+  email: string,
+  password: string,
+): Promise<AuthToken> {
+  // implementation
+  return {} as AuthToken;
+}
+```
+
+### React Components
+
+```typescript
+/**
+ * Props for the Button component.
+ *
+ * @interface ButtonProps
+ * @property {string} label - Button text label
+ * @property {'primary' | 'secondary' | 'danger' | 'ghost'} [variant='primary'] - Visual variant
+ * @property {'small' | 'medium' | 'large'} [size='medium'] - Button size
+ * @property {boolean} [disabled=false] - Whether button is disabled
+ * @property {boolean} [loading=false] - Whether button is in loading state
+ * @property {() => void} [onClick] - Click event handler
+ * @property {React.ReactNode} [children] - Additional button content
+ * @property {string} [className] - Additional CSS classes
+ * @property {string} [testId] - Test identifier for automated tests
+ */
+interface ButtonProps {
+  label: string;
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  size?: 'small' | 'medium' | 'large';
+  disabled?: boolean;
+  loading?: boolean;
+  onClick?: () => void;
+  children?: React.ReactNode;
+  className?: string;
+  testId?: string;
+}
+
+/**
+ * Reusable button component with multiple variants and loading state.
+ *
+ * @component
+ * @param {ButtonProps} props - Component props
+ * @returns {JSX.Element} Rendered button element
+ *
+ * @example
+ * // Primary button
+ * <Button
+ *   label="Save Changes"
+ *   variant="primary"
+ *   onClick={() => saveData()}
+ * />
+ *
+ * @example
+ * // Loading state
+ * <Button
+ *   label="Processing..."
+ *   loading={isSubmitting}
+ *   disabled={isSubmitting}
+ * />
+ *
+ * @example
+ * // With children
+ * <Button variant="ghost">
+ *   <Icon name="trash" />
+ *   Delete
+ * </Button>
+ */
+export const Button: React.FC<ButtonProps> = ({
+  label,
+  variant = 'primary',
+  size = 'medium',
+  disabled = false,
+  loading = false,
+  onClick,
+  children,
+  className = '',
+  testId,
+}) => {
+  return (
+    <button
+      className={`btn btn-${variant} btn-${size} ${className}`}
+      disabled={disabled || loading}
+      onClick={onClick}
+      data-testid={testId}
+      aria-busy={loading}
+    >
+      {loading && <Spinner size="small" />}
+      {label}
+      {children}
+    </button>
+  );
+};
+```
+
+### Hooks Customizados
+
+```typescript
+/**
+ * Hook for fetching and caching user data with automatic refetching.
+ *
+ * @param {string} userId - User ID to fetch
+ * @param {Object} [options] - Hook options
+ * @param {boolean} [options.enabled=true] - Whether to fetch automatically
+ * @param {number} [options.refetchInterval] - Refetch interval in ms
+ * @returns {Object} Hook state and methods
+ * @returns {User | null} return.data - User data
+ * @returns {boolean} return.loading - Loading state
+ * @returns {Error | null} return.error - Error if occurred
+ * @returns {() => void} return.refetch - Manual refetch function
+ *
+ * @example
+ * // Basic usage
+ * const { data, loading, error } = useUser('user-123');
+ * if (loading) return <Spinner />;
+ * if (error) return <Error message={error.message} />;
+ * return <UserProfile user={data} />;
+ *
+ * @example
+ * // With auto-refetch
+ * const { data, refetch } = useUser('user-123', {
+ *   refetchInterval: 5000 // Refetch every 5 seconds
+ * });
+ *
+ * @example
+ * // Conditional fetching
+ * const { data } = useUser(userId, {
+ *   enabled: !!userId // Only fetch if userId exists
+ * });
+ */
+function useUser(
+  userId: string,
+  options?: {
+    enabled?: boolean;
+    refetchInterval?: number;
+  },
+) {
+  const [data, setData] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchUser = useCallback(async () => {
+    try {
+      setLoading(true);
+      const user = await fetchUserById(userId);
+      setData(user);
+      setError(null);
+    } catch (err) {
+      setError(err as Error);
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (options?.enabled !== false) {
+      fetchUser();
+    }
+  }, [fetchUser, options?.enabled]);
+
+  useEffect(() => {
+    if (options?.refetchInterval) {
+      const interval = setInterval(fetchUser, options.refetchInterval);
+      return () => clearInterval(interval);
+    }
+  }, [fetchUser, options?.refetchInterval]);
+
+  return { data, loading, error, refetch: fetchUser };
+}
+
+/**
+ * Hook for managing form state with validation.
+ *
+ * @template T - Form values type
+ * @param {T} initialValues - Initial form values
+ * @param {(values: T) => Record<string, string>} [validate] - Validation function
+ * @returns {Object} Form state and handlers
+ *
+ * @example
+ * const { values, errors, handleChange, handleSubmit } = useForm({
+ *   email: '',
+ *   password: ''
+ * }, (vals) => {
+ *   const errs = {};
+ *   if (!vals.email) errs.email = 'Email is required';
+ *   if (!vals.password) errs.password = 'Password is required';
+ *   return errs;
+ * });
+ */
+function useForm<T extends Record<string, any>>(
+  initialValues: T,
+  validate?: (values: T) => Record<string, string>,
+) {
+  const [values, setValues] = useState<T>(initialValues);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleChange = (name: keyof T, value: any) => {
+    setValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (onSubmit: (values: T) => void) => {
+    return (e: React.FormEvent) => {
+      e.preventDefault();
+      const validationErrors = validate ? validate(values) : {};
+      setErrors(validationErrors);
+      if (Object.keys(validationErrors).length === 0) {
+        onSubmit(values);
+      }
+    };
+  };
+
+  return { values, errors, handleChange, handleSubmit, setValues };
+}
+```
+
+### Higher-Order Functions e Decorators
+
+```typescript
+/**
+ * Memoizes function results based on arguments.
+ *
+ * @param {Function} fn - Function to memoize
+ * @param {(args: any[]) => string} [keyFn] - Custom cache key generator
+ * @returns {Function} Memoized function
+ * @template T - Function type
+ *
+ * @example
+ * const expensiveCalculation = memoize((n: number) => {
+ *   console.log('Calculating...');
+ *   return n * n;
+ * });
+ *
+ * expensiveCalculation(5); // Logs "Calculating...", returns 25
+ * expensiveCalculation(5); // Returns 25 (cached, no log)
+ */
+function memoize<T extends (...args: any[]) => any>(
+  fn: T,
+  keyFn?: (args: Parameters<T>) => string,
+): T {
+  const cache = new Map<string, ReturnType<T>>();
+
+  return ((...args: Parameters<T>): ReturnType<T> => {
+    const key = keyFn ? keyFn(args) : JSON.stringify(args);
+
+    if (cache.has(key)) {
+      return cache.get(key)!;
+    }
+
+    const result = fn(...args);
+    cache.set(key, result);
+    return result;
+  }) as T;
+}
+
+/**
+ * Debounces function execution.
+ *
+ * @param {Function} fn - Function to debounce
+ * @param {number} delay - Delay in milliseconds
+ * @returns {Function} Debounced function
+ * @template T - Function type
+ *
+ * @example
+ * const searchAPI = debounce((query: string) => {
+ *   fetch(`/api/search?q=${query}`);
+ * }, 300);
+ *
+ * // Only calls API after user stops typing for 300ms
+ * searchInput.addEventListener('input', (e) => searchAPI(e.target.value));
+ */
+function debounce<T extends (...args: any[]) => any>(
+  fn: T,
+  delay: number,
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout;
+
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  };
+}
+
+/**
+ * Throttles function execution to run at most once per interval.
+ *
+ * @param {Function} fn - Function to throttle
+ * @param {number} interval - Minimum interval between calls in ms
+ * @returns {Function} Throttled function
+ * @template T - Function type
+ *
+ * @example
+ * const handleScroll = throttle(() => {
+ *   console.log('Scroll position:', window.scrollY);
+ * }, 100);
+ *
+ * window.addEventListener('scroll', handleScroll);
+ */
+function throttle<T extends (...args: any[]) => any>(
+  fn: T,
+  interval: number,
+): (...args: Parameters<T>) => void {
+  let lastCall = 0;
+
+  return (...args: Parameters<T>) => {
+    const now = Date.now();
+    if (now - lastCall >= interval) {
+      lastCall = now;
+      fn(...args);
+    }
+  };
+}
+```
+
+## Tags JSDoc Comuns
+
+### Tags Obrigatórias
+
+- `@param {type} name - description` - Parâmetros da função
+- `@returns {type} description` - Valor de retorno
+- `@throws {ErrorType} description` - Exceções que podem ser lançadas
+
+### Tags Opcionais Úteis
+
+- `@example` - Exemplos de uso
+- `@see` - Referências relacionadas
+- `@since` - Versão em que foi adicionado
+- `@deprecated` - Indica que está deprecated
+- `@todo` - Tarefas pendentes
+- `@author` - Autor do código
+- `@version` - Versão
+- `@template` - Para generics
+- `@typedef` - Para definir tipos customizados
+- `@property` - Propriedades de objetos
+- `@class` - Documentação de classe
+- `@module` - Documentação de módulo
+- `@async` - Indica função assíncrona
+- `@private` - Marca como privado
+- `@protected` - Marca como protegido
+- `@readonly` - Marca como somente leitura
+
+### Exemplo Completo com Múltiplas Tags
+
+```typescript
+/**
+ * Processes payment for an order with retry logic and notification.
+ *
+ * This function handles the complete payment flow including validation,
+ * payment processing, retry logic for failures, and customer notification.
+ *
+ * @param {string} orderId - Order ID to process
+ * @param {PaymentMethod} method - Payment method to use
+ * @param {Object} [options] - Additional options
+ * @param {boolean} [options.sendEmail=true] - Whether to send confirmation email
+ * @param {number} [options.retryCount=3] - Number of retry attempts
+ * @param {string} [options.callbackUrl] - Webhook URL for payment status
+ * @returns {Promise<PaymentResult>} Processing result with transaction details
+ * @throws {OrderNotFoundError} When order is not found
+ * @throws {PaymentFailedError} When payment processing fails
+ * @throws {InsufficientFundsError} When account has insufficient funds
+ * @throws {InvalidPaymentMethodError} When payment method is invalid
+ *
+ * @example
+ * // Basic usage
+ * const result = await processPayment('order-123', 'credit-card');
+ * console.log('Transaction ID:', result.transactionId);
+ *
+ * @example
+ * // With options
+ * const result = await processPayment('order-123', 'credit-card', {
+ *   sendEmail: true,
+ *   retryCount: 5,
+ *   callbackUrl: 'https://api.example.com/payment-webhook'
+ * });
+ *
+ * @see {@link PaymentMethod} for available payment methods
+ * @see {@link PaymentResult} for result structure
+ * @see {@link https://docs.example.com/payments} Payment API documentation
+ *
+ * @since 1.2.0
+ * @author John Doe <john@example.com>
+ * @version 1.2.0
+ */
+async function processPayment(
+  orderId: string,
+  method: PaymentMethod,
+  options?: {
+    sendEmail?: boolean;
+    retryCount?: number;
+    callbackUrl?: string;
+  },
+): Promise<PaymentResult> {
+  // implementation
+  return {} as PaymentResult;
+}
+
+/**
+ * Legacy authentication method.
+ *
+ * @deprecated Since version 2.0.0. Use authenticateWithOAuth instead.
+ * @param {string} username - Username
+ * @param {string} password - Password
+ * @returns {Promise<User>} Authenticated user
+ *
+ * @example
+ * // ⚠️ Deprecated - do not use
+ * const user = await legacyAuth('user', 'pass');
+ *
+ * @see {@link authenticateWithOAuth} for the recommended method
+ */
+async function legacyAuth(username: string, password: string): Promise<User> {
+  console.warn('legacyAuth is deprecated, use authenticateWithOAuth');
+  // implementation
+  return {} as User;
+}
+```
+
+## Regras de Formatação
+
+1. **Sempre comece com uma descrição clara** em uma linha
+2. **Use uma linha em branco** após a descrição antes das tags
+3. **Ordene as tags** nesta ordem:
+   - `@param` (todos os parâmetros)
+   - `@returns` ou `@return`
+   - `@throws` (todas as exceções)
+   - `@example` (um ou mais exemplos)
+   - `@see` (referências)
+   - `@since`, `@version`
+   - `@deprecated`
+   - `@author`
+   - Outras tags
+4. **Use tipos TypeScript** quando disponível, senão use tipos JSDoc
+5. **Seja específico** nos tipos (evite `any` e `object`)
+6. **Documente parâmetros opcionais** com `[name]` e inclua valor padrão se houver
+7. **Mantenha linhas com no máximo 80-100 caracteres**
+8. **Use markdown** dentro dos comentários quando apropriado
+
+## Boas Práticas
+
+### ✅ Correto
+
+```typescript
+/**
+ * Validates email format using RFC 5322 standard.
+ *
+ * @param {string} email - Email address to validate
+ * @returns {boolean} True if email is valid, false otherwise
+ *
+ * @example
+ * isValidEmail('user@example.com'); // true
+ * isValidEmail('invalid-email'); // false
+ * isValidEmail('user+tag@example.co.uk'); // true
+ */
+function isValidEmail(email: string): boolean {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+}
+
+/**
+ * Fetches paginated list of users with filtering and sorting.
+ *
+ * @param {Object} params - Query parameters
+ * @param {number} [params.page=1] - Page number (1-indexed)
+ * @param {number} [params.limit=10] - Items per page
+ * @param {string} [params.search] - Search term for name/email
+ * @param {boolean} [params.activeOnly=false] - Filter active users only
+ * @returns {Promise<PaginatedResponse<User>>} Paginated user list
+ *
+ * @example
+ * const response = await getUsers({ page: 1, limit: 20, search: 'john' });
+ * console.log(`Found ${response.data.length} users`);
+ * console.log(`Total: ${response.meta.total}`);
+ */
+async function getUsers(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  activeOnly?: boolean;
+}): Promise<PaginatedResponse<User>> {
+  // implementation
+  return {} as PaginatedResponse<User>;
+}
+```
+
+### ❌ Incorreto
+
+```typescript
+// No documentation
+function isValidEmail(email: string): boolean {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+}
+
+// Incomplete documentation
+/**
+ * Validates email
+ */
+function isValidEmail(email: string): boolean {
+  // ...
+}
+
+// Poor description
+/**
+ * Function for email
+ * @param {string} email - email
+ * @returns {boolean} result
+ */
+function isValidEmail(email: string): boolean {
+  // ...
+}
+
+// Missing examples and type information
+/**
+ * Gets users
+ */
+async function getUsers(params: any): Promise<any> {
+  // ...
+}
+```
+
+## Casos de Uso Avançados
+
+### Documentando Funções Complexas com Business Logic
+
+```typescript
+/**
+ * Calculates discounted price based on user tier and purchase volume.
+ *
+ * Business rules:
+ * - VIP users: 15% discount on all purchases
+ * - Premium users: 10% discount on purchases > $100
+ * - Standard users: 5% discount on purchases > $500
+ * - Bulk discount: Additional 5% for quantity > 10 items
+ * - Maximum total discount: 25%
+ *
+ * @param {number} price - Base price per item
+ * @param {number} quantity - Number of items
+ * @param {UserTier} userTier - User's membership tier
+ * @returns {number} Final discounted price
+ * @throws {InvalidPriceError} When price is negative
+ * @throws {InvalidQuantityError} When quantity is zero or negative
+ *
+ * @example
+ * // VIP user buying 1 item at $100
+ * calculateDiscount(100, 1, 'vip'); // 85 (15% discount)
+ *
+ * @example
+ * // Premium user buying 12 items at $50 each
+ * calculateDiscount(50, 12, 'premium');
+ * // $600 base, 10% tier discount, 5% bulk = $510 final
+ */
+function calculateDiscount(
+  price: number,
+  quantity: number,
+  userTier: UserTier,
+): number {
+  if (price < 0) throw new InvalidPriceError('Price cannot be negative');
+  if (quantity <= 0) throw new InvalidQuantityError('Quantity must be positive');
+
+  const basePrice = price * quantity;
+  let discount = 0;
+
+  // Apply tier-based discount
+  switch (userTier) {
+    case 'vip':
+      discount = 0.15;
+      break;
+    case 'premium':
+      if (basePrice > 100) discount = 0.10;
+      break;
+    case 'standard':
+      if (basePrice > 500) discount = 0.05;
+      break;
+  }
+
+  // Apply bulk discount
+  if (quantity > 10) {
+    discount += 0.05;
+  }
+
+  // Cap maximum discount at 25%
+  discount = Math.min(discount, 0.25);
+
+  return basePrice * (1 - discount);
+}
+```
+
+### Documentando APIs e Endpoints
+
+```typescript
+/**
+ * API client for the User Management service.
+ *
+ * @class UserApiClient
+ * @example
+ * const client = new UserApiClient({
+ *   baseUrl: 'https://api.example.com',
+ *   apiKey: 'your-api-key'
+ * });
+ */
+class UserApiClient {
+  /**
+   * Retrieves user profile by ID.
+   *
+   * HTTP: GET /api/users/:id
+   * Rate limit: 100 requests/minute
+   * Requires authentication: Yes
+   *
+   * @param {string} userId - User ID to fetch
+   * @param {Object} [options] - Request options
+   * @param {string[]} [options.fields] - Specific fields to include
+   * @param {boolean} [options.includeDeleted=false] - Include soft-deleted users
+   * @returns {Promise<ApiResponse<User>>} API response with user data
+   * @throws {ApiError} When API request fails
+   * @throws {RateLimitError} When rate limit is exceeded
+   * @throws {UnauthorizedError} When API key is invalid
+   *
+   * @example
+   * const response = await client.getUser('user-123');
+   * console.log(response.data.name);
+   *
+   * @example
+   * // Fetch specific fields only
+   * const response = await client.getUser('user-123', {
+   *   fields: ['name', 'email', 'createdAt']
+   * });
+   */
+  async getUser(
+    userId: string,
+    options?: {
+      fields?: string[];
+      includeDeleted?: boolean;
+    },
+  ): Promise<ApiResponse<User>> {
+    // implementation
+    return {} as ApiResponse<User>;
+  }
+}
+```
+
+### Documentando Tipos de Erro
+
+```typescript
+/**
+ * Base error class for application errors.
+ *
+ * @class AppError
+ * @extends Error
+ * @property {string} code - Machine-readable error code
+ * @property {number} statusCode - HTTP status code
+ * @property {Object} [meta] - Additional error metadata
+ */
+class AppError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public statusCode: number,
+    public meta?: Record<string, any>,
+  ) {
+    super(message);
+    this.name = 'AppError';
+  }
+}
+
+/**
+ * Thrown when a requested resource is not found.
+ *
+ * @class NotFoundError
+ * @extends AppError
+ *
+ * @example
+ * throw new NotFoundError('User not found', { userId: '123' });
+ */
+class NotFoundError extends AppError {
+  constructor(message: string, meta?: Record<string, any>) {
+    super(message, 'NOT_FOUND', 404, meta);
+    this.name = 'NotFoundError';
+  }
+}
+
+/**
+ * Thrown when validation fails.
+ *
+ * @class ValidationError
+ * @extends AppError
+ * @property {ValidationIssue[]} issues - List of validation issues
+ *
+ * @example
+ * throw new ValidationError('Invalid input', {
+ *   issues: [
+ *     { field: 'email', message: 'Invalid email format' },
+ *     { field: 'age', message: 'Must be 18 or older' }
+ *   ]
+ * });
+ */
+class ValidationError extends AppError {
+  constructor(
+    message: string,
+    public issues: ValidationIssue[],
+  ) {
+    super(message, 'VALIDATION_ERROR', 400, { issues });
+    this.name = 'ValidationError';
+  }
+}
+```
+
+## Checklist de Documentação
+
+Ao criar ou modificar código, certifique-se de:
+
+- [ ] Todas as funções públicas têm JSDoc completo
+- [ ] Todos os parâmetros estão documentados com tipo e descrição
+- [ ] O retorno está documentado com tipo e descrição
+- [ ] Exceções possíveis estão documentadas com `@throws`
+- [ ] Exemplos de uso estão incluídos quando apropriado
+- [ ] Classes e interfaces têm descrição clara
+- [ ] Métodos de classe estão documentados
+- [ ] Propriedades públicas estão documentadas
+- [ ] Generics estão documentados com `@template`
+- [ ] Código deprecated está marcado com `@deprecated`
+- [ ] Descrições estão em inglês
+- [ ] Exemplos de código estão em inglês
+- [ ] Comentários inline estão em inglês
+- [ ] Referências externas estão linkadas com `@see`
+
+## Integração com TypeScript
+
+Quando usar TypeScript, o JSDoc complementa os tipos:
+
+```typescript
+/**
+ * Merges two arrays removing duplicates while preserving order.
+ *
+ * Time complexity: O(n + m) where n and m are array lengths
+ * Space complexity: O(n + m)
+ *
+ * @param {T[]} array1 - First array
+ * @param {T[]} array2 - Second array
+ * @returns {T[]} New array with unique elements from both arrays
+ * @template T - Element type
+ *
+ * @example
+ * const merged = mergeArrays([1, 2, 3], [3, 4, 5]);
+ * // Result: [1, 2, 3, 4, 5]
+ */
+function mergeArrays<T>(array1: T[], array2: T[]): T[] {
+  return Array.from(new Set([...array1, ...array2]));
+}
+
+/**
+ * Type-safe event emitter with strong typing for events.
+ *
+ * @template T - Event map type defining event names and payload types
+ *
+ * @example
+ * type Events = {
+ *   'user:created': { userId: string; timestamp: number };
+ *   'user:deleted': { userId: string };
+ * };
+ *
+ * const emitter = new EventEmitter<Events>();
+ * emitter.on('user:created', (data) => {
+ *   // data is typed as { userId: string; timestamp: number }
+ *   console.log(`User ${data.userId} created`);
+ * });
+ */
+class EventEmitter<T extends Record<string, any>> {
+  // implementation
+}
+```
+
+A documentação JSDoc fornece contexto adicional que os tipos TypeScript não capturam, como comportamento, exemplos, complexidade algorítmica e exceções.
+
+## Ferramentas e Integração
+
+### ESLint com JSDoc
+
+Configure o ESLint para validar JSDoc:
+
+```json
+{
+  "plugins": ["jsdoc"],
+  "extends": ["plugin:jsdoc/recommended"],
+  "rules": {
+    "jsdoc/require-description": "warn",
+    "jsdoc/require-param-description": "warn",
+    "jsdoc/require-returns-description": "warn",
+    "jsdoc/require-example": "off",
+    "jsdoc/check-tag-names": "error"
+  }
+}
+```
+
+### Geração de Documentação
+
+Use TypeDoc ou JSDoc para gerar documentação:
+
+```bash
+# TypeDoc (recomendado para TypeScript)
+npm install --save-dev typedoc
+npx typedoc --out docs src
+
+# JSDoc
+npm install --save-dev jsdoc
+npx jsdoc -c jsdoc.json
+```
+
+### VSCode IntelliSense
+
+O JSDoc melhora o IntelliSense do VSCode:
+
+- Hover sobre funções mostra documentação
+- Auto-complete sugere parâmetros documentados
+- Validação de tipos em tempo real
+- Go to definition funciona melhor
+
+## Comentários em Código (além de JSDoc)
+
+Além da documentação formal com JSDoc, use comentários em linha e de bloco para explicar **o "porquê" do código**, nunca para repetir o óbvio.
+
+**⚠️ IMPORTANTE:** Todos os comentários no código devem estar em inglês, incluindo comentários inline, blocos de comentários e qualquer texto dentro dos exemplos de código.
+
+### Quando comentar
+
+- **Regras de negócio complexas**
+  - Explique o contexto de negócio que não é óbvio olhando apenas o código.
+  - Documente decisões importantes e restrições do domínio.
+
+- **Algoritmos ou fluxos não triviais**
+  - Descreva o raciocínio por trás do algoritmo.
+  - Aponte referências externas (links de RFCs, docs, papers, etc.) quando fizer sentido.
+  - Mencione complexidade algorítmica se relevante.
+
+- **Workarounds e dívidas técnicas**
+  - Explique por que o workaround existe e, se possível, até quando deve existir.
+  - Use `TODO`, `FIXME` e `NOTE` com padrão consistente.
+  - Referencie tickets ou issues relacionadas.
+
+- **Integrações externas**
+  - Registre suposições sobre APIs externas (limites, contratos frágeis, bugs conhecidos).
+  - Documente quirks de bibliotecas de terceiros.
+  - Explique configurações não óbvias.
+
+### Quando NÃO comentar
+
+- **Evite comentar o óbvio**
+  - Comentários que apenas repetem o que o código já diz claramente:
+
+```typescript
+// ❌ Bad: redundant comment
+// Increment i by 1
+for (let i = 0; i < 10; i++) {
+  // ...
+}
+
+// ✅ Good: only comment the non-obvious
+// Process in batches of 10 to avoid memory issues with large datasets
+for (let i = 0; i < items.length; i += 10) {
+  const batch = items.slice(i, i + 10);
+  await processBatch(batch);
+}
+```
+
+- **Evite comentários desatualizados**
+  - Comentários devem ser revisados sempre que o código for alterado.
+  - Comentário desatualizado é pior do que não ter comentário.
+
+- **Não use comentários para desativar regras de lint sem justificativa**
+  - Se for realmente necessário, sempre explique o motivo:
+
+```typescript
+// ✅ Good: justified lint disable
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Legacy API requires dynamic payload structure; will be typed in MDI-1234
+function sendToLegacyAPI(payload: any) {
+  return legacyClient.send(payload);
+}
+
+// ❌ Bad: no justification
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function processData(data: any) {
+  // ...
+}
+```
+
+### Padrão para TODO, FIXME, NOTE
+
+Use um padrão consistente para comentários especiais, sempre com:
+- **tag** (`TODO`, `FIXME`, `NOTE`, `HACK`, `WARNING`)
+- **responsável** (iniciais ou usuário)
+- **referência de tarefa** (Jira/GitHub issue, quando existir)
+- **data opcional** (para itens sensíveis ao tempo)
+
+```typescript
+// TODO[john, MDI-1234]: remove legacy endpoint when all clients migrate to v2 API
+// FIXME[team, MDI-987]: timezone calculation doesn't handle DST; fix when migrating to luxon
+// NOTE[jane]: business rule agreed with marketing team on 2024-11-23
+// HACK[bob]: workaround for Safari bug, remove when iOS 18+ is minimum supported version
+// WARNING[alice]: changing this value affects billing calculation system-wide
+```
+
+### Comentários em linha vs. em bloco
+
+- **Comentários em linha** (`// ...`)
+  - Use para explicar uma linha ou pequeno trecho de código.
+  - Devem ser curtos e diretos.
+  - Coloque acima da linha que está sendo explicada, não ao lado.
+
+- **Comentários em bloco** (`/** ... */` ou `/* ... */`)
+  - Use para explicar um fluxo maior, uma regra de negócio complexa ou contexto de um módulo.
+  - Para documentação de API pública, **sempre use JSDoc** com `/** ... */`.
+
+```typescript
+// ✅ Inline comment for specific section
+const discount = calculateDiscount(value, user);
+
+/**
+ * ✅ Block comment explaining a complex flow
+ *
+ * This flow implements the saga pattern for distributed transactions:
+ * 1. First tries to reserve inventory
+ * 2. Then processes payment
+ * 3. If payment fails, compensates by releasing inventory
+ * 4. On success, sends confirmation and updates analytics
+ *
+ * See: https://microservices.io/patterns/data/saga.html
+ */
+async function processOrder(orderId: string): Promise<OrderResult> {
+  const order = await getOrder(orderId);
+
+  try {
+    // Reserve inventory with 5-minute timeout
+    await inventoryService.reserve(order.items);
+
+    // Process payment through payment gateway
+    const payment = await paymentService.charge(order.total);
+
+    // Update order status and trigger notifications
+    await confirmOrder(orderId, payment.transactionId);
+
+    return { success: true, orderId };
+  } catch (error) {
+    // Compensate: release reserved inventory
+    await inventoryService.release(order.items);
+    throw error;
+  }
+}
+```
+
+### Comentários e Clean Code
+
+- **Prefira código autoexplicativo a comentários**
+  - Se possível tornar o código claro com bons nomes e funções pequenas, faça isso antes de comentar.
+
+```typescript
+// ❌ Bad: comment needed because code is unclear
+// Check if user can access resource
+if (user.role === 'admin' || (user.role === 'editor' && resource.ownerId === user.id)) {
+  // grant access
+}
+
+// ✅ Good: self-documenting code
+function canAccessResource(user: User, resource: Resource): boolean {
+  return user.role === 'admin' || user.isOwnerOf(resource);
+}
+
+if (canAccessResource(user, resource)) {
+  // grant access
+}
+```
+
+- **Use comentários para explicar "por que" e não "o que"**
+  - O código já mostra **o que** está sendo feito.
+  - Comentários devem explicar **por que** a decisão foi tomada.
+
+```typescript
+// ❌ Bad: explains "what" (obvious from code)
+// Call the API
+await fetch('/api/users');
+
+// ✅ Good: explains "why" (non-obvious business decision)
+// We fetch users on mount even if not displayed immediately because
+// the API response typically takes 3-5 seconds and we want data ready
+// when user navigates to the users tab. See performance analysis in MDI-456
+await fetch('/api/users');
+```
+
+- **Evite comentários históricos**
+  - Histórico de mudanças deve estar no Git, não no código.
+
+```typescript
+// ❌ Bad: historical comment
+// Changed by John on 2022-03-15 to fix bug #123
+// Updated by Jane on 2022-06-20 to add validation
+function validateEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// ✅ Good: use Git history
+function validateEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+```
+
+### Exemplos de Bons Comentários
+
+```typescript
+/**
+ * Process user authentication with rate limiting.
+ */
+async function authenticateUser(email: string, password: string): Promise<User> {
+  // Rate limiting: max 5 attempts per 15 minutes per email
+  // This prevents brute force attacks while allowing legitimate users
+  // to retry with typos. See security policy: SEC-001
+  const attempts = await redis.get(`auth:attempts:${email}`);
+  if (attempts && parseInt(attempts) >= 5) {
+    throw new RateLimitError('Too many authentication attempts');
+  }
+
+  // Hash comparison uses constant-time algorithm to prevent timing attacks
+  const user = await db.users.findByEmail(email);
+  if (!user || !await bcrypt.compare(password, user.passwordHash)) {
+    await redis.incr(`auth:attempts:${email}`);
+    await redis.expire(`auth:attempts:${email}`, 900); // 15 minutes
+    throw new InvalidCredentialsError();
+  }
+
+  // Clear rate limit counter on successful auth
+  await redis.del(`auth:attempts:${email}`);
+
+  return user;
+}
+
+/**
+ * Calculates shipping cost with dynamic pricing.
+ */
+function calculateShipping(weight: number, destination: string): number {
+  // Base rate calculation uses USPS Priority Mail API
+  const baseRate = getBaseShippingRate(weight);
+
+  // Apply zone-based multiplier
+  // Zone 1-3: no multiplier
+  // Zone 4-6: 1.5x multiplier
+  // Zone 7-8: 2x multiplier
+  // See: https://www.usps.com/ship/priority-mail.htm
+  const zone = getShippingZone(destination);
+  const zoneMultiplier = zone <= 3 ? 1 : zone <= 6 ? 1.5 : 2;
+
+  // Weekend delivery adds 30% surcharge
+  // Note: this is a business decision, not a carrier requirement
+  const isWeekend = new Date().getDay() % 6 === 0;
+  const weekendMultiplier = isWeekend ? 1.3 : 1;
+
+  return baseRate * zoneMultiplier * weekendMultiplier;
+}
+
+/**
+ * Cache implementation with LRU eviction policy.
+ */
+class LRUCache<K, V> {
+  private cache = new Map<K, V>();
+  private readonly maxSize: number;
+
+  constructor(maxSize: number) {
+    this.maxSize = maxSize;
+  }
+
+  get(key: K): V | undefined {
+    const value = this.cache.get(key);
+
+    if (value !== undefined) {
+      // Move to end to mark as recently used
+      // This is the "LRU" part - most recently accessed items stay in cache
+      this.cache.delete(key);
+      this.cache.set(key, value);
+    }
+
+    return value;
+  }
+
+  set(key: K, value: V): void {
+    // Delete first to ensure correct insertion order
+    this.cache.delete(key);
+
+    // Check size and evict least recently used (first item) if needed
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+
+    this.cache.set(key, value);
+  }
+}
+```
+
+### Guia rápido para o time
+
+- **Antes de escrever um comentário, pergunte:**
+  - O contexto ficará claro para alguém que não participou da decisão?
+  - O comentário ainda fará sentido daqui a 6 meses?
+  - Posso tornar o código autoexplicativo em vez de comentar?
+  - Estou explicando o "por que" ou apenas o "o que"?
+
+- **Ao revisar PRs, verifique:**
+  - Comentários explicam decisões, não detalhes óbvios de implementação
+  - TODO/FIXME têm referência de tarefa e responsável
+  - Não há comentários desatualizados ou contraditórios em relação ao código
+  - Código desabilitado foi removido, não comentado
+  - Lint disables têm justificativa clara
+  - Todos comentários e documentação estão em inglês
+
+## Recursos Adicionais
+
+### Documentação Oficial
+
+- [JSDoc Official Documentation](https://jsdoc.app/)
+- [TypeScript JSDoc Reference](https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html)
+- [Google JavaScript Style Guide](https://google.github.io/styleguide/jsguide.html)
+
+### Ferramentas Recomendadas
+
+- **[TypeDoc](https://typedoc.org/)** - Gerador de documentação para TypeScript
+- **[ESLint JSDoc Plugin](https://github.com/gajus/eslint-plugin-jsdoc)** - Linting para JSDoc
+- **[Better Comments](https://marketplace.visualstudio.com/items?itemName=aaron-bond.better-comments)** - VSCode extension para destacar comentários
+
+### Templates Úteis
+
+```typescript
+/**
+ * @module moduleName
+ * @description Brief module description
+ */
+
+/**
+ * Brief function description.
+ *
+ * Detailed description if needed.
+ *
+ * @param {Type} paramName - Parameter description
+ * @returns {ReturnType} Return value description
+ * @throws {ErrorType} When error occurs
+ *
+ * @example
+ * // Usage example
+ * const result = functionName(param);
+ */
+```
