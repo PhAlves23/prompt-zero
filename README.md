@@ -1,4 +1,4 @@
-![PromptZero Banner](./DOCS/assets/promptzero-banner.png)
+![PromptZero Banner](./docs/assets/promptzero-banner.png)
 
 <div align="center">
 
@@ -1047,7 +1047,9 @@ Este projeto é privado e proprietário.
 
 ## 👥 Equipe
 
-Desenvolvido com ❤️ por [Seu Nome/Equipe]
+Desenvolvido por Paulo Alves
+ph23.alves@gmail.com
+https://www.linkedin.com/in/ph-alves/?locale=en
 
 ---
 
@@ -1075,7 +1077,4 @@ Para dúvidas, problemas ou sugestões:
 <div align="center">
 
 **[⬆ Voltar ao topo](#promptzero)**
-
-Feito com 💚 usando Next.js, NestJS e muito ☕
-
 </div>
