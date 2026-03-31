@@ -1,10 +1,10 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, Copy } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { z } from "zod/v4"
 import { toast } from "sonner"
@@ -62,6 +62,7 @@ export function PromptDetailClient({
   const router = useRouter()
   const queryClient = useQueryClient()
   const [executeInput, setExecuteInput] = useState("")
+  const [executeVariables, setExecuteVariables] = useState<Record<string, string>>({})
   const [streamOutput, setStreamOutput] = useState("")
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamStatus, setStreamStatus] = useState<"idle" | "running" | "done" | "error" | "cancelled">("idle")
@@ -102,7 +103,10 @@ export function PromptDetailClient({
     queryKey: queryKeys.prompts.list(`ab-${promptId}`),
     queryFn: () => bffFetch<PaginatedResult<Prompt>>("/prompts?page=1&limit=20"),
   })
-  const promptsForExperiment = promptsForExperimentQuery.data?.data ?? []
+  const promptsForExperiment = useMemo(
+    () => promptsForExperimentQuery.data?.data ?? [],
+    [promptsForExperimentQuery.data?.data],
+  )
   const promptBOptions = promptsForExperiment.filter((prompt) => prompt.id !== promptId)
   const selectedPromptB = useMemo(
     () => promptsForExperiment.find((prompt) => prompt.id === experimentPromptBId),
@@ -131,28 +135,6 @@ export function PromptDetailClient({
   const abUsesTemplate = Boolean(promptQuery.data?.isTemplate || selectedPromptB?.isTemplate)
   const isLoadingAbTemplateVariables =
     abUsesTemplate && (variablesQuery.isFetching || promptBVariablesQuery.isFetching)
-
-  useEffect(() => {
-    if (!abUsesTemplate) {
-      setAbRunVariables({})
-      return
-    }
-    setAbRunVariables((current) => {
-      const next: Record<string, string> = {}
-      for (const variable of abTemplateVariables) {
-        const existing = current[variable.name]
-        if (existing && existing.trim() !== "") {
-          next[variable.name] = existing
-          continue
-        }
-        const fallback = variable.defaultValue ?? ""
-        if (fallback.trim() !== "") {
-          next[variable.name] = fallback
-        }
-      }
-      return next
-    })
-  }, [abUsesTemplate, abTemplateVariables])
 
   const experimentResultsQuery = useQuery({
     queryKey: queryKeys.experiments.results(experimentId),
@@ -273,7 +255,12 @@ export function PromptDetailClient({
         maxTokens: settings.maxTokens,
       }
       const filteredVariables = Object.fromEntries(
-        Object.entries(abRunVariables).filter(([, value]) => value.trim() !== ""),
+        abTemplateVariables
+          .map((variable) => [
+            variable.name,
+            (abRunVariables[variable.name] ?? variable.defaultValue ?? "").trim(),
+          ])
+          .filter(([, value]) => value !== ""),
       )
       if (Object.keys(filteredVariables).length > 0) {
         body.variables = filteredVariables
@@ -374,12 +361,19 @@ export function PromptDetailClient({
               "content-type": "application/json",
             },
             body: JSON.stringify({
-              input: executionInput,
               model: promptQuery.data?.model ?? "gpt-4o-mini",
               temperature: payload.settings.temperature,
               topP: payload.settings.topP,
               topK: payload.settings.topK,
               maxTokens: payload.settings.maxTokens,
+              variables: Object.fromEntries(
+                (variablesQuery.data ?? [])
+                  .map((variable) => [
+                    variable.name,
+                    (executeVariables[variable.name] ?? variable.defaultValue ?? "").trim(),
+                  ])
+                  .filter(([, value]) => value !== ""),
+              ),
             }),
             signal,
           }),
@@ -404,9 +398,7 @@ export function PromptDetailClient({
         setStreamError("")
       } else {
         setStreamStatus("error")
-        if (!streamError) {
-          setStreamError("Falha ao executar prompt")
-        }
+        setStreamError((current) => current || "Falha ao executar prompt")
       }
       setIsStreaming(false)
       abortControllerRef.current = null
@@ -424,7 +416,33 @@ export function PromptDetailClient({
       toast.error("Configuracoes avancadas invalidas")
       return
     }
+    if (promptQuery.data?.isTemplate) {
+      const missingRequired = (variablesQuery.data ?? []).filter((variable) => {
+        if (!variable.required) {
+          return false
+        }
+        const value = executeVariables[variable.name] ?? variable.defaultValue ?? ""
+        return !value || value.trim() === ""
+      })
+      if (missingRequired.length > 0) {
+        toast.error(`Preencha as variaveis obrigatorias: ${missingRequired.map((item) => item.name).join(", ")}`)
+        return
+      }
+    }
     executePrompt.mutate({ input, settings: parsed.data })
+  }
+
+  async function copyExecutionOutput(output: string | null) {
+    if (!output || output.trim() === "") {
+      toast.error("Essa execucao nao possui output para copiar")
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(output)
+      toast.success("Output copiado")
+    } catch {
+      toast.error("Nao foi possivel copiar o output")
+    }
   }
 
   function createAbExperiment() {
@@ -592,6 +610,42 @@ export function PromptDetailClient({
               <p className="text-xs text-muted-foreground">Numero maximo de tokens na resposta</p>
             </div>
           </div>
+          {promptQuery.data?.isTemplate ? (
+            <div className="grid gap-3 rounded-lg border p-3">
+              <p className="text-sm font-medium">Variaveis do template</p>
+              {variablesQuery.isPending ? (
+                <p className="text-xs text-muted-foreground">Carregando variaveis...</p>
+              ) : variablesQuery.data && variablesQuery.data.length > 0 ? (
+                variablesQuery.data.map((variable) => (
+                  <div key={`execute-variable-${variable.name}`} className="grid gap-1.5">
+                    <Label htmlFor={`execute-variable-${variable.name}`}>
+                      {variable.name}
+                      {variable.required ? " *" : ""}
+                    </Label>
+                    <Input
+                      id={`execute-variable-${variable.name}`}
+                      placeholder={variable.defaultValue ?? "Informe um valor"}
+                      value={executeVariables[variable.name] ?? variable.defaultValue ?? ""}
+                      onChange={(event) => {
+                        const value = event.currentTarget.value
+                        setExecuteVariables((current) => ({
+                          ...current,
+                          [variable.name]: value,
+                        }))
+                      }}
+                    />
+                    {variable.description ? (
+                      <p className="text-xs text-muted-foreground">{variable.description}</p>
+                    ) : null}
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Nenhuma variavel configurada. Sincronize as variaveis do template para evitar erro na execucao.
+                </p>
+              )}
+            </div>
+          ) : null}
           <Button
             type="button"
             className="w-fit cursor-pointer"
@@ -721,7 +775,7 @@ export function PromptDetailClient({
                   <Input
                     id={`ab-variable-${variable.name}`}
                     placeholder={variable.defaultValue ?? "Informe um valor"}
-                    value={abRunVariables[variable.name] ?? ""}
+                    value={abRunVariables[variable.name] ?? variable.defaultValue ?? ""}
                     onChange={(event) => {
                       const value = event.currentTarget.value
                       setAbRunVariables((current) => ({
@@ -917,7 +971,20 @@ export function PromptDetailClient({
           ) : executionsQuery.data && executionsQuery.data.data.length > 0 ? (
             executionsQuery.data.data.map((execution) => (
               <div key={execution.id} className="rounded border p-3 text-sm">
-                <div className="font-medium">{execution.model}</div>
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <div className="font-medium">{execution.model}</div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="cursor-pointer"
+                    disabled={!execution.output}
+                    onClick={() => copyExecutionOutput(execution.output)}
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copiar output
+                  </Button>
+                </div>
                 <div className="text-muted-foreground">{execution.output ?? "Sem output"}</div>
               </div>
             ))
