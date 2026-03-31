@@ -36,6 +36,10 @@ const executeSettingsSchema = z.object({
 type UpdatePromptValues = z.infer<typeof updateSchema>
 type ExecuteSettingsValues = z.infer<typeof executeSettingsSchema>
 
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString("pt-BR")
+}
+
 export function PromptDetailClient({
   lang,
   promptId,
@@ -101,9 +105,12 @@ export function PromptDetailClient({
         method: "PATCH",
         body: values,
       }),
-    onSuccess: () => {
+    onSuccess: (updatedPrompt) => {
       toast.success("Prompt atualizado")
+      queryClient.setQueryData(queryKeys.prompts.detail(promptId), updatedPrompt)
       void queryClient.invalidateQueries({ queryKey: queryKeys.prompts.detail(promptId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.prompts.versions(promptId) })
+      void queryClient.invalidateQueries({ queryKey: ["prompts", "list"] })
     },
   })
 
@@ -236,6 +243,9 @@ export function PromptDetailClient({
           <CardTitle>Editar prompt</CardTitle>
         </CardHeader>
         <CardContent>
+          <p className="mb-4 text-xs text-muted-foreground">
+            Ultima edicao: {formatDateTime(promptQuery.data.updatedAt)}
+          </p>
           <form
             className="grid gap-4"
             onSubmit={form.handleSubmit((values) => {
@@ -408,22 +418,31 @@ export function PromptDetailClient({
             <p className="text-sm text-destructive">Falha ao carregar versoes.</p>
           ) : versionsQuery.data && versionsQuery.data.length > 0 ? (
             versionsQuery.data.map((version) => (
-              <div key={version.id} className="rounded border p-3 text-sm flex items-center justify-between gap-2">
-                <span>Versao {version.version}</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="cursor-pointer"
-                  onClick={() => restoreVersion.mutate(version.id)}
-                  disabled={restoreVersion.isPending}
-                >
-                  Restaurar
-                </Button>
-                <Button type="button" variant="outline" asChild>
-                  <Link href={`/${lang}/prompts/${promptId}/versions/${version.id}`} className="cursor-pointer">
-                    Ver detalhes
-                  </Link>
-                </Button>
+              <div key={version.id} className="rounded border p-3 text-sm">
+                <div className="mb-2 flex items-start justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <p className="font-medium">Versao {version.version}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Data/hora: {formatDateTime(version.createdAt)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="cursor-pointer"
+                      onClick={() => restoreVersion.mutate(version.id)}
+                      disabled={restoreVersion.isPending}
+                    >
+                      Restaurar
+                    </Button>
+                    <Button type="button" variant="outline" asChild>
+                      <Link href={`/${lang}/prompts/${promptId}/versions/${version.id}`} className="cursor-pointer">
+                        Ver detalhes
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
               </div>
             ))
           ) : (
