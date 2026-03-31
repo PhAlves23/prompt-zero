@@ -5,11 +5,12 @@ Este projeto está configurado com dois workflows no GitHub Actions:
 - `.github/workflows/ci.yml`
   - Roda em `pull_request` e `push` na `main`
   - Backend: `lint`, `test`, `test:e2e`, `build` (com Postgres de serviço)
-  - Frontend: `pnpm install --frozen-lockfile`, `lint`, `build`
+  - Frontend: `pnpm install --frozen-lockfile`, `lint`, `build`, `test:e2e` (Playwright)
 
 - `.github/workflows/deploy-production-railway.yml`
   - Roda em `push` na `main` e manualmente (`workflow_dispatch`)
   - Executa validações de backend/frontend
+  - Frontend também valida `test:e2e` (Playwright) antes do deploy
   - Executa `prisma migrate deploy` no backend
   - Faz deploy no Railway de backend e frontend
 

@@ -158,40 +158,35 @@
 
 ### Arquitetura de Alto Nível
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         Frontend                            │
-│  Next.js 16 + React 19 + Tailwind CSS + shadcn/ui         │
-│                                                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │   Páginas    │  │ Componentes  │  │  React Query │    │
-│  │ (App Router) │→ │      UI      │→ │   + Zustand  │    │
-│  └──────────────┘  └──────────────┘  └──────────────┘    │
-│                           ↓                                 │
-│                    ┌──────────────┐                        │
-│                    │  BFF Proxy   │                        │
-│                    │ /api/bff/*   │                        │
-│                    └──────────────┘                        │
-└─────────────────────────────────────────────────────────────┘
-                            ↓ HTTP + JWT
-┌─────────────────────────────────────────────────────────────┐
-│                         Backend                             │
-│         NestJS 11 + Prisma + PostgreSQL + Redis            │
-│                                                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │ Controllers  │→ │   Services   │→ │    Prisma    │    │
-│  │  (Routes)    │  │  (Business)  │  │  (Database)  │    │
-│  └──────────────┘  └──────────────┘  └──────────────┘    │
-│                           ↓                                 │
-│                    ┌──────────────┐                        │
-│                    │  LLM Service │                        │
-│                    └──────────────┘                        │
-└─────────────────────────────────────────────────────────────┘
-                            ↓ API Calls
-┌─────────────────────────────────────────────────────────────┐
-│                    Provedores de IA                         │
-│  OpenAI  │  Anthropic  │  Google Gemini  │  OpenRouter    │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph FE["Frontend"]
+        FE_STACK["Next.js 16 + React 19 + Tailwind CSS + shadcn/ui"]
+        FE_PAGES["Páginas (App Router)"] --> FE_UI["Componentes UI"]
+        FE_UI --> FE_STATE["React Query + Zustand"]
+        FE_STATE --> FE_BFF["BFF Proxy (/api/bff/*)"]
+        FE_STACK -.-> FE_PAGES
+    end
+
+    subgraph BE["Backend (NestJS 11 + Prisma + PostgreSQL + Redis)"]
+        BE_CTRL["Controllers (Routes)"] --> BE_SVC["Services (Business)"]
+        BE_SVC --> BE_PRISMA["Prisma (Database)"]
+        BE_SVC --> BE_LLM["LLM Service"]
+    end
+
+    FE_BFF -->|HTTP + JWT| BE_CTRL
+
+    subgraph AI["Provedores de IA"]
+        AI_OPENAI["OpenAI"]
+        AI_ANTHROPIC["Anthropic"]
+        AI_GEMINI["Google Gemini"]
+        AI_OPENROUTER["OpenRouter"]
+    end
+
+    BE_LLM -->|API Calls| AI_OPENAI
+    BE_LLM -->|API Calls| AI_ANTHROPIC
+    BE_LLM -->|API Calls| AI_GEMINI
+    BE_LLM -->|API Calls| AI_OPENROUTER
 ```
 
 ---
@@ -315,31 +310,33 @@ http://localhost:3001/api/docs
 
 ### Estrutura do Projeto
 
-```
-prompt-zero/
-├── frontend/          # Aplicação Next.js
-│   ├── app/          # App Router (páginas e rotas)
-│   ├── components/   # Componentes React
-│   ├── lib/          # Utilitários e lógica
-│   ├── stores/       # Estado global (Zustand)
-│   ├── hooks/        # React Hooks customizados
-│   └── tests/        # Testes
-│
-├── backend/          # API NestJS
-│   ├── src/          # Código-fonte
-│   │   ├── auth/     # Autenticação
-│   │   ├── prompts/  # Gerenciamento de prompts
-│   │   ├── executions/ # Execução de prompts
-│   │   ├── analytics/ # Analytics
-│   │   ├── experiments/ # Experimentos A/B
-│   │   └── ...       # Outros módulos
-│   ├── prisma/       # Schema e migrações
-│   └── test/         # Testes
-│
-└── DOCS/             # Documentação completa
-    ├── FRONTEND.md
-    ├── BACKEND.md
-    └── assets/
+```mermaid
+flowchart TD
+    ROOT["prompt-zero/"]
+
+    ROOT --> FE["frontend/ (Aplicação Next.js)"]
+    FE --> FE_APP["app/ (App Router: páginas e rotas)"]
+    FE --> FE_COMPONENTS["components/ (Componentes React)"]
+    FE --> FE_LIB["lib/ (Utilitários e lógica)"]
+    FE --> FE_STORES["stores/ (Estado global - Zustand)"]
+    FE --> FE_HOOKS["hooks/ (React Hooks customizados)"]
+    FE --> FE_TESTS["tests/ (Testes)"]
+
+    ROOT --> BE["backend/ (API NestJS)"]
+    BE --> BE_SRC["src/ (Código-fonte)"]
+    BE_SRC --> BE_AUTH["auth/ (Autenticação)"]
+    BE_SRC --> BE_PROMPTS["prompts/ (Gerenciamento de prompts)"]
+    BE_SRC --> BE_EXEC["executions/ (Execução de prompts)"]
+    BE_SRC --> BE_ANALYTICS["analytics/ (Analytics)"]
+    BE_SRC --> BE_EXPERIMENTS["experiments/ (Experimentos A/B)"]
+    BE_SRC --> BE_ETC["... (Outros módulos)"]
+    BE --> BE_PRISMA["prisma/ (Schema e migrações)"]
+    BE --> BE_TEST["test/ (Testes)"]
+
+    ROOT --> DOCS["DOCS/ (Documentação completa)"]
+    DOCS --> DOCS_FE["FRONTEND.md"]
+    DOCS --> DOCS_BE["BACKEND.md"]
+    DOCS --> DOCS_ASSETS["assets/"]
 ```
 
 ### Scripts Úteis

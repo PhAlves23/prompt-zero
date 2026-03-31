@@ -109,6 +109,14 @@ jobs:
         run: pnpm build
         working-directory: frontend
 
+      - name: Install Playwright browser
+        run: pnpm test:e2e:install
+        working-directory: frontend
+
+      - name: Frontend E2E tests (Playwright)
+        run: pnpm test:e2e
+        working-directory: frontend
+
   backend-migrate-and-deploy:
     name: Backend Migrate + Deploy Railway
     runs-on: ubuntu-latest

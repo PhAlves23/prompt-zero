@@ -981,6 +981,8 @@ export default defineConfig({
 });
 ```
 
+Para E2E, o projeto também usa **Playwright** com configuração em `playwright.config.ts` e specs em `tests/e2e/`.
+
 ### Testes Existentes
 
 Arquivo: `tests/stream-execution.test.ts`
@@ -990,10 +992,23 @@ Testes para streaming de execução de prompts:
 - Tratamento de erros
 - Retries e resiliência
 
+Arquivo: `tests/e2e/smoke.spec.ts`
+
+Testes E2E de fumaça:
+- Redirecionamento para rota com locale
+- Abertura de rota pública `/pt-BR/explore`
+
 ### Executar Testes
 
 ```bash
+# Unitários
 npm test
+
+# E2E (Playwright)
+npm run test:e2e
+
+# Instalar browser do Playwright (primeira execução)
+npm run test:e2e:install
 ```
 
 ---
@@ -1400,7 +1415,7 @@ Usando **@dnd-kit** para:
 
 ### Roadmap Sugerido
 
-- [ ] Testes E2E com Playwright
+- [x] Testes E2E com Playwright
 - [ ] Storybook para documentação de componentes
 - [ ] Otimização de bundle size
 - [ ] Implementar ISR (Incremental Static Regeneration) onde aplicável
