@@ -54,6 +54,61 @@ export function DashboardPageClient({
   experiments: ExperimentsPageDictionary
 }) {
   const [period, setPeriod] = useQueryState("period", parseAsString.withDefault("30d"))
+  const isPt = lang.startsWith("pt")
+  const isEs = lang.startsWith("es")
+  const t = {
+    loadingSeries: isEs ? "Cargando serie temporal..." : isPt ? "Carregando série temporal..." : "Loading time series...",
+    loadExecPerDayError:
+      isEs ? "Error al cargar ejecuciones por día." : isPt ? "Falha ao carregar execuções por dia." : "Failed to load executions per day.",
+    loadingRanking: isEs ? "Cargando ranking..." : isPt ? "Carregando ranking..." : "Loading ranking...",
+    loadRankingError:
+      isEs ? "Error al cargar ranking de prompts." : isPt ? "Falha ao carregar ranking de prompts." : "Failed to load prompts ranking.",
+    loadingCost: isEs ? "Cargando distribución de costos..." : isPt ? "Carregando distribuição de custos..." : "Loading cost distribution...",
+    loadCostError:
+      isEs ? "Error al cargar costo por modelo." : isPt ? "Falha ao carregar custo por modelo." : "Failed to load model costs.",
+    noModelUsage: isEs ? "No se registró consumo de modelo." : isPt ? "Nenhum consumo de modelo foi registrado ainda." : "No model usage registered yet.",
+    loadingAbHistory: isEs ? "Cargando histórico A/B..." : isPt ? "Carregando histórico A/B..." : "Loading A/B history...",
+    loadAbHistoryError: isEs ? "Error al cargar histórico A/B." : isPt ? "Falha ao carregar histórico A/B." : "Failed to load A/B history.",
+    loadingAbRanking: isEs ? "Cargando ranking A/B..." : isPt ? "Carregando ranking A/B..." : "Loading A/B ranking...",
+    loadAbRankingError: isEs ? "Error al cargar ranking A/B." : isPt ? "Falha ao carregar ranking A/B." : "Failed to load A/B ranking.",
+    loadingGeneric: isEs ? "Cargando..." : isPt ? "Carregando..." : "Loading...",
+    loadGenericError: isEs ? "Error al cargar." : isPt ? "Falha ao carregar." : "Failed to load.",
+    prompts: isEs ? "Prompts" : "Prompts",
+    activePrompts: isEs ? "Total de prompts activos" : isPt ? "Total de prompts ativos" : "Total active prompts",
+    executions: isEs ? "Ejecuciones" : isPt ? "Execuções" : "Executions",
+    executionsInPeriod: isEs ? "Ejecuciones en los últimos" : isPt ? "Execuções nos últimos" : "Executions in the last",
+    tokens: "Tokens",
+    tokenUsage: isEs ? "Consumo total en" : isPt ? "Consumo total em" : "Total usage in",
+    estimatedCost: isEs ? "Costo estimado" : isPt ? "Custo estimado" : "Estimated cost",
+    aggregatedCost: isEs ? "Costo agregado en" : isPt ? "Custo agregado em" : "Aggregated cost in",
+    workspaces: isEs ? "Espacios de trabajo" : "Workspaces",
+    workspaceDesc: isEs ? "Espacios de organización" : isPt ? "Espaços de organização" : "Organization spaces",
+    tags: "Tags",
+    tagsDesc: isEs ? "Etiquetas registradas" : isPt ? "Etiquetas cadastradas" : "Registered tags",
+    executionsPerDay: isEs ? "Ejecuciones por día" : isPt ? "Execuções por dia" : "Executions per day",
+    usageTrend: isEs ? "Tendencia de uso en el período seleccionado" : isPt ? "Tendência de uso no período selecionado" : "Usage trend in selected period",
+    noExecutionsPeriod: isEs ? "Sin ejecuciones en el período" : isPt ? "Sem execuções no período" : "No executions in period",
+    runPromptHint: isEs ? "Ejecuta un prompt para ver la curva de uso." : isPt ? "Rode um prompt para visualizar a curva de uso." : "Run a prompt to view usage curve.",
+    topPrompts: isEs ? "Top prompts" : "Top prompts",
+    mostExecuted: isEs ? "Más ejecutados en el período" : isPt ? "Mais executados no período" : "Most executed in period",
+    shortExec: isEs ? "ejec." : isPt ? "exec." : "exec.",
+    noRankingYet: isEs ? "Sin ranking todavía" : isPt ? "Sem ranking ainda" : "No ranking yet",
+    rankingHint: isEs ? "Cuando haya ejecuciones, el ranking aparecerá aquí." : isPt ? "Quando houver execuções, o ranking aparece aqui." : "When there are executions, ranking appears here.",
+    costByModel: isEs ? "Costo por modelo" : isPt ? "Custo por modelo" : "Cost by model",
+    costDistribution: isEs ? "Distribución de costo entre modelos usados" : isPt ? "Distribuição de custo entre modelos usados" : "Cost distribution across used models",
+    noCostPeriod: isEs ? "Sin costo en el período" : isPt ? "Sem custo no período" : "No cost in period",
+    noCostHint: isEs ? "Aún no se registró consumo de modelos." : isPt ? "Nenhum consumo de modelo foi registrado ainda." : "No model usage registered yet.",
+    abHistory: isEs ? "Historial A/B por día" : isPt ? "Histórico A/B por dia" : "A/B history by day",
+    abVolume: isEs ? "Volumen de votos de experimentos A/B en el período" : isPt ? "Volume de votos de experimentos A/B no período" : "A/B experiment votes volume in period",
+    noAbHistory: isEs ? "Sin histórico A/B en el período" : isPt ? "Sem histórico A/B no período" : "No A/B history in period",
+    noAbHistoryHint: isEs ? "Crea experimentos y registra votos para poblar este gráfico." : isPt ? "Crie experimentos e registre votos para popular este gráfico." : "Create experiments and register votes to populate this chart.",
+    abRanking: isEs ? "Ranking de experimentos A/B" : isPt ? "Ranking de experimentos A/B" : "A/B experiment ranking",
+    mostVotes: isEs ? "Experimentos con más votos en el período" : isPt ? "Experimentos com mais votos no período" : "Experiments with most votes in period",
+    votes: isEs ? "votos" : "votos",
+    winner: isEs ? "Ganador" : isPt ? "Vencedor" : "Winner",
+    noAbRankingYet: isEs ? "Sin ranking A/B todavía" : isPt ? "Sem ranking A/B ainda" : "No A/B ranking yet",
+    noAbRankingHint: isEs ? "Aún no hay votos de experimento en el período seleccionado." : isPt ? "Ainda não há votos de experimento no período selecionado." : "No experiment votes in selected period yet.",
+  }
   const selectedPeriod = period === "7d" || period === "30d" || period === "90d" ? period : "30d"
 
   const overviewQuery = useQuery({
@@ -107,60 +162,72 @@ export function DashboardPageClient({
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <MetricCard
-          title="Prompts"
-          description="Total de prompts ativos"
+          title={t.prompts}
+          description={t.activePrompts}
           value={overviewQuery.data?.promptsTotal}
           isLoading={overviewQuery.isPending}
           isError={overviewQuery.isError}
+          loadingLabel={t.loadingGeneric}
+          errorLabel={t.loadGenericError}
         />
         <MetricCard
-          title="Execucoes"
-          description={`Execucoes nos ultimos ${selectedPeriod}`}
+          title={t.executions}
+          description={`${t.executionsInPeriod} ${selectedPeriod}`}
           value={overviewQuery.data?.executionsTotal}
           isLoading={overviewQuery.isPending}
           isError={overviewQuery.isError}
+          loadingLabel={t.loadingGeneric}
+          errorLabel={t.loadGenericError}
         />
         <MetricCard
-          title="Tokens"
-          description={`Consumo total em ${selectedPeriod}`}
+          title={t.tokens}
+          description={`${t.tokenUsage} ${selectedPeriod}`}
           value={overviewQuery.data?.totalTokens}
           isLoading={overviewQuery.isPending}
           isError={overviewQuery.isError}
+          loadingLabel={t.loadingGeneric}
+          errorLabel={t.loadGenericError}
         />
         <MetricCard
-          title="Custo estimado"
-          description={`Custo agregado em ${selectedPeriod}`}
-          value={formatCurrency(overviewQuery.data?.totalEstimatedCost)}
+          title={t.estimatedCost}
+          description={`${t.aggregatedCost} ${selectedPeriod}`}
+          value={formatCurrency(overviewQuery.data?.totalEstimatedCost, lang)}
           isLoading={overviewQuery.isPending}
           isError={overviewQuery.isError}
+          loadingLabel={t.loadingGeneric}
+          errorLabel={t.loadGenericError}
         />
         <MetricCard
-          title="Workspaces"
-          description="Espacos de organizacao"
+          title={t.workspaces}
+          description={t.workspaceDesc}
           value={workspacesQuery.data?.length}
           isLoading={workspacesQuery.isPending}
           isError={workspacesQuery.isError}
+          loadingLabel={t.loadingGeneric}
+          errorLabel={t.loadGenericError}
         />
         <MetricCard
-          title="Tags"
-          description="Etiquetas cadastradas"
+          title={t.tags}
+          description={t.tagsDesc}
           value={tagsQuery.data?.length}
           isLoading={tagsQuery.isPending}
           isError={tagsQuery.isError}
+          loadingLabel={t.loadingGeneric}
+          errorLabel={t.loadGenericError}
         />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>Execucoes por dia</CardTitle>
-            <CardDescription>Tendencia de uso no periodo selecionado</CardDescription>
+            <CardTitle>{t.executionsPerDay}</CardTitle>
+            <CardDescription>{t.usageTrend}</CardDescription>
           </CardHeader>
           <CardContent>
             {executionsPerDayQuery.isPending ? (
-              <p className="text-sm text-muted-foreground">Carregando serie temporal...</p>
+              <p className="text-sm text-muted-foreground">{t.loadingSeries}</p>
             ) : executionsPerDayQuery.isError ? (
-              <p className="text-sm text-destructive">Falha ao carregar execucoes por dia.</p>
+              <p className="text-sm text-destructive">{t.loadExecPerDayError}</p>
             ) : executionsPerDayQuery.data && executionsPerDayQuery.data.length > 0 ? (
               <ChartContainer
                 config={executionsChartConfig}
@@ -181,7 +248,7 @@ export function DashboardPageClient({
                     tickMargin={8}
                     minTickGap={24}
                     tickFormatter={(value) =>
-                      new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+                      new Date(value).toLocaleDateString(lang, { day: "2-digit", month: "2-digit" })
                     }
                   />
                   <ChartTooltip
@@ -190,7 +257,7 @@ export function DashboardPageClient({
                       <ChartTooltipContent
                         indicator="dot"
                         labelFormatter={(value) =>
-                          new Date(value).toLocaleDateString("pt-BR", {
+                          new Date(value).toLocaleDateString(lang, {
                             day: "2-digit",
                             month: "long",
                           })
@@ -210,8 +277,8 @@ export function DashboardPageClient({
             ) : (
               <Empty className="border">
                 <EmptyHeader>
-                  <EmptyTitle>Sem execucoes no periodo</EmptyTitle>
-                  <EmptyDescription>Rode um prompt para visualizar a curva de uso.</EmptyDescription>
+                  <EmptyTitle>{t.noExecutionsPeriod}</EmptyTitle>
+                  <EmptyDescription>{t.runPromptHint}</EmptyDescription>
                 </EmptyHeader>
               </Empty>
             )}
@@ -220,14 +287,14 @@ export function DashboardPageClient({
 
         <Card>
           <CardHeader>
-            <CardTitle>Top prompts</CardTitle>
-            <CardDescription>Mais executados no periodo</CardDescription>
+            <CardTitle>{t.topPrompts}</CardTitle>
+            <CardDescription>{t.mostExecuted}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
             {topPromptsQuery.isPending ? (
-              <p className="text-sm text-muted-foreground">Carregando ranking...</p>
+              <p className="text-sm text-muted-foreground">{t.loadingRanking}</p>
             ) : topPromptsQuery.isError ? (
-              <p className="text-sm text-destructive">Falha ao carregar ranking de prompts.</p>
+              <p className="text-sm text-destructive">{t.loadRankingError}</p>
             ) : topPromptsQuery.data && topPromptsQuery.data.length > 0 ? (
               topPromptsQuery.data.map((item, index) => (
                 <Link
@@ -239,15 +306,15 @@ export function DashboardPageClient({
                     <span className="text-sm font-medium">
                       {index + 1}. {item.promptTitle}
                     </span>
-                    <span className="text-xs text-muted-foreground">{item.executions} exec.</span>
+                    <span className="text-xs text-muted-foreground">{item.executions} {t.shortExec}</span>
                   </div>
                 </Link>
               ))
             ) : (
               <Empty className="border">
                 <EmptyHeader>
-                  <EmptyTitle>Sem ranking ainda</EmptyTitle>
-                  <EmptyDescription>Quando houver execucoes, o ranking aparece aqui.</EmptyDescription>
+                  <EmptyTitle>{t.noRankingYet}</EmptyTitle>
+                  <EmptyDescription>{t.rankingHint}</EmptyDescription>
                 </EmptyHeader>
               </Empty>
             )}
@@ -257,14 +324,14 @@ export function DashboardPageClient({
 
       <Card>
         <CardHeader>
-          <CardTitle>Custo por modelo</CardTitle>
-          <CardDescription>Distribuicao de custo entre modelos usados</CardDescription>
+          <CardTitle>{t.costByModel}</CardTitle>
+          <CardDescription>{t.costDistribution}</CardDescription>
         </CardHeader>
         <CardContent>
           {costPerModelQuery.isPending ? (
-            <p className="text-sm text-muted-foreground">Carregando distribuicao de custos...</p>
+            <p className="text-sm text-muted-foreground">{t.loadingCost}</p>
           ) : costPerModelQuery.isError ? (
-            <p className="text-sm text-destructive">Falha ao carregar custo por modelo.</p>
+            <p className="text-sm text-destructive">{t.loadCostError}</p>
           ) : costPerModelQuery.data && costPerModelQuery.data.length > 0 ? (
             <ChartContainer
               config={costChartConfig}
@@ -288,9 +355,9 @@ export function DashboardPageClient({
                         <div className="flex w-full items-center justify-between gap-3">
                           <span className="text-muted-foreground">{String(name)}</span>
                           <span className="font-mono font-medium">
-                            {formatCurrency(Number(value ?? 0))}
+                            {formatCurrency(Number(value ?? 0), lang)}
                             {" | "}
-                            {item.payload.totalTokens.toLocaleString("pt-BR")} tokens
+                            {item.payload.totalTokens.toLocaleString(lang)} tokens
                           </span>
                         </div>
                       )}
@@ -308,8 +375,8 @@ export function DashboardPageClient({
           ) : (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>Sem custo no periodo</EmptyTitle>
-                <EmptyDescription>Nenhum consumo de modelo foi registrado ainda.</EmptyDescription>
+                <EmptyTitle>{t.noCostPeriod}</EmptyTitle>
+                <EmptyDescription>{t.noCostHint}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}
@@ -319,14 +386,14 @@ export function DashboardPageClient({
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>Historico A/B por dia</CardTitle>
-            <CardDescription>Volume de votos de experimentos A/B no periodo</CardDescription>
+            <CardTitle>{t.abHistory}</CardTitle>
+            <CardDescription>{t.abVolume}</CardDescription>
           </CardHeader>
           <CardContent>
             {abHistoryQuery.isPending ? (
-              <p className="text-sm text-muted-foreground">Carregando historico A/B...</p>
+              <p className="text-sm text-muted-foreground">{t.loadingAbHistory}</p>
             ) : abHistoryQuery.isError ? (
-              <p className="text-sm text-destructive">Falha ao carregar historico A/B.</p>
+              <p className="text-sm text-destructive">{t.loadAbHistoryError}</p>
             ) : abHistoryQuery.data && abHistoryQuery.data.length > 0 ? (
               <ChartContainer config={abHistoryChartConfig} className="aspect-auto h-[260px] w-full">
                 <AreaChart data={abHistoryQuery.data}>
@@ -344,7 +411,7 @@ export function DashboardPageClient({
                     tickMargin={8}
                     minTickGap={24}
                     tickFormatter={(value) =>
-                      new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+                      new Date(value).toLocaleDateString(lang, { day: "2-digit", month: "2-digit" })
                     }
                   />
                   <ChartTooltip
@@ -352,7 +419,7 @@ export function DashboardPageClient({
                     content={
                       <ChartTooltipContent
                         labelFormatter={(value) =>
-                          new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })
+                          new Date(value).toLocaleDateString(lang, { day: "2-digit", month: "long" })
                         }
                         formatter={(_value, _name, item) => (
                           <div className="grid gap-1 text-xs">
@@ -375,8 +442,8 @@ export function DashboardPageClient({
             ) : (
               <Empty className="border">
                 <EmptyHeader>
-                  <EmptyTitle>Sem historico A/B no periodo</EmptyTitle>
-                  <EmptyDescription>Crie experimentos e registre votos para popular este grafico.</EmptyDescription>
+                  <EmptyTitle>{t.noAbHistory}</EmptyTitle>
+                  <EmptyDescription>{t.noAbHistoryHint}</EmptyDescription>
                 </EmptyHeader>
               </Empty>
             )}
@@ -385,14 +452,14 @@ export function DashboardPageClient({
 
         <Card>
           <CardHeader>
-            <CardTitle>Ranking de experimentos A/B</CardTitle>
-            <CardDescription>Experimentos com mais votos no periodo</CardDescription>
+            <CardTitle>{t.abRanking}</CardTitle>
+            <CardDescription>{t.mostVotes}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
             {abRankingQuery.isPending ? (
-              <p className="text-sm text-muted-foreground">Carregando ranking A/B...</p>
+              <p className="text-sm text-muted-foreground">{t.loadingAbRanking}</p>
             ) : abRankingQuery.isError ? (
-              <p className="text-sm text-destructive">Falha ao carregar ranking A/B.</p>
+              <p className="text-sm text-destructive">{t.loadAbRankingError}</p>
             ) : abRankingQuery.data && abRankingQuery.data.length > 0 ? (
               abRankingQuery.data.map((item, index) => (
                 <div key={item.experimentId} className="grid gap-1 rounded-lg border p-3 text-sm">
@@ -408,20 +475,20 @@ export function DashboardPageClient({
                           : experimentsI18n.status.stopped}
                       </Badge>
                     </div>
-                    <span className="text-muted-foreground">{item.totalVotes} votos</span>
+                    <span className="text-muted-foreground">{item.totalVotes} {t.votes}</span>
                   </div>
                   <p className="text-muted-foreground">A: {item.promptATitle}</p>
                   <p className="text-muted-foreground">B: {item.promptBTitle}</p>
                   <p className="text-xs">
-                    Vencedor: <span className="font-medium">{item.winnerVariant}</span> ({item.winnerPercent}%)
+                    {t.winner}: <span className="font-medium">{item.winnerVariant}</span> ({item.winnerPercent}%)
                   </p>
                 </div>
               ))
             ) : (
               <Empty className="border">
                 <EmptyHeader>
-                  <EmptyTitle>Sem ranking A/B ainda</EmptyTitle>
-                  <EmptyDescription>Ainda nao ha votos de experimento no periodo selecionado.</EmptyDescription>
+                  <EmptyTitle>{t.noAbRankingYet}</EmptyTitle>
+                  <EmptyDescription>{t.noAbRankingHint}</EmptyDescription>
                 </EmptyHeader>
               </Empty>
             )}
@@ -438,12 +505,16 @@ function MetricCard({
   value,
   isLoading,
   isError,
+  loadingLabel,
+  errorLabel,
 }: {
   title: string
   description: string
   value: number | string | undefined
   isLoading: boolean
   isError: boolean
+  loadingLabel: string
+  errorLabel: string
 }) {
   return (
     <Card>
@@ -453,9 +524,9 @@ function MetricCard({
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Carregando...</p>
+          <p className="text-sm text-muted-foreground">{loadingLabel}</p>
         ) : isError ? (
-          <p className="text-sm text-destructive">Falha ao carregar.</p>
+          <p className="text-sm text-destructive">{errorLabel}</p>
         ) : (
           <p className="text-2xl font-semibold">{value ?? "-"}</p>
         )}
@@ -464,14 +535,14 @@ function MetricCard({
   )
 }
 
-function formatCurrency(value: number | undefined) {
+function formatCurrency(value: number | undefined, locale = "pt-BR") {
   if (typeof value !== "number") {
     return "-"
   }
-  return new Intl.NumberFormat("pt-BR", {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "USD",
-    minimumFractionDigits: 4,
-    maximumFractionDigits: 4,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(value)
 }

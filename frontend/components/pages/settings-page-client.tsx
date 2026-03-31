@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { ApiKeyStatus, ProviderCredential, UserProfile } from "@/lib/api/types"
+import type { Dictionary } from "@/app/[lang]/dictionaries"
 
 const profileSchema = z.object({
   name: z.string().min(2),
@@ -30,7 +31,7 @@ type ApiKeyValues = {
 }
 type ProviderKeyName = "openai" | "anthropic" | "google" | "openrouter"
 
-export function SettingsPageClient() {
+export function SettingsPageClient({ dict }: { dict: Dictionary }) {
   const queryClient = useQueryClient()
   const [tab, setTab] = useQueryState("tab", parseAsString.withDefault("user"))
   const [disconnectingProvider, setDisconnectingProvider] = useState<ProviderKeyName | null>(null)
@@ -61,7 +62,7 @@ export function SettingsPageClient() {
     mutationFn: (values: ProfileValues) =>
       bffFetch<UserProfile>("/users/profile", { method: "PATCH", body: values }),
     onSuccess: (updatedProfile) => {
-      toast.success("Perfil atualizado")
+      toast.success(dict.settings.profileCard.toastUpdated)
       queryClient.setQueryData(queryKeys.settings.profile, updatedProfile)
       queryClient.setQueryData(queryKeys.auth.me, updatedProfile)
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings.profile })
@@ -116,11 +117,11 @@ export function SettingsPageClient() {
   async function connectProvider(provider: ProviderKeyName) {
     const value = apiKeyInputs[provider]?.trim()
     if (!value) {
-      toast.error("Cole uma API Key antes de salvar")
+      toast.error(dict.settings.apiKeysCard.pasteBeforeSave)
       return
     }
     if (value.length < 10) {
-      toast.error("API Key invalida: minimo de 10 caracteres")
+      toast.error(dict.settings.apiKeysCard.invalidMinChars)
       return
     }
 
@@ -145,24 +146,24 @@ export function SettingsPageClient() {
             : status.providers.some((item) => item.provider === provider)
 
       if (connected) {
-        toast.success("Conectado com sucesso")
+        toast.success(dict.settings.apiKeysCard.connectedSuccess)
         setApiKeyInputs((current) => ({ ...current, [provider]: "" }))
       } else {
-        toast.error("A chave foi enviada, mas nao foi possivel confirmar conexao")
+        toast.error(dict.settings.apiKeysCard.sentButNotConfirmed)
       }
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
         return
       }
-      toast.error("Nao foi possivel salvar a chave")
+      toast.error(dict.settings.apiKeysCard.saveFailed)
     }
   }
 
   async function disconnectProvider(provider: ProviderKeyName) {
     const credentialIds = providerCredentialIdsByProvider[provider]
     if (!credentialIds.length) {
-      toast.error("Nao ha credenciais para desconectar este provedor")
+      toast.error(dict.settings.apiKeysCard.disconnectNoCredentials)
       return
     }
 
@@ -179,12 +180,12 @@ export function SettingsPageClient() {
         queryClient.invalidateQueries({ queryKey: queryKeys.settings.apiKeys }),
         queryClient.invalidateQueries({ queryKey: queryKeys.settings.providerCredentials }),
       ])
-      toast.success("Desconectado com sucesso")
+      toast.success(dict.settings.apiKeysCard.disconnectedSuccess)
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error("Nao foi possivel desconectar o provedor")
+        toast.error(dict.settings.apiKeysCard.disconnectFailed)
       }
     } finally {
       setDisconnectingProvider(null)
@@ -199,18 +200,26 @@ export function SettingsPageClient() {
         className="gap-4"
       >
         <TabsList className="bg-muted">
-          <TabsTrigger value="user" className="cursor-pointer">Usuario</TabsTrigger>
-          <TabsTrigger value="api-keys" className="cursor-pointer">API Keys</TabsTrigger>
+          <TabsTrigger value="user" className="cursor-pointer">
+            {dict.settings.tabs.user}
+          </TabsTrigger>
+          <TabsTrigger value="api-keys" className="cursor-pointer">
+            {dict.settings.tabs.apiKeys}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="user">
           <Card>
             <CardHeader>
-              <CardTitle>Perfil do usuario</CardTitle>
+              <CardTitle>{dict.settings.profileCard.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              {profileQuery.isPending ? <p className="text-sm text-muted-foreground">Carregando perfil...</p> : null}
-              {profileQuery.isError ? <p className="text-sm text-destructive">Falha ao carregar perfil.</p> : null}
+              {profileQuery.isPending ? (
+                <p className="text-sm text-muted-foreground">{dict.settings.profileCard.loading}</p>
+              ) : null}
+              {profileQuery.isError ? (
+                <p className="text-sm text-destructive">{dict.settings.profileCard.loadError}</p>
+              ) : null}
               <form
                 onSubmit={profileForm.handleSubmit((values) => {
                   const parsed = profileSchema.safeParse(values)
@@ -227,11 +236,11 @@ export function SettingsPageClient() {
                 className="grid gap-4"
               >
                 <div className="grid gap-2">
-                  <Label htmlFor="profile-name">Nome</Label>
+                  <Label htmlFor="profile-name">{dict.settings.profileCard.nameLabel}</Label>
                   <Input id="profile-name" {...profileForm.register("name")} />
                 </div>
                 <Button className="w-fit cursor-pointer" type="submit">
-                  {updateProfile.isPending ? "Salvando..." : "Salvar perfil"}
+                  {updateProfile.isPending ? dict.settings.profileCard.saving : dict.settings.profileCard.save}
                 </Button>
               </form>
             </CardContent>
@@ -242,6 +251,7 @@ export function SettingsPageClient() {
           <div className="grid gap-4">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <ProviderStatusCard
+                dict={dict}
                 name="OpenAI"
                 status={providersStatus.openai}
                 logoSrcCandidates={[
@@ -268,6 +278,7 @@ export function SettingsPageClient() {
                 isDisconnecting={disconnectingProvider === "openai"}
               />
               <ProviderStatusCard
+                dict={dict}
                 name="Anthropic"
                 status={providersStatus.anthropic}
                 logoSrcCandidates={[
@@ -294,6 +305,7 @@ export function SettingsPageClient() {
                 isDisconnecting={disconnectingProvider === "anthropic"}
               />
               <ProviderStatusCard
+                dict={dict}
                 name="Google"
                 status={providersStatus.google}
                 logoSrcCandidates={[
@@ -320,6 +332,7 @@ export function SettingsPageClient() {
                 isDisconnecting={disconnectingProvider === "google"}
               />
               <ProviderStatusCard
+                dict={dict}
                 name="OpenRouter"
                 status={providersStatus.openrouter}
                 logoSrcCandidates={[
@@ -347,7 +360,7 @@ export function SettingsPageClient() {
               />
             </div>
             {apiKeysQuery.isError ? (
-              <p className="text-sm text-destructive">Falha ao carregar status das chaves.</p>
+              <p className="text-sm text-destructive">{dict.settings.apiKeysCard.loadError}</p>
             ) : null}
           </div>
         </TabsContent>
@@ -357,6 +370,7 @@ export function SettingsPageClient() {
 }
 
 function ProviderStatusCard({
+  dict,
   name,
   status,
   logoSrcCandidates,
@@ -368,6 +382,7 @@ function ProviderStatusCard({
   onDisconnect,
   isDisconnecting,
 }: {
+  dict: Dictionary
   name: string
   status: boolean
   logoSrcCandidates: string[]
@@ -409,7 +424,9 @@ function ProviderStatusCard({
             </span>
             <div>
               <p className="text-sm font-medium">{name}</p>
-              <p className="text-xs text-muted-foreground">{status ? "Conectado" : "Nao configurado"}</p>
+              <p className="text-xs text-muted-foreground">
+                {status ? dict.settings.apiKeysCard.providerStatus.connected : dict.settings.apiKeysCard.providerStatus.notConfigured}
+              </p>
             </div>
           </div>
           <span
@@ -419,15 +436,15 @@ function ProviderStatusCard({
                 : "rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-600 dark:text-amber-400"
             }
           >
-            {status ? "OK" : "Pendente"}
+            {status ? dict.settings.apiKeysCard.providerStatus.ok : dict.settings.apiKeysCard.providerStatus.pending}
           </span>
         </div>
         <div className="grid gap-2">
-          <Label htmlFor={`provider-key-${name}`}>API Key</Label>
+          <Label htmlFor={`provider-key-${name}`}>{dict.settings.apiKeysCard.apiKeyLabel}</Label>
           <Input
             id={`provider-key-${name}`}
             type="password"
-            placeholder="Cole a API Key"
+            placeholder={dict.settings.apiKeysCard.apiKeyPlaceholder}
             value={inputValue}
             onChange={(event) => onInputChange(event.target.value)}
           />
@@ -440,7 +457,11 @@ function ProviderStatusCard({
             disabled={isSaving || isDisconnecting}
           >
             <KeyRound className="h-4 w-4" />
-            {isSaving ? "Conectando..." : status ? "Atualizar chave" : "Conectar"}
+            {isSaving
+              ? dict.settings.apiKeysCard.connecting
+              : status
+                ? dict.settings.apiKeysCard.updateKey
+                : dict.settings.apiKeysCard.connect}
           </Button>
           {status ? (
             <Button
@@ -451,7 +472,7 @@ function ProviderStatusCard({
               disabled={isSaving || isDisconnecting}
             >
               <Unplug className="h-4 w-4" />
-              {isDisconnecting ? "Desconectando..." : "Desconectar"}
+              {isDisconnecting ? dict.settings.apiKeysCard.disconnecting : dict.settings.apiKeysCard.disconnect}
             </Button>
           ) : null}
         </div>

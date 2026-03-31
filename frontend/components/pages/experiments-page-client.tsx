@@ -48,6 +48,85 @@ export function ExperimentsPageClient({
   experiments: ExperimentsPageDictionary
 }) {
   const queryClient = useQueryClient()
+  const isPt = lang.startsWith("pt")
+  const isEs = lang.startsWith("es")
+  const t = {
+    runFailed: isEs ? "Error al ejecutar la ronda A/B" : isPt ? "Falha ao executar rodada A/B" : "Failed to run A/B round",
+    stopFailed: isEs ? "Error al finalizar el experimento" : isPt ? "Falha ao encerrar experimento" : "Failed to stop experiment",
+    selectAB: isEs ? "Selecciona Prompt A y Prompt B" : isPt ? "Selecione Prompt A e Prompt B" : "Select Prompt A and Prompt B",
+    promptsLoadError:
+      isEs
+        ? "Error al cargar prompts. Verifica si tienes prompts creados."
+        : isPt
+          ? "Falha ao carregar prompts. Verifique se você possui prompts cadastrados."
+          : "Failed to load prompts. Make sure you have created prompts.",
+    selectPrompt: isEs ? "Selecciona un prompt" : isPt ? "Selecione um prompt" : "Select a prompt",
+    noPromptFound: isEs ? "No se encontró ningún prompt." : isPt ? "Nenhum prompt encontrado." : "No prompt found.",
+    creating: isEs ? "Creando..." : isPt ? "Criando..." : "Creating...",
+    createExperiment: isEs ? "Crear experimento" : isPt ? "Criar experimento" : "Create experiment",
+    selectTemplateHint:
+      isEs
+        ? "Selecciona al menos un prompt con template para cargar los campos automáticamente."
+        : isPt
+          ? "Selecione ao menos um prompt em template para carregar os campos automaticamente."
+          : "Select at least one template prompt to load fields automatically.",
+    loadingVariables:
+      isEs
+        ? "Cargando variables de los prompts seleccionados..."
+        : isPt
+          ? "Carregando variáveis dos prompts selecionados..."
+          : "Loading variables from selected prompts...",
+    noVariables:
+      isEs
+        ? "No hay variables configuradas para los prompts seleccionados."
+        : isPt
+          ? "Nenhuma variável configurada para os prompts selecionados."
+          : "No variables configured for selected prompts.",
+    loadingExperiments: isEs ? "Cargando experimentos..." : isPt ? "Carregando experimentos..." : "Loading experiments...",
+    experimentsLoadError: isEs ? "Error al cargar experimentos." : isPt ? "Falha ao carregar experimentos." : "Failed to load experiments.",
+    runRound: isEs ? "Ejecutar ronda" : isPt ? "Executar rodada" : "Run round",
+    stop: isEs ? "Finalizar" : isPt ? "Encerrar" : "Stop",
+    voteA: isEs ? "Votar A" : "Votar A",
+    voteB: isEs ? "Votar B" : "Votar B",
+    noExperimentTitle: isEs ? "No se encontró ningún experimento" : isPt ? "Nenhum experimento encontrado" : "No experiment found",
+    roundExecuted: isEs ? "Ronda A/B ejecutada" : isPt ? "Rodada A/B executada" : "A/B round executed",
+    voteRegistered: isEs ? "Voto registrado" : "Voto registrado",
+    alreadyVoted:
+      isEs
+        ? "Este resultado ya fue votado. Ejecuta una nueva ronda para votar de nuevo."
+        : isPt
+          ? "Esse resultado já foi votado. Execute uma nova rodada para votar novamente."
+          : "This result has already been voted. Run a new round to vote again.",
+    voteFailed: isEs ? "No se pudo registrar el voto" : isPt ? "Não foi possível registrar o voto" : "Could not register vote",
+    experimentStopped: isEs ? "Experimento finalizado" : isPt ? "Experimento encerrado" : "Experiment stopped",
+    experimentCreated: isEs ? "Experimento creado" : isPt ? "Experimento criado" : "Experiment created",
+    createFailed: isEs ? "No se pudo crear el experimento" : isPt ? "Não foi possível criar o experimento" : "Could not create experiment",
+    invalidSplit:
+      isEs
+        ? "División inválida: usa un valor de 1 a 99 para Prompt A"
+        : isPt
+          ? "Divisão inválida: use um valor de 1 a 99 para Prompt A"
+          : "Invalid split: use a value from 1 to 99 for Prompt A",
+    searchPromptByName: isEs ? "Buscar prompt por nombre..." : isPt ? "Buscar prompt por nome..." : "Search prompt by name...",
+    trafficSplitLabel: isEs ? "Porcentaje A (1-99)" : isPt ? "Percentual A (1-99)" : "Percentage A (1-99)",
+    sampleTargetLabel: isEs ? "Muestra objetivo (opcional)" : isPt ? "Amostra alvo (opcional)" : "Target sample (optional)",
+    promptBReceives:
+      isEs ? "Prompt B recibe automáticamente" : isPt ? "Prompt B recebe automaticamente" : "Prompt B automatically receives",
+    runVariablesTitle:
+      isEs ? "Variables para rondas (templates)" : isPt ? "Variáveis para rodadas (templates)" : "Round variables (templates)",
+    generatedFieldsHint:
+      isEs
+        ? "Campos generados dinámicamente por los placeholders de los prompts A/B. Los valores se usarán en la ronda A/B."
+        : isPt
+          ? "Campos gerados dinamicamente pelos placeholders dos prompts A/B. Os valores enviados serao usados na rodada A/B."
+          : "Fields generated dynamically from A/B prompt placeholders. Values are used in the A/B round.",
+    valuePlaceholder: isEs ? "Introduce un valor" : isPt ? "Informe um valor" : "Enter a value",
+    createdExperiments: isEs ? "Experimentos creados" : isPt ? "Experimentos criados" : "Created experiments",
+    createdAt: isEs ? "Creado en" : isPt ? "Criado em" : "Created at",
+    lastRound:
+      isEs ? "Última ronda: variante" : isPt ? "Última rodada: variante" : "Last round: variant",
+    exposure: isEs ? "exposición" : isPt ? "exposição" : "exposure",
+  }
   const [promptAId, setPromptAId] = useState("")
   const [promptBId, setPromptBId] = useState("")
   const [openPromptA, setOpenPromptA] = useState(false)
@@ -147,7 +226,7 @@ export function ExperimentsPageClient({
         ...current,
         [experiment.id]: result,
       }))
-      toast.success("Rodada A/B executada")
+      toast.success(t.roundExecuted)
       void queryClient.invalidateQueries({ queryKey: queryKeys.experiments.list })
     },
     onError: (error) => {
@@ -156,7 +235,7 @@ export function ExperimentsPageClient({
       } else if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error("Falha ao executar rodada A/B")
+        toast.error(t.runFailed)
       }
     },
   })
@@ -176,7 +255,7 @@ export function ExperimentsPageClient({
         delete next[payload.experimentId]
         return next
       })
-      toast.success("Voto registrado")
+      toast.success(t.voteRegistered)
       void queryClient.invalidateQueries({ queryKey: queryKeys.experiments.list })
     },
     onError: (error, payload) => {
@@ -190,14 +269,14 @@ export function ExperimentsPageClient({
             delete next[payload.experimentId]
             return next
           })
-          toast.error("Esse resultado ja foi votado. Execute uma nova rodada para votar novamente.")
+          toast.error(t.alreadyVoted)
           return
         }
         toast.error(error.payload.message)
       } else if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error("Nao foi possivel registrar o voto")
+        toast.error(t.voteFailed)
       }
     },
   })
@@ -208,11 +287,11 @@ export function ExperimentsPageClient({
         method: "POST",
       }),
     onSuccess: () => {
-      toast.success("Experimento encerrado")
+      toast.success(t.experimentStopped)
       void queryClient.invalidateQueries({ queryKey: queryKeys.experiments.list })
     },
     onError: () => {
-      toast.error("Falha ao encerrar experimento")
+      toast.error(t.stopFailed)
     },
   })
 
@@ -229,22 +308,22 @@ export function ExperimentsPageClient({
       }),
     onSuccess: () => {
       setSampleSizeTarget("")
-      toast.success("Experimento criado")
+      toast.success(t.experimentCreated)
       void queryClient.invalidateQueries({ queryKey: queryKeys.experiments.list })
     },
     onError: () => {
-      toast.error("Nao foi possivel criar o experimento")
+      toast.error(t.createFailed)
     },
   })
 
   function handleCreateExperiment() {
     const splitA = Number(trafficSplitA)
     if (!promptAId || !promptBId) {
-      toast.error("Selecione Prompt A e Prompt B")
+      toast.error(t.selectAB)
       return
     }
     if (!Number.isFinite(splitA) || splitA < 1 || splitA > 99) {
-      toast.error("Divisao invalida: use um valor de 1 a 99 para Prompt A")
+      toast.error(t.invalidSplit)
       return
     }
     const target = Number(sampleSizeTarget)
@@ -267,7 +346,7 @@ export function ExperimentsPageClient({
         <CardContent className="grid gap-3 md:grid-cols-2 md:items-start">
           {promptsQuery.isError ? (
             <p className="md:col-span-2 text-sm text-destructive">
-              Falha ao carregar prompts. Verifique se voce possui prompts cadastrados.
+              {t.promptsLoadError}
             </p>
           ) : null}
           <div className="grid w-full gap-1.5 self-start">
@@ -284,15 +363,15 @@ export function ExperimentsPageClient({
                 >
                   {promptAId
                     ? availablePrompts.find((prompt) => prompt.id === promptAId)?.title
-                    : "Selecione um prompt"}
+                    : t.selectPrompt}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-(--radix-popover-trigger-width) p-0">
                 <Command>
-                  <CommandInput placeholder="Buscar prompt por nome..." />
+                  <CommandInput placeholder={t.searchPromptByName} />
                   <CommandList>
-                    <CommandEmpty>Nenhum prompt encontrado.</CommandEmpty>
+                    <CommandEmpty>{t.noPromptFound}</CommandEmpty>
                     <CommandGroup>
                       {availablePrompts.map((prompt) => (
                         <CommandItem
@@ -332,15 +411,15 @@ export function ExperimentsPageClient({
                 >
                   {promptBId
                     ? promptBOptions.find((prompt) => prompt.id === promptBId)?.title
-                    : "Selecione um prompt"}
+                    : t.selectPrompt}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-(--radix-popover-trigger-width) p-0">
                 <Command>
-                  <CommandInput placeholder="Buscar prompt por nome..." />
+                  <CommandInput placeholder={t.searchPromptByName} />
                   <CommandList>
-                    <CommandEmpty>Nenhum prompt encontrado.</CommandEmpty>
+                    <CommandEmpty>{t.noPromptFound}</CommandEmpty>
                     <CommandGroup>
                       {promptBOptions.map((prompt) => (
                         <CommandItem
@@ -364,7 +443,7 @@ export function ExperimentsPageClient({
             </Popover>
           </div>
           <div className="grid w-full gap-1.5 self-start">
-            <Label htmlFor="traffic-split-a">Percentual A (1-99)</Label>
+            <Label htmlFor="traffic-split-a">{t.trafficSplitLabel}</Label>
             <Input
               id="traffic-split-a"
               type="number"
@@ -374,11 +453,11 @@ export function ExperimentsPageClient({
               onChange={(event) => setTrafficSplitA(event.currentTarget.value)}
             />
             <p className="min-h-8 text-xs leading-snug text-muted-foreground">
-              Prompt B recebe automaticamente {Math.max(1, 100 - (Number(trafficSplitA) || 50))}%.
+              {t.promptBReceives} {Math.max(1, 100 - (Number(trafficSplitA) || 50))}%.
             </p>
           </div>
           <div className="grid w-full gap-1.5 self-start">
-            <Label htmlFor="sample-size-target">Amostra alvo (opcional)</Label>
+            <Label htmlFor="sample-size-target">{t.sampleTargetLabel}</Label>
             <Input
               id="sample-size-target"
               type="number"
@@ -397,7 +476,7 @@ export function ExperimentsPageClient({
               onClick={handleCreateExperiment}
               disabled={createExperiment.isPending}
             >
-              {createExperiment.isPending ? "Criando..." : "Criar experimento"}
+              {createExperiment.isPending ? t.creating : t.createExperiment}
             </Button>
           </div>
         </CardContent>
@@ -405,27 +484,26 @@ export function ExperimentsPageClient({
 
       <Card>
         <CardHeader>
-          <CardTitle>Variaveis para rodadas (templates)</CardTitle>
+          <CardTitle>{t.runVariablesTitle}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-2">
           {!selectedUsesTemplate ? (
             <p className="text-sm text-muted-foreground">
-              Selecione ao menos um prompt em template para carregar os campos automaticamente.
+              {t.selectTemplateHint}
             </p>
           ) : isLoadingTemplateVariables ? (
-            <p className="text-sm text-muted-foreground">Carregando variaveis dos prompts selecionados...</p>
+            <p className="text-sm text-muted-foreground">{t.loadingVariables}</p>
           ) : templateVariables.length > 0 ? (
             <>
               <p className="text-sm text-muted-foreground">
-                Campos gerados dinamicamente pelos placeholders dos prompts A/B. Os valores enviados serao usados na
-                rodada A/B.
+                {t.generatedFieldsHint}
               </p>
               {templateVariables.map((variable) => (
                 <div key={variable.name} className="grid gap-1.5">
                   <Label htmlFor={`run-variable-${variable.name}`}>{variable.name}</Label>
                   <Input
                     id={`run-variable-${variable.name}`}
-                    placeholder={variable.defaultValue ?? "Informe um valor"}
+                    placeholder={variable.defaultValue ?? t.valuePlaceholder}
                     value={runVariables[variable.name] ?? ""}
                     onChange={(event) => {
                       const value = event.currentTarget.value
@@ -443,7 +521,7 @@ export function ExperimentsPageClient({
             </>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Nenhuma variavel configurada para os prompts selecionados.
+              {t.noVariables}
             </p>
           )}
         </CardContent>
@@ -451,13 +529,13 @@ export function ExperimentsPageClient({
 
       <Card>
         <CardHeader>
-          <CardTitle>Experimentos criados</CardTitle>
+          <CardTitle>{t.createdExperiments}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
           {experimentsQuery.isPending ? (
-            <p className="text-sm text-muted-foreground">Carregando experimentos...</p>
+            <p className="text-sm text-muted-foreground">{t.loadingExperiments}</p>
           ) : experimentsQuery.isError ? (
-            <p className="text-sm text-destructive">Falha ao carregar experimentos.</p>
+            <p className="text-sm text-destructive">{t.experimentsLoadError}</p>
           ) : experimentsQuery.data && experimentsQuery.data.length > 0 ? (
             experimentsQuery.data.map((item) => (
               <div key={item.id} className="rounded-lg border p-3 text-sm">
@@ -479,7 +557,7 @@ export function ExperimentsPageClient({
                   {item.percentA}% / B {item.percentB}%
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Criado em: {formatDateTime(item.createdAt, lang)}
+                  {t.createdAt}: {formatDateTime(item.createdAt, lang)}
                 </p>
                 <div className="mt-3 flex gap-2">
                   <Button
@@ -489,7 +567,7 @@ export function ExperimentsPageClient({
                     onClick={() => runExperiment.mutate(item)}
                     disabled={runExperiment.isPending || item.status !== "running"}
                   >
-                    Executar rodada
+                    {t.runRound}
                   </Button>
                   <Button
                     type="button"
@@ -498,13 +576,13 @@ export function ExperimentsPageClient({
                     onClick={() => stopExperiment.mutate(item.id)}
                     disabled={stopExperiment.isPending || item.status !== "running"}
                   >
-                    Encerrar
+                    {t.stop}
                   </Button>
                 </div>
                 {lastRunsByExperiment[item.id] ? (
                   <div className="mt-3 grid gap-2 rounded border p-3">
                     <p className="font-medium">
-                      Ultima rodada: variante {lastRunsByExperiment[item.id].variant} (exposicao{" "}
+                      {t.lastRound} {lastRunsByExperiment[item.id].variant} ({t.exposure}{" "}
                       {lastRunsByExperiment[item.id].exposureId})
                     </p>
                     <p className="max-h-40 overflow-auto whitespace-pre-wrap text-muted-foreground">
@@ -524,7 +602,7 @@ export function ExperimentsPageClient({
                         }
                         disabled={voteExperiment.isPending || item.status !== "running"}
                       >
-                        Votar A
+                        {t.voteA}
                       </Button>
                       <Button
                         type="button"
@@ -539,7 +617,7 @@ export function ExperimentsPageClient({
                         }
                         disabled={voteExperiment.isPending || item.status !== "running"}
                       >
-                        Votar B
+                        {t.voteB}
                       </Button>
                     </div>
                   </div>
@@ -549,7 +627,7 @@ export function ExperimentsPageClient({
           ) : (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>Nenhum experimento encontrado</EmptyTitle>
+                <EmptyTitle>{t.noExperimentTitle}</EmptyTitle>
                 <EmptyDescription>Crie seu primeiro experimento A/B acima.</EmptyDescription>
               </EmptyHeader>
             </Empty>

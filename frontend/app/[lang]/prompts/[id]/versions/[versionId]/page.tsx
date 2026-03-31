@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
 import { PromptVersionDetailClient } from "@/components/pages/prompt-version-detail-client"
 import { getSessionUser } from "@/lib/auth/session"
-import { hasLocale } from "../../../../dictionaries"
+import { getDictionary, hasLocale, type Locale } from "../../../../dictionaries"
 
 type PromptVersionDetailPageProps = {
   params: Promise<{ lang: string; id: string; versionId: string }>
@@ -19,9 +19,11 @@ export default async function PromptVersionDetailPage({ params }: PromptVersionD
     redirect(`/${lang}/auth/login`)
   }
 
+  const dict = await getDictionary(lang as Locale)
+
   return (
-    <AppShell title="Versao do prompt" lang={lang} user={{ name: user.name, email: user.email }}>
-      <PromptVersionDetailClient promptId={id} versionId={versionId} />
+    <AppShell title={dict.prompts.versionDetailPageTitle} lang={lang} user={{ name: user.name, email: user.email }}>
+      <PromptVersionDetailClient promptId={id} versionId={versionId} dict={dict} />
     </AppShell>
   )
 }

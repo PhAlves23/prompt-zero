@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import type { Dictionary } from "@/app/[lang]/dictionaries"
 
 const schema = z.object({
   name: z.string().min(2),
@@ -16,7 +17,7 @@ const schema = z.object({
 
 type RegisterFormValues = z.infer<typeof schema>
 
-export function RegisterForm({ lang }: { lang: string }) {
+export function RegisterForm({ lang, dict }: { lang: string; dict: Dictionary }) {
   const router = useRouter()
   const form = useForm<RegisterFormValues>({
     defaultValues: {
@@ -45,11 +46,11 @@ export function RegisterForm({ lang }: { lang: string }) {
     })
 
     if (!response.ok) {
-      toast.error("Falha ao criar conta")
+      toast.error(dict.auth.registerForm.toastRegisterFailed)
       return
     }
 
-    toast.success("Conta criada com sucesso")
+    toast.success(dict.auth.registerForm.toastRegisterSuccess)
     router.push(`/${lang}/dashboard`)
     router.refresh()
   }
@@ -57,28 +58,28 @@ export function RegisterForm({ lang }: { lang: string }) {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Nome</Label>
+        <Label htmlFor="name">{dict.auth.registerForm.nameLabel}</Label>
         <Input id="name" autoComplete="name" {...form.register("name")} />
         {form.formState.errors.name ? (
           <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
         ) : null}
       </div>
       <div className="space-y-2">
-        <Label htmlFor="email">E-mail</Label>
+        <Label htmlFor="email">{dict.auth.email}</Label>
         <Input id="email" type="email" autoComplete="email" {...form.register("email")} />
         {form.formState.errors.email ? (
           <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
         ) : null}
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Senha</Label>
+        <Label htmlFor="password">{dict.auth.password}</Label>
         <Input id="password" type="password" autoComplete="new-password" {...form.register("password")} />
         {form.formState.errors.password ? (
           <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
         ) : null}
       </div>
       <Button type="submit" className="w-full cursor-pointer" disabled={form.formState.isSubmitting}>
-        {form.formState.isSubmitting ? "Criando..." : "Criar conta"}
+        {form.formState.isSubmitting ? dict.auth.registerForm.submitting : dict.auth.registerForm.submit}
       </Button>
     </form>
   )

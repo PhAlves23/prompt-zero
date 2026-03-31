@@ -17,10 +17,14 @@ import Link from "next/link"
 export function NavDocuments({
   title = "Documents",
   actionHref,
+  actionTitle,
+  actionSrLabel,
   items,
 }: {
   title?: string
   actionHref?: string
+  actionTitle: string
+  actionSrLabel: string
   items: {
     name: string
     url: string
@@ -31,10 +35,10 @@ export function NavDocuments({
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>{title}</SidebarGroupLabel>
       {actionHref ? (
-        <SidebarGroupAction title="Novo prompt" asChild>
+        <SidebarGroupAction title={actionTitle} asChild>
           <Link href={actionHref} className="cursor-pointer">
             <HugeiconsIcon icon={PlusSignCircleIcon} strokeWidth={2} />
-            <span className="sr-only">Novo prompt</span>
+            <span className="sr-only">{actionSrLabel}</span>
           </Link>
         </SidebarGroupAction>
       ) : null}

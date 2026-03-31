@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input"
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { ExplorePrompt, PaginatedResult } from "@/lib/api/types"
+import type { Dictionary } from "@/app/[lang]/dictionaries"
 
-export function ExplorePageClient({ lang }: { lang: string }) {
+export function ExplorePageClient({ lang, dict }: { lang: string; dict: Dictionary }) {
   const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""))
   const query = new URLSearchParams({
     page: "1",
@@ -29,22 +30,22 @@ export function ExplorePageClient({ lang }: { lang: string }) {
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2">
-              Explore prompts publicos
+              {dict.explore.list.title}
             </CardTitle>
             <span className="text-xs text-muted-foreground">
-              {promptsQuery.data?.meta.total ?? 0} resultados
+              {promptsQuery.data?.meta.total ?? 0} {dict.explore.list.results}
             </span>
           </div>
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="max-w-sm"
-            placeholder="Buscar prompts publicos"
+            placeholder={dict.explore.list.searchPlaceholder}
           />
         </CardHeader>
         <CardContent>
           {promptsQuery.isPending ? (
-            <p className="text-sm text-muted-foreground">Carregando prompts publicos...</p>
+            <p className="text-sm text-muted-foreground">{dict.explore.list.loading}</p>
           ) : promptsQuery.data && promptsQuery.data.data.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {promptsQuery.data.data.map((prompt) => (
@@ -63,12 +64,12 @@ export function ExplorePageClient({ lang }: { lang: string }) {
                   </div>
                   <h3 className="font-medium text-foreground">{prompt.title}</h3>
                   <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                    {prompt.description ?? "Sem descricao"}
+                    {prompt.description ?? dict.explore.common.noDescription}
                   </p>
                   <div className="mt-4 flex items-center justify-between border-t pt-3 text-xs text-muted-foreground">
-                    <span>Publico</span>
+                    <span>{dict.explore.common.publicLabel}</span>
                     <span>
-                      Forks: <span className="font-medium text-foreground">{prompt.forkCount}</span>
+                      {dict.explore.list.forksLabel}: <span className="font-medium text-foreground">{prompt.forkCount}</span>
                     </span>
                   </div>
                 </Link>
@@ -77,8 +78,8 @@ export function ExplorePageClient({ lang }: { lang: string }) {
           ) : (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>Nenhum resultado</EmptyTitle>
-                <EmptyDescription>Tente ajustar o termo de busca.</EmptyDescription>
+                <EmptyTitle>{dict.explore.list.emptyTitle}</EmptyTitle>
+                <EmptyDescription>{dict.explore.list.emptyDescription}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}

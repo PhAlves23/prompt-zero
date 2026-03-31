@@ -29,6 +29,97 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   user: SessionUser | null
 }
 
+function getSidebarI18n(lang: string) {
+  if (lang === "en-US") {
+    return {
+      guestName: "Guest",
+      nav: {
+        dashboard: "Dashboard",
+        prompts: "Prompts",
+        workspaces: "Workspaces",
+        tags: "Tags",
+        explore: "Explore",
+        experiments: "A/B experiments",
+        settings: "Settings",
+        apiKeys: "API keys",
+        getHelp: "Get help",
+        search: "Search",
+      },
+      docs: {
+        recent: "Recent",
+        noRecentPrompt: "No recent prompt",
+        newPrompt: "New prompt",
+      },
+      quickCreate: "Quick create",
+      promptMarketplace: "Prompt marketplace",
+      userMenu: {
+        account: "Account",
+        billing: "Billing",
+        notifications: "Notifications",
+        logout: "Log out",
+      },
+    }
+  }
+  if (lang === "es-ES") {
+    return {
+      guestName: "Invitado",
+      nav: {
+        dashboard: "Panel",
+        prompts: "Prompts",
+        workspaces: "Espacios de trabajo",
+        tags: "Tags",
+        explore: "Explorar",
+        experiments: "Experimentos A/B",
+        settings: "Configuración",
+        apiKeys: "Claves de API",
+        getHelp: "Obtener ayuda",
+        search: "Buscar",
+      },
+      docs: {
+        recent: "Recientes",
+        noRecentPrompt: "Ningún prompt reciente",
+        newPrompt: "Nuevo prompt",
+      },
+      quickCreate: "Creación rápida",
+      promptMarketplace: "Marketplace de prompts",
+      userMenu: {
+        account: "Cuenta",
+        billing: "Facturación",
+        notifications: "Notificaciones",
+        logout: "Cerrar sesión",
+      },
+    }
+  }
+  return {
+    guestName: "Convidado",
+    nav: {
+      dashboard: "Dashboard",
+      prompts: "Prompts",
+      workspaces: "Workspaces",
+      tags: "Tags",
+      explore: "Explorar",
+      experiments: "Experimentos A/B",
+      settings: "Configurações",
+      apiKeys: "Chaves de API",
+      getHelp: "Ajuda",
+      search: "Buscar",
+    },
+    docs: {
+      recent: "Recentes",
+      noRecentPrompt: "Nenhum prompt recente",
+      newPrompt: "Novo prompt",
+    },
+    quickCreate: "Criação rápida",
+    promptMarketplace: "Marketplace de prompts",
+    userMenu: {
+      account: "Conta",
+      billing: "Faturamento",
+      notifications: "Notificações",
+      logout: "Sair",
+    },
+  }
+}
+
 const buildSidebarData = (lang: string, user: SessionUser | null) => ({
   user: {
     name: user?.name ?? "Guest",
@@ -112,6 +203,7 @@ const buildSidebarData = (lang: string, user: SessionUser | null) => ({
 })
 
 export function AppSidebar({ lang, user, ...props }: AppSidebarProps) {
+  const t = getSidebarI18n(lang)
   const profileQuery = useQuery({
     queryKey: queryKeys.auth.me,
     queryFn: () => bffFetch<UserProfile>("/auth/me"),
@@ -124,6 +216,21 @@ export function AppSidebar({ lang, user, ...props }: AppSidebarProps) {
     queryFn: () => bffFetch<PaginatedResult<Prompt>>("/prompts?page=1&limit=5"),
   })
   const data = buildSidebarData(lang, sidebarUser)
+  data.user.name = data.user.name === "Guest" ? t.guestName : data.user.name
+  data.navMain = [
+    { ...data.navMain[0], title: t.nav.dashboard },
+    { ...data.navMain[1], title: t.nav.prompts },
+    { ...data.navMain[2], title: t.nav.workspaces },
+    { ...data.navMain[3], title: t.nav.tags },
+    { ...data.navMain[4], title: t.nav.explore },
+    { ...data.navMain[5], title: t.nav.experiments },
+  ]
+  data.navSecondary = [
+    { ...data.navSecondary[0], title: t.nav.settings },
+    { ...data.navSecondary[1], title: t.nav.apiKeys },
+    { ...data.navSecondary[2], title: t.nav.getHelp },
+    { ...data.navSecondary[3], title: t.nav.search },
+  ]
   const recentPrompts = recentPromptsQuery.data?.data ?? []
   const documentItems =
     recentPrompts.length > 0
@@ -134,7 +241,7 @@ export function AppSidebar({ lang, user, ...props }: AppSidebarProps) {
         }))
       : [
           {
-            name: "Nenhum prompt recente",
+            name: t.docs.noRecentPrompt,
             url: `/${lang}/prompts`,
             icon: <HugeiconsIcon icon={Database01Icon} strokeWidth={2} />,
           },
@@ -161,16 +268,23 @@ export function AppSidebar({ lang, user, ...props }: AppSidebarProps) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain
+          items={data.navMain}
+          quickCreateLabel={t.quickCreate}
+          quickCreateTooltip={t.quickCreate}
+          marketplaceSrLabel={t.promptMarketplace}
+        />
         <NavDocuments
-          title="Recentes"
+          title={t.docs.recent}
           actionHref={`/${lang}/prompts/new`}
+          actionTitle={t.docs.newPrompt}
+          actionSrLabel={t.docs.newPrompt}
           items={documentItems}
         />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} lang={lang} />
+        <NavUser user={data.user} lang={lang} labels={t.userMenu} />
       </SidebarFooter>
     </Sidebar>
   )

@@ -13,13 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { PaginatedResult, Prompt } from "@/lib/api/types"
-
-export type PromptsPageDictionary = {
-  visibility: {
-    public: string
-    private: string
-  }
-}
+import type { Dictionary } from "@/app/[lang]/dictionaries"
 
 type PromptTagChip = {
   name: string
@@ -52,10 +46,10 @@ function extractPromptTags(prompt: Prompt): PromptTagChip[] {
 
 export function PromptsPageClient({
   lang,
-  prompts: promptsI18n,
+  dict,
 }: {
   lang: string
-  prompts: PromptsPageDictionary
+  dict: Dictionary
 }) {
   const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""))
   const [isPublic, setIsPublic] = useQueryState("isPublic", parseAsBoolean.withDefault(false))
@@ -76,11 +70,11 @@ export function PromptsPageClient({
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle>Meus prompts</CardTitle>
+            <CardTitle>{dict.prompts.title}</CardTitle>
             <Button asChild className="cursor-pointer">
               <Link href={`/${lang}/prompts/new`}>
                 <Plus className="h-4 w-4" />
-                Cadastrar novo prompt
+                {dict.prompts.create}
               </Link>
             </Button>
           </div>
@@ -88,29 +82,29 @@ export function PromptsPageClient({
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar por titulo"
+              placeholder={dict.prompts.list.searchPlaceholder}
               className="max-w-xs"
             />
             <div className="flex items-center gap-2">
               <Switch
                 checked={isPublic}
                 onCheckedChange={(checked) => setIsPublic(checked)}
-                aria-label="Filtrar apenas prompts publicos"
+                aria-label={dict.prompts.list.onlyPublicAria}
               />
-              <span className="text-sm text-muted-foreground">Apenas publicos</span>
+              <span className="text-sm text-muted-foreground">{dict.prompts.list.onlyPublicLabel}</span>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {promptsQuery.isPending ? (
-            <p className="text-sm text-muted-foreground">Carregando prompts...</p>
+            <p className="text-sm text-muted-foreground">{dict.prompts.list.loading}</p>
           ) : promptsQuery.isError ? (
-            <p className="text-sm text-destructive">Erro ao carregar prompts.</p>
+            <p className="text-sm text-destructive">{dict.prompts.list.loadError}</p>
           ) : promptsQuery.data.data.length === 0 ? (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>Nenhum prompt encontrado</EmptyTitle>
-                <EmptyDescription>Ajuste os filtros ou cadastre um novo prompt.</EmptyDescription>
+                <EmptyTitle>{dict.prompts.list.emptyTitle}</EmptyTitle>
+                <EmptyDescription>{dict.prompts.list.emptyDescription}</EmptyDescription>
               </EmptyHeader>
               <EmptyContent />
             </Empty>
@@ -130,11 +124,11 @@ export function PromptsPageClient({
                         variant={prompt.isPublic ? "outline" : "secondary"}
                         className="shrink-0"
                       >
-                        {prompt.isPublic ? promptsI18n.visibility.public : promptsI18n.visibility.private}
+                        {prompt.isPublic ? dict.prompts.visibility.public : dict.prompts.visibility.private}
                       </Badge>
                     </div>
                     <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                      {prompt.description ?? "Sem descricao"}
+                      {prompt.description ?? dict.prompts.list.noDescription}
                     </p>
                     {promptTags.length > 0 ? (
                       <div className="mt-3 flex flex-wrap gap-1.5">

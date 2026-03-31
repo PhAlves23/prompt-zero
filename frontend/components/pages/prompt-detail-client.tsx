@@ -42,6 +42,11 @@ import type {
   PromptVariable,
   PromptVersion,
 } from "@/lib/api/types"
+import type { Dictionary } from "@/app/[lang]/dictionaries"
+
+function interpolate(template: string, params: Record<string, string>) {
+  return Object.entries(params).reduce((current, [key, value]) => current.replaceAll(`{${key}}`, value), template)
+}
 
 const updateSchema = z.object({
   title: z.string().min(3),
@@ -73,16 +78,22 @@ function extractPromptTagIds(prompt: Prompt | undefined): string[] {
     .filter((value): value is string => typeof value === "string" && value.length > 0)
 }
 
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString("pt-BR")
+function formatDateTime(value: string, locale: string) {
+  try {
+    return new Date(value).toLocaleString(locale)
+  } catch {
+    return new Date(value).toLocaleString()
+  }
 }
 
 export function PromptDetailClient({
   lang,
   promptId,
+  dict,
 }: {
   lang: string
   promptId: string
+  dict: Dictionary
 }) {
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -211,7 +222,7 @@ export function PromptDetailClient({
         body: values,
       }),
     onSuccess: (updatedPrompt) => {
-      toast.success("Prompt atualizado")
+      toast.success(dict.prompts.detail.toasts.promptUpdated)
       queryClient.setQueryData(queryKeys.prompts.detail(promptId), updatedPrompt)
       void queryClient.invalidateQueries({ queryKey: queryKeys.prompts.detail(promptId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.prompts.versions(promptId) })
@@ -222,7 +233,7 @@ export function PromptDetailClient({
   const forkPrompt = useMutation({
     mutationFn: () => bffFetch<Prompt>(`/prompts/${promptId}/fork`, { method: "POST" }),
     onSuccess: (prompt) => {
-      toast.success("Prompt duplicado")
+      toast.success(dict.prompts.detail.toasts.promptDuplicated)
       router.push(`/${lang}/prompts/${prompt.id}`)
       router.refresh()
     },
@@ -231,7 +242,7 @@ export function PromptDetailClient({
   const deletePrompt = useMutation({
     mutationFn: () => bffFetch<void>(`/prompts/${promptId}`, { method: "DELETE" }),
     onSuccess: () => {
-      toast.success("Prompt removido")
+      toast.success(dict.prompts.detail.toasts.promptRemoved)
       router.push(`/${lang}/prompts`)
       router.refresh()
     },
@@ -241,7 +252,7 @@ export function PromptDetailClient({
     mutationFn: (versionId: string) =>
       bffFetch<Prompt>(`/prompts/${promptId}/versions/${versionId}/restore`, { method: "POST" }),
     onSuccess: () => {
-      toast.success("Versao restaurada")
+      toast.success(dict.prompts.detail.toasts.versionRestored)
       void queryClient.invalidateQueries({ queryKey: queryKeys.prompts.detail(promptId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.prompts.versions(promptId) })
     },
@@ -252,7 +263,7 @@ export function PromptDetailClient({
         method: "DELETE",
       }),
     onSuccess: () => {
-      toast.success("Versao removida")
+      toast.success(dict.prompts.detail.toasts.versionRemoved)
       void queryClient.invalidateQueries({ queryKey: queryKeys.prompts.versions(promptId) })
     },
     onError: (error) => {
@@ -261,20 +272,20 @@ export function PromptDetailClient({
           error.payload.message === "errors.versionDeleteLastNotAllowed" ||
           error.payload.message === "Cannot delete the last prompt version"
         ) {
-          toast.error("Nao e possivel remover a ultima versao do prompt")
+          toast.error(dict.prompts.detail.toasts.cannotRemoveLastVersion)
           return
         }
         if (
           error.payload.message === "errors.versionHasExecutions" ||
           error.payload.message === "Cannot delete a version with associated executions"
         ) {
-          toast.error("Nao e possivel remover uma versao com execucoes associadas")
+          toast.error(dict.prompts.detail.toasts.cannotRemoveVersionWithExecutions)
           return
         }
         toast.error(error.payload.message)
         return
       }
-      toast.error("Nao foi possivel remover a versao")
+      toast.error(dict.prompts.detail.toasts.removeVersionFailed)
     },
   })
 
@@ -285,7 +296,7 @@ export function PromptDetailClient({
         body: { variables },
       }),
     onSuccess: () => {
-      toast.success("Variaveis sincronizadas")
+      toast.success(dict.prompts.detail.toasts.variablesSynced)
       void queryClient.invalidateQueries({ queryKey: queryKeys.prompts.variables(promptId) })
     },
   })
@@ -306,11 +317,11 @@ export function PromptDetailClient({
       setAbLastExposureId("")
       setAbLastOutput("")
       setAbLastVariant(null)
-      toast.success("Experimento A/B criado")
+      toast.success(dict.prompts.detail.toasts.abExperimentCreated)
       void queryClient.invalidateQueries({ queryKey: queryKeys.experiments.results(result.id) })
     },
     onError: () => {
-      toast.error("Nao foi possivel criar o experimento")
+      toast.error(dict.prompts.detail.toasts.abExperimentCreateFailed)
     },
   })
 
@@ -344,7 +355,7 @@ export function PromptDetailClient({
       setAbLastExposureId(result.exposureId)
       setAbLastVariant(result.variant)
       setAbLastOutput(result.output)
-      toast.success(`Rodada executada na variante ${result.variant}`)
+      toast.success(interpolate(dict.prompts.detail.toasts.abRunExecuted, { variant: result.variant }))
     },
     onError: (error) => {
       if (
@@ -352,13 +363,13 @@ export function PromptDetailClient({
         (error.payload.code === "errors.providerApiKeyNotConfigured" ||
           error.payload.message === "errors.providerApiKeyNotConfigured")
       ) {
-        toast.error("Configure uma API key para o provedor/modelo selecionado em Settings > API Keys.")
+        toast.error(dict.prompts.detail.toasts.configureApiKeys)
       } else if (error instanceof ClientHttpError) {
         toast.error(error.payload.message)
       } else if (error instanceof Error) {
         toast.error(error.message)
       } else {
-        toast.error("Falha ao executar rodada A/B")
+        toast.error(dict.prompts.detail.toasts.abRunFailed)
       }
     },
   })
@@ -377,7 +388,7 @@ export function PromptDetailClient({
       setAbLastExposureId("")
       setAbLastVariant(null)
       setAbLastOutput("")
-      toast.success("Voto registrado")
+      toast.success(dict.prompts.detail.toasts.voteRegistered)
     },
     onError: (error) => {
       if (
@@ -388,10 +399,10 @@ export function PromptDetailClient({
         setAbLastExposureId("")
         setAbLastVariant(null)
         setAbLastOutput("")
-        toast.error("Esse resultado ja foi votado. Execute uma nova rodada para votar novamente.")
+        toast.error(dict.prompts.detail.toasts.voteAlreadyRegistered)
         return
       }
-      toast.error("Nao foi possivel registrar o voto")
+      toast.error(dict.prompts.detail.toasts.voteFailed)
     },
   })
 
@@ -402,10 +413,10 @@ export function PromptDetailClient({
       }),
     onSuccess: (result) => {
       queryClient.setQueryData(queryKeys.experiments.results(experimentId), result)
-      toast.success("Experimento encerrado")
+      toast.success(dict.prompts.detail.toasts.experimentStopped)
     },
     onError: () => {
-      toast.error("Nao foi possivel encerrar o experimento")
+      toast.error(dict.prompts.detail.toasts.experimentStopFailed)
     },
   })
 
@@ -459,7 +470,7 @@ export function PromptDetailClient({
       abortControllerRef.current = null
     },
     onSuccess: () => {
-      toast.success("Execucao concluida")
+      toast.success(dict.prompts.detail.toasts.executionCompleted)
       void queryClient.invalidateQueries({ queryKey: queryKeys.prompts.executions(promptId) })
     },
     onError: (error) => {
@@ -468,11 +479,11 @@ export function PromptDetailClient({
         setStreamError("")
       } else {
         setStreamStatus("error")
-        setStreamError((current) => current || "Falha ao executar prompt")
+        setStreamError((current) => current || dict.prompts.detail.toasts.executePromptFailed)
       }
       setIsStreaming(false)
       abortControllerRef.current = null
-      toast.error("Falha ao executar prompt")
+      toast.error(dict.prompts.detail.toasts.executePromptFailed)
     },
   })
 
@@ -483,7 +494,7 @@ export function PromptDetailClient({
   function runWithSettings(input: string) {
     const parsed = executeSettingsSchema.safeParse(executeSettingsForm.getValues())
     if (!parsed.success) {
-      toast.error("Configuracoes avancadas invalidas")
+      toast.error(dict.prompts.detail.toasts.invalidAdvancedSettings)
       return
     }
     if (promptQuery.data?.isTemplate) {
@@ -495,7 +506,11 @@ export function PromptDetailClient({
         return !value || value.trim() === ""
       })
       if (missingRequired.length > 0) {
-        toast.error(`Preencha as variaveis obrigatorias: ${missingRequired.map((item) => item.name).join(", ")}`)
+        toast.error(
+          interpolate(dict.prompts.detail.toasts.missingRequiredVariables, {
+            variables: missingRequired.map((item) => item.name).join(", "),
+          }),
+        )
         return
       }
     }
@@ -504,27 +519,27 @@ export function PromptDetailClient({
 
   async function copyExecutionOutput(output: string | null) {
     if (!output || output.trim() === "") {
-      toast.error("Essa execucao nao possui output para copiar")
+      toast.error(dict.prompts.detail.toasts.noOutputToCopy)
       return
     }
     try {
       await navigator.clipboard.writeText(output)
-      toast.success("Output copiado")
+      toast.success(dict.prompts.detail.toasts.outputCopied)
     } catch {
-      toast.error("Nao foi possivel copiar o output")
+      toast.error(dict.prompts.detail.toasts.copyOutputFailed)
     }
   }
 
   function createAbExperiment() {
     if (!experimentPromptBId) {
-      toast.error("Selecione o Prompt B")
+      toast.error(dict.prompts.detail.toasts.selectPromptB)
       return
     }
     const target = Number(sampleSizeTarget)
     const parsedTarget = Number.isFinite(target) && target > 0 ? target : undefined
     const parsedSplitA = Number(trafficSplitA)
     if (!Number.isFinite(parsedSplitA) || parsedSplitA < 1 || parsedSplitA > 99) {
-      toast.error("Divisao A/B invalida. Use um valor entre 1 e 99 para A.")
+      toast.error(dict.prompts.detail.toasts.invalidTrafficSplit)
       return
     }
     createExperiment.mutate({
@@ -536,21 +551,23 @@ export function PromptDetailClient({
   }
 
   if (promptQuery.isPending) {
-    return <div className="px-4 lg:px-6 text-sm text-muted-foreground">Carregando prompt...</div>
+    return (
+      <div className="px-4 lg:px-6 text-sm text-muted-foreground">{dict.common.loading}</div>
+    )
   }
   if (promptQuery.isError || !promptQuery.data) {
-    return <div className="px-4 lg:px-6 text-sm text-destructive">Nao foi possivel carregar o prompt.</div>
+    return <div className="px-4 lg:px-6 text-sm text-destructive">{dict.prompts.detail.errors.loadPromptFailed}</div>
   }
 
   return (
     <div className="grid gap-4 px-4 lg:px-6">
       <Card>
         <CardHeader>
-          <CardTitle>Editar prompt</CardTitle>
+          <CardTitle>{dict.prompts.detail.edit.cardTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="mb-4 text-xs text-muted-foreground">
-            Ultima edicao: {formatDateTime(promptQuery.data.updatedAt)}
+            {dict.prompts.detail.labels.lastEdit}: {formatDateTime(promptQuery.data.updatedAt, lang)}
           </p>
           <form
             className="grid gap-4"
@@ -574,19 +591,19 @@ export function PromptDetailClient({
             })}
           >
             <div className="grid gap-2">
-              <Label htmlFor="title">Titulo</Label>
+              <Label htmlFor="title">{dict.prompts.detail.edit.fields.title}</Label>
               <Input id="title" {...form.register("title")} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Descricao</Label>
+              <Label htmlFor="description">{dict.prompts.detail.edit.fields.description}</Label>
               <Input id="description" {...form.register("description")} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="content">Conteudo</Label>
+              <Label htmlFor="content">{dict.prompts.detail.edit.fields.content}</Label>
               <Textarea id="content" rows={10} {...form.register("content")} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="prompt-categories">Categorias</Label>
+              <Label htmlFor="prompt-categories">{dict.prompts.detail.edit.fields.categories}</Label>
               <Popover open={openPromptTags} onOpenChange={setOpenPromptTags}>
                 <PopoverTrigger asChild>
                   <Button
@@ -600,15 +617,15 @@ export function PromptDetailClient({
                   >
                     {selectedPromptTags.length > 0
                       ? selectedPromptTags.map((tag) => tag.name).join(", ")
-                      : "Selecione categoria(s)"}
+                      : dict.prompts.detail.edit.selectCategories}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="start" className="w-(--radix-popover-trigger-width) p-0">
                   <Command>
-                    <CommandInput placeholder="Buscar categoria..." />
+                    <CommandInput placeholder={dict.prompts.detail.placeholders.searchCategory} />
                     <CommandList>
-                      <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
+                      <CommandEmpty>{dict.prompts.detail.edit.emptyCategories}</CommandEmpty>
                       <CommandGroup>
                         {(tagsQuery.data ?? []).map((tag) => {
                           const isSelected = (updateTagIds ?? []).includes(tag.id)
@@ -634,27 +651,27 @@ export function PromptDetailClient({
                   </Command>
                 </PopoverContent>
               </Popover>
-              {tagsQuery.isPending ? <p className="text-xs text-muted-foreground">Carregando categorias...</p> : null}
+              {tagsQuery.isPending ? (
+                <p className="text-xs text-muted-foreground">{dict.prompts.detail.edit.loadingCategories}</p>
+              ) : null}
               {tagsQuery.isError ? (
-                <p className="text-xs text-destructive">Nao foi possivel carregar as categorias.</p>
+                <p className="text-xs text-destructive">{dict.prompts.detail.errors.loadCategoriesFailed}</p>
               ) : null}
               {!tagsQuery.isPending && !tagsQuery.isError && (tagsQuery.data?.length ?? 0) === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Nenhuma categoria cadastrada. Crie categorias na pagina de Tags.
-                </p>
+                <p className="text-xs text-muted-foreground">{dict.prompts.detail.edit.noCategoriesHint}</p>
               ) : null}
             </div>
             <div className="flex items-center gap-2">
               <Switch
                 checked={updateIsPublic}
                 onCheckedChange={(checked) => form.setValue("isPublic", checked)}
-                aria-label="Definir prompt como publico"
+                aria-label={dict.prompts.detail.aria.setPublic}
               />
-              <span className="text-sm text-muted-foreground">Prompt publico</span>
+              <span className="text-sm text-muted-foreground">{dict.prompts.detail.edit.publicLabel}</span>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button type="submit" className="cursor-pointer" disabled={updatePrompt.isPending}>
-                Salvar
+                {dict.common.save}
               </Button>
               <Button
                 type="button"
@@ -663,7 +680,7 @@ export function PromptDetailClient({
                 onClick={() => forkPrompt.mutate()}
                 disabled={forkPrompt.isPending}
               >
-                Duplicar
+                {dict.prompts.detail.edit.actions.duplicate}
               </Button>
               <Button
                 type="button"
@@ -672,7 +689,7 @@ export function PromptDetailClient({
                 onClick={() => deletePrompt.mutate()}
                 disabled={deletePrompt.isPending}
               >
-                Excluir
+                {dict.common.delete}
               </Button>
             </div>
           </form>
@@ -681,17 +698,17 @@ export function PromptDetailClient({
 
       <Card>
         <CardHeader>
-          <CardTitle>Executar prompt</CardTitle>
+          <CardTitle>{dict.prompts.detail.execute.cardTitle}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
           <Textarea
             rows={4}
-            placeholder="Informe o input para executar"
+            placeholder={dict.prompts.detail.placeholders.executionInput}
             value={executeInput}
             onChange={(event) => setExecuteInput(event.currentTarget.value)}
           />
           <div className="grid gap-3 rounded-lg border p-3 md:grid-cols-2">
-            <p className="md:col-span-2 text-sm font-medium">Configuracoes avancadas</p>
+            <p className="md:col-span-2 text-sm font-medium">{dict.prompts.detail.execute.advancedSettingsTitle}</p>
             <div className="grid gap-1.5">
               <Label htmlFor="temperature">Temperature</Label>
               <Input
@@ -702,7 +719,7 @@ export function PromptDetailClient({
                 max={2}
                 {...executeSettingsForm.register("temperature", { valueAsNumber: true })}
               />
-              <p className="text-xs text-muted-foreground">Controla a aleatoriedade (0-2)</p>
+              <p className="text-xs text-muted-foreground">{dict.prompts.detail.execute.settingsHelp.temperature}</p>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="top-p">Top P</Label>
@@ -714,7 +731,7 @@ export function PromptDetailClient({
                 max={1}
                 {...executeSettingsForm.register("topP", { valueAsNumber: true })}
               />
-              <p className="text-xs text-muted-foreground">Nucleus sampling (0-1)</p>
+              <p className="text-xs text-muted-foreground">{dict.prompts.detail.execute.settingsHelp.topP}</p>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="top-k">Top K</Label>
@@ -725,7 +742,7 @@ export function PromptDetailClient({
                 max={200}
                 {...executeSettingsForm.register("topK", { valueAsNumber: true })}
               />
-              <p className="text-xs text-muted-foreground">Limita o numero de tokens considerados</p>
+              <p className="text-xs text-muted-foreground">{dict.prompts.detail.execute.settingsHelp.topK}</p>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="max-tokens">Max Tokens</Label>
@@ -736,14 +753,14 @@ export function PromptDetailClient({
                 max={4000}
                 {...executeSettingsForm.register("maxTokens", { valueAsNumber: true })}
               />
-              <p className="text-xs text-muted-foreground">Numero maximo de tokens na resposta</p>
+              <p className="text-xs text-muted-foreground">{dict.prompts.detail.execute.settingsHelp.maxTokens}</p>
             </div>
           </div>
           {promptQuery.data?.isTemplate ? (
             <div className="grid gap-3 rounded-lg border p-3">
-              <p className="text-sm font-medium">Variaveis do template</p>
+              <p className="text-sm font-medium">{dict.prompts.detail.execute.templateVariablesTitle}</p>
               {variablesQuery.isPending ? (
-                <p className="text-xs text-muted-foreground">Carregando variaveis...</p>
+                <p className="text-xs text-muted-foreground">{dict.prompts.detail.execute.loadingVariables}</p>
               ) : variablesQuery.data && variablesQuery.data.length > 0 ? (
                 variablesQuery.data.map((variable) => (
                   <div key={`execute-variable-${variable.name}`} className="grid gap-1.5">
@@ -753,7 +770,7 @@ export function PromptDetailClient({
                     </Label>
                     <Input
                       id={`execute-variable-${variable.name}`}
-                      placeholder={variable.defaultValue ?? "Informe um valor"}
+                      placeholder={variable.defaultValue ?? dict.prompts.detail.execute.variableValuePlaceholder}
                       value={executeVariables[variable.name] ?? variable.defaultValue ?? ""}
                       onChange={(event) => {
                         const value = event.currentTarget.value
@@ -769,9 +786,7 @@ export function PromptDetailClient({
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  Nenhuma variavel configurada. Sincronize as variaveis do template para evitar erro na execucao.
-                </p>
+                <p className="text-xs text-muted-foreground">{dict.prompts.detail.execute.noVariablesHint}</p>
               )}
             </div>
           ) : null}
@@ -781,7 +796,7 @@ export function PromptDetailClient({
             disabled={isStreaming || executeInput.trim().length === 0}
             onClick={() => runWithSettings(executeInput)}
           >
-            {isStreaming ? "Executando..." : "Executar"}
+            {isStreaming ? dict.prompts.detail.executions.running : dict.prompts.detail.executions.run}
           </Button>
           {isStreaming ? (
             <Button type="button" variant="outline" className="w-fit cursor-pointer" onClick={cancelExecution}>
@@ -801,7 +816,7 @@ export function PromptDetailClient({
           <div className="rounded border bg-card p-3">
             <p className="text-xs text-muted-foreground">Output em tempo real ({streamStatus})</p>
             <p className="mt-2 min-h-10 whitespace-pre-wrap text-sm">
-              {streamOutput || "Aguardando execucao"}
+              {streamOutput || dict.prompts.detail.execute.waitingOutput}
             </p>
             {streamError ? <p className="mt-2 text-sm text-destructive">{streamError}</p> : null}
           </div>
@@ -810,11 +825,11 @@ export function PromptDetailClient({
 
       <Card>
         <CardHeader>
-          <CardTitle>Experimento A/B</CardTitle>
+          <CardTitle>{dict.prompts.detail.ab.cardTitle}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
           <div className="grid gap-1.5">
-            <Label>Prompt B</Label>
+            <Label>{dict.prompts.detail.ab.promptBLabel}</Label>
             <Popover open={openPromptB} onOpenChange={setOpenPromptB}>
               <PopoverTrigger asChild>
                 <Button
@@ -827,15 +842,15 @@ export function PromptDetailClient({
                 >
                   {experimentPromptBId
                     ? promptBOptions.find((prompt) => prompt.id === experimentPromptBId)?.title
-                    : "Selecione um prompt"}
+                    : dict.prompts.detail.ab.selectPrompt}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-(--radix-popover-trigger-width) p-0">
                 <Command>
-                  <CommandInput placeholder="Buscar prompt por nome..." />
+                  <CommandInput placeholder={dict.prompts.detail.placeholders.searchPromptByName} />
                   <CommandList>
-                    <CommandEmpty>Nenhum prompt encontrado.</CommandEmpty>
+                    <CommandEmpty>{dict.prompts.detail.ab.emptyPrompts}</CommandEmpty>
                     <CommandGroup>
                       {promptBOptions.map((prompt) => (
                         <CommandItem
@@ -862,18 +877,18 @@ export function PromptDetailClient({
             </Popover>
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="sample-size-target">Amostra alvo (opcional)</Label>
+            <Label htmlFor="sample-size-target">{dict.prompts.detail.ab.sampleSizeLabel}</Label>
             <Input
               id="sample-size-target"
               type="number"
               min={1}
               value={sampleSizeTarget}
               onChange={(event) => setSampleSizeTarget(event.currentTarget.value)}
-              placeholder="Ex.: 100"
+              placeholder={dict.prompts.detail.placeholders.exampleSampleSize}
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="traffic-split-a">Percentual para Prompt A (1-99)</Label>
+            <Label htmlFor="traffic-split-a">{dict.prompts.detail.ab.trafficSplitLabel}</Label>
             <Input
               id="traffic-split-a"
               type="number"
@@ -881,29 +896,31 @@ export function PromptDetailClient({
               max={99}
               value={trafficSplitA}
               onChange={(event) => setTrafficSplitA(event.currentTarget.value)}
-              placeholder="Ex.: 80"
+              placeholder={dict.prompts.detail.placeholders.exampleTrafficSplit}
             />
             <p className="text-xs text-muted-foreground">
-              Prompt B recebe automaticamente {Math.max(1, 100 - (Number(trafficSplitA) || 50))}%.
+              {interpolate(dict.prompts.detail.ab.promptBReceives, {
+                percent: String(Math.max(1, 100 - (Number(trafficSplitA) || 50))),
+              })}
             </p>
           </div>
           {!abUsesTemplate ? (
             <p className="text-xs text-muted-foreground">
-              Se algum prompt do experimento usar template, os campos aparecem aqui automaticamente.
+              {dict.prompts.detail.ab.templateHint}
             </p>
           ) : isLoadingAbTemplateVariables ? (
-            <p className="text-xs text-muted-foreground">Carregando variaveis dos prompts A/B...</p>
+            <p className="text-xs text-muted-foreground">{dict.prompts.detail.ab.loadingTemplateVariables}</p>
           ) : abTemplateVariables.length > 0 ? (
             <div className="grid gap-2 rounded border p-3">
               <p className="text-xs text-muted-foreground">
-                Variaveis da rodada A/B (uniao de placeholders dos prompts A e B).
+                {dict.prompts.detail.ab.variablesDescription}
               </p>
               {abTemplateVariables.map((variable) => (
                 <div key={variable.name} className="grid gap-1.5">
                   <Label htmlFor={`ab-variable-${variable.name}`}>{variable.name}</Label>
                   <Input
                     id={`ab-variable-${variable.name}`}
-                    placeholder={variable.defaultValue ?? "Informe um valor"}
+                    placeholder={variable.defaultValue ?? dict.prompts.detail.ab.variableValuePlaceholder}
                     value={abRunVariables[variable.name] ?? variable.defaultValue ?? ""}
                     onChange={(event) => {
                       const value = event.currentTarget.value
@@ -917,9 +934,7 @@ export function PromptDetailClient({
               ))}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">
-              Nenhuma variavel configurada para os prompts selecionados.
-            </p>
+            <p className="text-xs text-muted-foreground">{dict.prompts.detail.ab.noVariablesForSelectedPrompts}</p>
           )}
           <div className="flex flex-wrap gap-2">
             <Button
@@ -928,7 +943,9 @@ export function PromptDetailClient({
               disabled={createExperiment.isPending || !experimentPromptBId}
               onClick={createAbExperiment}
             >
-              {createExperiment.isPending ? "Criando..." : "Criar experimento"}
+              {createExperiment.isPending
+                ? dict.prompts.detail.ab.actions.creatingExperiment
+                : dict.prompts.detail.ab.actions.createExperiment}
             </Button>
             <Button
               type="button"
@@ -937,7 +954,7 @@ export function PromptDetailClient({
               disabled={!experimentId || runExperiment.isPending}
               onClick={() => runExperiment.mutate()}
             >
-              {runExperiment.isPending ? "Executando rodada..." : "Executar rodada A/B"}
+              {runExperiment.isPending ? dict.prompts.detail.ab.actions.runningRound : dict.prompts.detail.ab.actions.runRound}
             </Button>
             <Button
               type="button"
@@ -946,7 +963,7 @@ export function PromptDetailClient({
               disabled={!experimentId || stopExperiment.isPending}
               onClick={() => stopExperiment.mutate()}
             >
-              {stopExperiment.isPending ? "Encerrando..." : "Encerrar experimento"}
+              {stopExperiment.isPending ? dict.prompts.detail.executions.stopping : dict.prompts.detail.executions.stopExperiment}
             </Button>
           </div>
 
@@ -985,7 +1002,7 @@ export function PromptDetailClient({
                   onClick={() => voteExperiment.mutate("A")}
                   disabled={voteExperiment.isPending || !experimentId}
                 >
-                  Votar A
+                  {dict.prompts.detail.executions.voteA}
                 </Button>
                 <Button
                   type="button"
@@ -994,7 +1011,7 @@ export function PromptDetailClient({
                   onClick={() => voteExperiment.mutate("B")}
                   disabled={voteExperiment.isPending || !experimentId}
                 >
-                  Votar B
+                  {dict.prompts.detail.executions.voteB}
                 </Button>
               </div>
             </div>
@@ -1008,9 +1025,9 @@ export function PromptDetailClient({
         </CardHeader>
         <CardContent className="space-y-2">
           {versionsQuery.isPending ? (
-            <p className="text-sm text-muted-foreground">Carregando versoes...</p>
+            <p className="text-sm text-muted-foreground">{dict.common.loading}</p>
           ) : versionsQuery.isError ? (
-            <p className="text-sm text-destructive">Falha ao carregar versoes.</p>
+            <p className="text-sm text-destructive">{dict.prompts.detail.versions.loadError}</p>
           ) : versionsQuery.data && versionsQuery.data.length > 0 ? (
             versionsQuery.data.map((version) => (
               <div key={version.id} className="rounded border p-3 text-sm">
@@ -1018,7 +1035,7 @@ export function PromptDetailClient({
                   <div className="space-y-0.5">
                     <p className="font-medium">Versao {version.version}</p>
                     <p className="text-xs text-muted-foreground">
-                      Data/hora: {formatDateTime(version.createdAt)}
+                      Data/hora: {formatDateTime(version.createdAt, lang)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1039,14 +1056,14 @@ export function PromptDetailClient({
                           className="cursor-pointer"
                           disabled={removeVersion.isPending}
                         >
-                          Excluir versao
+                          {dict.prompts.detail.versions.deleteVersion}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Remover versao?</AlertDialogTitle>
+                          <AlertDialogTitle>{dict.prompts.detail.versions.deleteDialogTitle}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Essa acao nao pode ser desfeita. A versao selecionada sera removida permanentemente.
+                            {dict.prompts.detail.versions.deleteDialogDescription}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -1063,7 +1080,7 @@ export function PromptDetailClient({
                     </AlertDialog>
                     <Button type="button" variant="outline" asChild>
                       <Link href={`/${lang}/prompts/${promptId}/versions/${version.id}`} className="cursor-pointer">
-                        Ver detalhes
+                        {dict.prompts.detail.versions.viewDetails}
                       </Link>
                     </Button>
                   </div>
@@ -1073,8 +1090,8 @@ export function PromptDetailClient({
           ) : (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>Nenhuma versao disponivel</EmptyTitle>
-                <EmptyDescription>Edite o prompt para criar novas versoes.</EmptyDescription>
+                <EmptyTitle>{dict.prompts.detail.versions.emptyTitle}</EmptyTitle>
+                <EmptyDescription>{dict.prompts.detail.versions.emptyDescription}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}
@@ -1083,13 +1100,15 @@ export function PromptDetailClient({
 
       <Card>
         <CardHeader>
-          <CardTitle>Variaveis ({variablesQuery.data?.length ?? 0})</CardTitle>
+          <CardTitle>
+            {dict.prompts.detail.variables.title} ({variablesQuery.data?.length ?? 0})
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {variablesQuery.isPending ? (
-            <p className="text-sm text-muted-foreground">Carregando variaveis...</p>
+            <p className="text-sm text-muted-foreground">{dict.prompts.detail.variables.loading}</p>
           ) : variablesQuery.isError ? (
-            <p className="text-sm text-destructive">Falha ao carregar variaveis.</p>
+            <p className="text-sm text-destructive">{dict.prompts.detail.variables.loadError}</p>
           ) : variablesQuery.data && variablesQuery.data.length > 0 ? (
             <>
               {variablesQuery.data.map((variable) => (
@@ -1104,14 +1123,14 @@ export function PromptDetailClient({
                 onClick={() => syncVariables.mutate(variablesQuery.data ?? [])}
                 disabled={syncVariables.isPending}
               >
-                Sincronizar variaveis
+                {dict.prompts.detail.variables.sync}
               </Button>
             </>
           ) : (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>Nenhuma variavel detectada</EmptyTitle>
-                <EmptyDescription>Esse prompt nao possui placeholders no template.</EmptyDescription>
+                <EmptyTitle>{dict.prompts.detail.variables.emptyTitle}</EmptyTitle>
+                <EmptyDescription>{dict.prompts.detail.variables.emptyDescription}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}
@@ -1124,9 +1143,9 @@ export function PromptDetailClient({
         </CardHeader>
         <CardContent className="space-y-2">
           {executionsQuery.isPending ? (
-            <p className="text-sm text-muted-foreground">Carregando execucoes...</p>
+            <p className="text-sm text-muted-foreground">{dict.prompts.detail.executions.loading}</p>
           ) : executionsQuery.isError ? (
-            <p className="text-sm text-destructive">Falha ao carregar execucoes.</p>
+            <p className="text-sm text-destructive">{dict.prompts.detail.executions.loadError}</p>
           ) : executionsQuery.data && executionsQuery.data.data.length > 0 ? (
             executionsQuery.data.data.map((execution) => (
               <div key={execution.id} className="rounded border p-3 text-sm">
@@ -1150,8 +1169,8 @@ export function PromptDetailClient({
           ) : (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>Nenhuma execucao encontrada</EmptyTitle>
-                <EmptyDescription>Rode o prompt para ver o historico de execucoes.</EmptyDescription>
+                <EmptyTitle>{dict.prompts.detail.executions.emptyTitle}</EmptyTitle>
+                <EmptyDescription>{dict.prompts.detail.executions.emptyDescription}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}

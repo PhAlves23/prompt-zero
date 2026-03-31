@@ -7,6 +7,7 @@ type AuthSplitShellProps = {
   footerText: string
   footerActionLabel: string
   footerActionHref: string
+  leftTagline: string
   children: ReactNode
 }
 
@@ -112,6 +113,7 @@ export function AuthSplitShell({
   footerText,
   footerActionLabel,
   footerActionHref,
+  leftTagline,
   children,
 }: AuthSplitShellProps) {
   return (
@@ -128,7 +130,7 @@ export function AuthSplitShell({
                 prompt<span className="text-pz-lime">zero</span>
               </p>
               <p className="mt-2 max-w-sm text-sm leading-relaxed text-[#8B8B9A]">
-                Versione, teste e evolua prompts com consistencia e contexto.
+                {leftTagline}
               </p>
             </div>
           </div>

@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
 import { SettingsPageClient } from "@/components/pages/settings-page-client"
 import { getSessionUser } from "@/lib/auth/session"
-import { hasLocale } from "../dictionaries"
+import { getDictionary, hasLocale, type Locale } from "../dictionaries"
 
 type SettingsPageProps = {
   params: Promise<{ lang: string }>
@@ -18,9 +18,11 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
     redirect(`/${lang}/auth/login`)
   }
 
+  const dict = await getDictionary(lang as Locale)
+
   return (
-    <AppShell title="Settings" lang={lang} user={{ name: user.name, email: user.email }}>
-      <SettingsPageClient />
+    <AppShell title={dict.settings.pageTitle} lang={lang} user={{ name: user.name, email: user.email }}>
+      <SettingsPageClient dict={dict} />
     </AppShell>
   )
 }

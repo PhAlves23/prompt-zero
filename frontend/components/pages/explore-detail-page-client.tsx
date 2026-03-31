@@ -11,13 +11,16 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/u
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { ExplorePrompt, Prompt, UserProfile } from "@/lib/api/types"
+import type { Dictionary } from "@/app/[lang]/dictionaries"
 
 export function ExploreDetailPageClient({
   lang,
   promptId,
+  dict,
 }: {
   lang: string
   promptId: string
+  dict: Dictionary
 }) {
   const router = useRouter()
   const promptQuery = useQuery({
@@ -32,17 +35,17 @@ export function ExploreDetailPageClient({
   const forkPrompt = useMutation({
     mutationFn: () => bffFetch<Prompt>(`/prompts/${promptId}/fork`, { method: "POST" }),
     onSuccess: (forkedPrompt) => {
-      toast.success("Prompt duplicado com sucesso")
+      toast.success(dict.explore.detail.toastForkSuccess)
       router.push(`/${lang}/prompts/${forkedPrompt.id}`)
       router.refresh()
     },
     onError: () => {
-      toast.error("Nao foi possivel duplicar este prompt")
+      toast.error(dict.explore.detail.toastForkError)
     },
   })
 
   if (promptQuery.isPending) {
-    return <div className="px-4 lg:px-6 text-sm text-muted-foreground">Carregando prompt publico...</div>
+    return <div className="px-4 lg:px-6 text-sm text-muted-foreground">{dict.explore.detail.loading}</div>
   }
 
   if (promptQuery.isError || !promptQuery.data) {
@@ -50,8 +53,8 @@ export function ExploreDetailPageClient({
       <div className="px-4 lg:px-6">
         <Empty className="border">
           <EmptyHeader>
-            <EmptyTitle>Prompt nao encontrado</EmptyTitle>
-            <EmptyDescription>Esse prompt pode nao ser publico ou nao existir mais.</EmptyDescription>
+            <EmptyTitle>{dict.explore.detail.notFoundTitle}</EmptyTitle>
+            <EmptyDescription>{dict.explore.detail.notFoundDescription}</EmptyDescription>
           </EmptyHeader>
         </Empty>
       </div>
@@ -71,13 +74,13 @@ export function ExploreDetailPageClient({
           </div>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <p className="text-sm text-muted-foreground">{promptQuery.data.description ?? "Sem descricao"}</p>
+          <p className="text-sm text-muted-foreground">{promptQuery.data.description ?? dict.explore.common.noDescription}</p>
           <pre className="max-h-[420px] overflow-auto rounded border bg-card p-3 text-sm whitespace-pre-wrap">
             {promptQuery.data.content}
           </pre>
           <div>
             {authMeQuery.isLoading ? (
-              <p className="text-sm text-muted-foreground">Verificando sessao...</p>
+              <p className="text-sm text-muted-foreground">{dict.explore.detail.checkingSession}</p>
             ) : authMeQuery.isSuccess ? (
               <Button
                 type="button"
@@ -86,7 +89,7 @@ export function ExploreDetailPageClient({
                 disabled={forkPrompt.isPending}
               >
                 <Copy className="h-4 w-4" />
-                {forkPrompt.isPending ? "Duplicando..." : "Duplicar este prompt"}
+                {forkPrompt.isPending ? dict.explore.detail.forking : dict.explore.detail.forkCta}
               </Button>
             ) : (
               <Link
@@ -94,7 +97,7 @@ export function ExploreDetailPageClient({
                 className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-accent cursor-pointer"
               >
                 <LogIn className="h-4 w-4" />
-                Fazer login para duplicar este prompt
+                {dict.explore.detail.loginToFork}
               </Link>
             )}
           </div>

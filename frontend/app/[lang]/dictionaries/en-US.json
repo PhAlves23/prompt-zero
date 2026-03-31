@@ -14,6 +14,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "prompts": "Prompts",
+    "explore": "Explore",
     "playground": "Playground",
     "settings": "Settings",
     "docs": "Documentation"
@@ -22,7 +23,196 @@
     "title": "My prompts",
     "create": "Create prompt",
     "empty": "No prompts yet. Create your first.",
+    "detailPageTitle": "Prompt details",
+    "versionDetailPageTitle": "Prompt version",
+    "detail": {
+      "labels": {
+        "lastEdit": "Last edited",
+        "dateTime": "Date/time",
+        "advancedSettings": "Advanced settings",
+        "version": "Version"
+      },
+      "placeholders": {
+        "searchCategory": "Search category…",
+        "executionInput": "Enter input to execute",
+        "searchPromptByName": "Search prompt by name…",
+        "exampleSampleSize": "e.g., 100",
+        "exampleTrafficSplit": "e.g., 80"
+      },
+      "aria": {
+        "setPublic": "Set prompt as public"
+      },
+      "toasts": {
+        "promptUpdated": "Prompt updated",
+        "promptDuplicated": "Prompt duplicated",
+        "promptRemoved": "Prompt removed",
+        "versionRestored": "Version restored",
+        "versionRemoved": "Version removed",
+        "cannotRemoveLastVersion": "You can't remove the last prompt version",
+        "cannotRemoveVersionWithExecutions": "You can't remove a version with associated executions",
+        "removeVersionFailed": "Couldn't remove the version",
+        "variablesSynced": "Variables synced",
+        "abExperimentCreated": "A/B experiment created",
+        "abExperimentCreateFailed": "Couldn't create the experiment",
+        "abRunExecuted": "Run executed on variant {variant}",
+        "configureApiKeys": "Configure an API key for the selected provider/model in Settings > API keys.",
+        "abRunFailed": "Failed to run A/B round",
+        "voteRegistered": "Vote recorded",
+        "voteAlreadyRegistered": "This result has already been voted on. Run a new round to vote again.",
+        "voteFailed": "Couldn't record the vote",
+        "experimentStopped": "Experiment stopped",
+        "experimentStopFailed": "Couldn't stop the experiment",
+        "executionCompleted": "Execution completed",
+        "executePromptFailed": "Failed to execute prompt",
+        "invalidAdvancedSettings": "Invalid advanced settings",
+        "missingRequiredVariables": "Fill the required variables: {variables}",
+        "noOutputToCopy": "This execution has no output to copy",
+        "outputCopied": "Output copied",
+        "copyOutputFailed": "Couldn't copy output",
+        "selectPromptB": "Select Prompt B",
+        "invalidTrafficSplit": "Invalid A/B split. Use a value between 1 and 99 for A."
+      },
+      "errors": {
+        "loadPromptFailed": "Couldn't load the prompt.",
+        "loadCategoriesFailed": "Couldn't load categories."
+      },
+      "edit": {
+        "cardTitle": "Edit prompt",
+        "fields": {
+          "title": "Title",
+          "description": "Description",
+          "content": "Content",
+          "categories": "Categories"
+        },
+        "selectCategories": "Select category(ies)",
+        "emptyCategories": "No categories found.",
+        "loadingCategories": "Loading categories…",
+        "noCategoriesHint": "No categories yet. Create categories on the Tags page.",
+        "publicLabel": "Public prompt",
+        "actions": {
+          "duplicate": "Duplicate"
+        }
+      },
+      "execute": {
+        "cardTitle": "Run prompt",
+        "waitingOutput": "Waiting for execution",
+        "advancedSettingsTitle": "Advanced settings",
+        "settingsHelp": {
+          "temperature": "Controls randomness (0-2)",
+          "topP": "Nucleus sampling (0-1)",
+          "topK": "Limits the number of tokens considered",
+          "maxTokens": "Maximum number of tokens in the response"
+        },
+        "templateVariablesTitle": "Template variables",
+        "loadingVariables": "Loading variables…",
+        "variableValuePlaceholder": "Enter a value",
+        "noVariablesHint": "No variables configured. Sync template variables to avoid execution errors.",
+        "runCta": "Run"
+      },
+      "ab": {
+        "cardTitle": "A/B experiment",
+        "promptBLabel": "Prompt B",
+        "selectPrompt": "Select a prompt",
+        "emptyPrompts": "No prompts found.",
+        "sampleSizeLabel": "Target sample size (optional)",
+        "trafficSplitLabel": "Percent for Prompt A (1-99)",
+        "promptBReceives": "Prompt B automatically receives {percent}%.",
+        "templateHint": "If any prompt in the experiment uses a template, the fields will appear here automatically.",
+        "loadingTemplateVariables": "Loading A/B prompt variables…",
+        "variablesDescription": "A/B round variables (union of placeholders from prompts A and B).",
+        "variableValuePlaceholder": "Enter a value",
+        "noVariablesForSelectedPrompts": "No variables configured for the selected prompts.",
+        "actions": {
+          "createExperiment": "Create experiment",
+          "creatingExperiment": "Creating…",
+          "runRound": "Run A/B round",
+          "runningRound": "Running round…"
+        }
+      },
+      "versions": {
+        "viewDetails": "View details",
+        "emptyTitle": "No versions available",
+        "emptyDescription": "Edit the prompt to create new versions.",
+        "deleteVersion": "Delete version",
+        "loadError": "Failed to load versions.",
+        "deleteDialogTitle": "Remove version?",
+        "deleteDialogDescription": "This action cannot be undone. The selected version will be permanently removed."
+      },
+      "variables": {
+        "title": "Variables",
+        "loading": "Loading variables…",
+        "loadError": "Failed to load variables.",
+        "sync": "Sync variables",
+        "emptyTitle": "No variables detected",
+        "emptyDescription": "This prompt has no placeholders in the template."
+      },
+      "executions": {
+        "run": "Run",
+        "running": "Running…",
+        "stopExperiment": "Stop experiment",
+        "stopping": "Stopping…",
+        "voteA": "Vote A",
+        "voteB": "Vote B",
+        "loading": "Loading executions…",
+        "loadError": "Failed to load executions.",
+        "emptyTitle": "No executions found",
+        "emptyDescription": "Run the prompt to see execution history."
+      }
+    },
     "version": "Version",
+    "versionDetail": {
+      "notFoundTitle": "Version not found",
+      "notFoundDescription": "Check whether this version still exists for this prompt.",
+      "versionLabel": "Version",
+      "createdAtLabel": "Created at",
+      "restoreCta": "Restore this version"
+    },
+    "list": {
+      "searchPlaceholder": "Search by title",
+      "onlyPublicAria": "Filter only public prompts",
+      "onlyPublicLabel": "Only public",
+      "loading": "Loading prompts…",
+      "loadError": "Error loading prompts.",
+      "emptyTitle": "No prompt found",
+      "emptyDescription": "Adjust filters or create a new prompt.",
+      "noDescription": "No description"
+    },
+    "createForm": {
+      "toastCreateError": "Could not create the prompt",
+      "backToList": "Back to list",
+      "fields": {
+        "title": "Title",
+        "description": "Description",
+        "content": "Content",
+        "language": "Language",
+        "model": "Model",
+        "workspace": "Workspace",
+        "type": "Type",
+        "name": "Name",
+        "default": "Default"
+      },
+      "promptSettings": "Prompt settings",
+      "advancedSettings": "Advanced settings",
+      "selectLanguage": "Select language",
+      "selectModel": "Select model",
+      "selectWorkspace": "Select a workspace (optional)",
+      "selectType": "Select type",
+      "noWorkspace": "No workspace",
+      "selectCategories": "Select category(ies)",
+      "searchCategory": "Search category...",
+      "emptyCategories": "No category found.",
+      "loadingCategories": "Loading categories...",
+      "loadingWorkspaces": "Loading workspaces...",
+      "emptyCategoriesHintPrefix": "No categories yet. Create in",
+      "publicPromptAria": "Set prompt as public",
+      "publicPromptLabel": "Public prompt",
+      "creating": "Creating...",
+      "templateVariablesTitle": "Template variables (single step)",
+      "addVariable": "Add variable",
+      "templateHint": "Tip: use placeholders in content like {{product}} to auto-detect variables.",
+      "noVariables": "No variables detected/added.",
+      "removeVariable": "Remove variable"
+    },
     "executions": "executions",
     "lastEdit": "Last edited",
     "tokens": "tokens",
@@ -38,7 +228,36 @@
     "signup": "Sign up",
     "email": "Email",
     "password": "Password",
-    "forgotPassword": "Forgot password?"
+    "forgotPassword": "Forgot password?",
+    "loginPage": {
+      "title": "Sign in",
+      "description": "Access your account to manage your prompts.",
+      "footerText": "Don't have an account yet?",
+      "footerActionLabel": "Sign up"
+    },
+    "registerPage": {
+      "title": "Sign up",
+      "description": "Create your account to start versioning and testing your prompts.",
+      "footerText": "Already have an account?",
+      "footerActionLabel": "Sign in"
+    },
+    "shell": {
+      "leftTagline": "Version, test, and evolve prompts with consistency and context."
+    },
+    "loginForm": {
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "emailPlaceholder": "you@company.com",
+      "toastAuthFailed": "Authentication failed",
+      "toastSessionStarted": "Session started"
+    },
+    "registerForm": {
+      "nameLabel": "Name",
+      "submit": "Sign up",
+      "submitting": "Creating…",
+      "toastRegisterFailed": "Failed to create account",
+      "toastRegisterSuccess": "Account created successfully"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -46,7 +265,45 @@
     "configureApiKey": "Configure your API key to test prompts.",
     "profile": "Profile",
     "preferences": "Preferences",
-    "language": "Language"
+    "language": "Language",
+    "pageTitle": "Settings",
+    "tabs": {
+      "user": "User",
+      "apiKeys": "API keys"
+    },
+    "profileCard": {
+      "title": "User profile",
+      "loading": "Loading profile…",
+      "loadError": "Failed to load profile.",
+      "nameLabel": "Name",
+      "save": "Save profile",
+      "saving": "Saving…",
+      "toastUpdated": "Profile updated"
+    },
+    "apiKeysCard": {
+      "loadError": "Failed to load key status.",
+      "pasteBeforeSave": "Paste an API key before saving",
+      "invalidMinChars": "Invalid API key: minimum 10 characters",
+      "connectedSuccess": "Connected successfully",
+      "sentButNotConfirmed": "The key was sent, but we couldn't confirm the connection",
+      "saveFailed": "Couldn't save the key",
+      "disconnectNoCredentials": "There are no credentials to disconnect for this provider",
+      "disconnectedSuccess": "Disconnected successfully",
+      "disconnectFailed": "Couldn't disconnect the provider",
+      "providerStatus": {
+        "connected": "Connected",
+        "notConfigured": "Not configured",
+        "ok": "OK",
+        "pending": "Pending"
+      },
+      "apiKeyLabel": "API key",
+      "apiKeyPlaceholder": "Paste the API key",
+      "connect": "Connect",
+      "connecting": "Connecting…",
+      "updateKey": "Update key",
+      "disconnect": "Disconnect",
+      "disconnecting": "Disconnecting…"
+    }
   },
   "meta": {
     "title": "PromptZero — Version, test and evolve your AI prompts",
@@ -59,5 +316,67 @@
       "running": "Running",
       "stopped": "Stopped"
     }
+  },
+  "explore": {
+    "common": {
+      "noDescription": "No description",
+      "publicLabel": "Public"
+    },
+    "list": {
+      "title": "Explore public prompts",
+      "results": "results",
+      "searchPlaceholder": "Search public prompts",
+      "loading": "Loading public prompts…",
+      "forksLabel": "Forks",
+      "emptyTitle": "No results",
+      "emptyDescription": "Try adjusting the search term."
+    },
+    "detail": {
+      "pageTitle": "Public prompt",
+      "loading": "Loading public prompt…",
+      "notFoundTitle": "Prompt not found",
+      "notFoundDescription": "This prompt may no longer be public or may not exist.",
+      "checkingSession": "Checking session…",
+      "forking": "Duplicating…",
+      "forkCta": "Duplicate this prompt",
+      "loginToFork": "Log in to duplicate this prompt",
+      "toastForkSuccess": "Prompt duplicated successfully",
+      "toastForkError": "Could not duplicate this prompt"
+    }
+  },
+  "workspaces": {
+    "title": "Workspaces",
+    "newTitle": "New workspace",
+    "fields": {
+      "name": "Name",
+      "description": "Description"
+    },
+    "createCta": "Create workspace",
+    "loading": "Loading workspaces…",
+    "editTitle": "Edit workspace",
+    "noDescription": "No description",
+    "emptyTitle": "No workspace registered",
+    "emptyDescription": "Create workspaces to organize your prompts.",
+    "toastCreated": "Workspace created",
+    "toastUpdated": "Workspace updated",
+    "toastRemoved": "Workspace removed"
+  },
+  "tags": {
+    "title": "Tags",
+    "newTitle": "New tag",
+    "fields": {
+      "name": "Name",
+      "color": "Tag color",
+      "colorShort": "Color"
+    },
+    "selectColorAria": "Select color",
+    "createCta": "Create tag",
+    "editTitle": "Edit tag",
+    "loading": "Loading tags…",
+    "emptyTitle": "No tags registered",
+    "emptyDescription": "Create tags to classify prompts.",
+    "toastCreated": "Tag created",
+    "toastUpdated": "Tag updated",
+    "toastRemoved": "Tag removed"
   }
 }

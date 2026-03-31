@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
 import { PromptCreatePageClient } from "@/components/pages/prompt-create-page-client"
 import { getSessionUser } from "@/lib/auth/session"
-import { hasLocale } from "../../dictionaries"
+import { getDictionary, hasLocale, type Locale } from "../../dictionaries"
 
 type PromptCreatePageProps = {
   params: Promise<{ lang: string }>
@@ -17,10 +17,11 @@ export default async function PromptCreatePage({ params }: PromptCreatePageProps
   if (!user) {
     redirect(`/${lang}/auth/login`)
   }
+  const dict = await getDictionary(lang as Locale)
 
   return (
-    <AppShell title="Novo prompt" lang={lang} user={{ name: user.name, email: user.email }}>
-      <PromptCreatePageClient lang={lang} />
+    <AppShell title={dict.prompts.create} lang={lang} user={{ name: user.name, email: user.email }}>
+      <PromptCreatePageClient lang={lang} dict={dict} />
     </AppShell>
   )
 }

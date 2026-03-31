@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation"
 import { AuthSplitShell } from "@/components/auth/auth-split-shell"
 import { RegisterForm } from "@/components/auth/register-form"
 import { getSessionUser } from "@/lib/auth/session"
-import { hasLocale } from "../../dictionaries"
+import { getDictionary, hasLocale, type Locale } from "../../dictionaries"
 
 type RegisterPageProps = {
   params: Promise<{ lang: string }>
@@ -14,6 +14,8 @@ export default async function RegisterPage({ params }: RegisterPageProps) {
     notFound()
   }
 
+  const dict = await getDictionary(lang as Locale)
+
   const user = await getSessionUser()
   if (user) {
     redirect(`/${lang}/dashboard`)
@@ -21,13 +23,14 @@ export default async function RegisterPage({ params }: RegisterPageProps) {
 
   return (
     <AuthSplitShell
-      title="Criar conta"
-      description="Comece a organizar e testar seus prompts de IA."
-      footerText="Ja possui conta?"
-      footerActionLabel="Entrar"
+      title={dict.auth.registerPage.title}
+      description={dict.auth.registerPage.description}
+      footerText={dict.auth.registerPage.footerText}
+      footerActionLabel={dict.auth.registerPage.footerActionLabel}
       footerActionHref={`/${lang}/auth/login`}
+      leftTagline={dict.auth.shell.leftTagline}
     >
-      <RegisterForm lang={lang} />
+      <RegisterForm lang={lang} dict={dict} />
     </AuthSplitShell>
   )
 }

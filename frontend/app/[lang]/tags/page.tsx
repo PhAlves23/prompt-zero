@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
 import { TagsPageClient } from "@/components/pages/tags-page-client"
 import { getSessionUser } from "@/lib/auth/session"
-import { hasLocale } from "../dictionaries"
+import { getDictionary, hasLocale, type Locale } from "../dictionaries"
 
 type TagsPageProps = {
   params: Promise<{ lang: string }>
@@ -17,10 +17,11 @@ export default async function TagsPage({ params }: TagsPageProps) {
   if (!user) {
     redirect(`/${lang}/auth/login`)
   }
+  const dict = await getDictionary(lang as Locale)
 
   return (
-    <AppShell title="Tags" lang={lang} user={{ name: user.name, email: user.email }}>
-      <TagsPageClient />
+    <AppShell title={dict.tags.title} lang={lang} user={{ name: user.name, email: user.email }}>
+      <TagsPageClient dict={dict} />
     </AppShell>
   )
 }

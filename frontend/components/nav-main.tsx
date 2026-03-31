@@ -15,16 +15,22 @@ import Link from "next/link"
 
 export function NavMain({
   items,
+  quickCreateLabel,
+  quickCreateTooltip,
+  marketplaceSrLabel,
 }: {
   items: {
     title: string
     url: string
     icon?: React.ReactNode
   }[]
+  quickCreateLabel: string
+  quickCreateTooltip: string
+  marketplaceSrLabel: string
 }) {
-  const promptsUrl = items.find((item) => item.title === "Prompts")?.url
+  const promptsUrl = items.find((item) => item.url.endsWith("/prompts"))?.url
   const quickCreateUrl = promptsUrl ? `${promptsUrl}/new` : "#"
-  const exploreUrl = items.find((item) => item.title === "Explore")?.url ?? "#"
+  const exploreUrl = items.find((item) => item.url.endsWith("/explore"))?.url ?? "#"
 
   return (
     <SidebarGroup>
@@ -33,12 +39,12 @@ export function NavMain({
           <SidebarMenuItem className="flex items-center gap-2">
             <SidebarMenuButton
               asChild
-              tooltip="Quick Create"
+              tooltip={quickCreateTooltip}
               className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
             >
               <Link href={quickCreateUrl} className="cursor-pointer">
                 <HugeiconsIcon icon={PlusSignCircleIcon} strokeWidth={2} />
-                <span>Quick Create</span>
+                <span>{quickCreateLabel}</span>
               </Link>
             </SidebarMenuButton>
             <Button
@@ -49,7 +55,7 @@ export function NavMain({
             >
               <Link href={exploreUrl} className="cursor-pointer">
                 <Store className="h-4 w-4" />
-                <span className="sr-only">Marketplace de prompts</span>
+                <span className="sr-only">{marketplaceSrLabel}</span>
               </Link>
             </Button>
           </SidebarMenuItem>

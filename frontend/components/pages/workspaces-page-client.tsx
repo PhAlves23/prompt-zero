@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { Workspace } from "@/lib/api/types"
+import type { Dictionary } from "@/app/[lang]/dictionaries"
 
 const schema = z.object({
   name: z.string().min(2),
@@ -23,7 +24,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-export function WorkspacesPageClient() {
+export function WorkspacesPageClient({ dict }: { dict: Dictionary }) {
   const queryClient = useQueryClient()
   const [editingWorkspaceId, setEditingWorkspaceId] = useState<string | null>(null)
   const form = useForm<FormValues>({
@@ -48,7 +49,7 @@ export function WorkspacesPageClient() {
     mutationFn: (values: FormValues) =>
       bffFetch<Workspace>("/workspaces", { method: "POST", body: values }),
     onSuccess: () => {
-      toast.success("Workspace criado")
+      toast.success(dict.workspaces.toastCreated)
       form.reset()
       void queryClient.invalidateQueries({ queryKey: queryKeys.workspaces.list })
     },
@@ -57,7 +58,7 @@ export function WorkspacesPageClient() {
   const deleteWorkspace = useMutation({
     mutationFn: (id: string) => bffFetch<void>(`/workspaces/${id}`, { method: "DELETE" }),
     onSuccess: () => {
-      toast.success("Workspace removido")
+      toast.success(dict.workspaces.toastRemoved)
       void queryClient.invalidateQueries({ queryKey: queryKeys.workspaces.list })
     },
   })
@@ -66,7 +67,7 @@ export function WorkspacesPageClient() {
     mutationFn: (input: { id: string; values: FormValues }) =>
       bffFetch<Workspace>(`/workspaces/${input.id}`, { method: "PATCH", body: input.values }),
     onSuccess: () => {
-      toast.success("Workspace atualizado")
+      toast.success(dict.workspaces.toastUpdated)
       setEditingWorkspaceId(null)
       editForm.reset()
       void queryClient.invalidateQueries({ queryKey: queryKeys.workspaces.list })
@@ -77,7 +78,7 @@ export function WorkspacesPageClient() {
     <div className="grid gap-4 px-4 lg:px-6">
       <Card>
         <CardHeader>
-          <CardTitle>Novo workspace</CardTitle>
+          <CardTitle>{dict.workspaces.newTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -97,15 +98,15 @@ export function WorkspacesPageClient() {
             })}
           >
             <div className="grid gap-2">
-              <Label htmlFor="name">Nome</Label>
+              <Label htmlFor="name">{dict.workspaces.fields.name}</Label>
               <Input id="name" {...form.register("name")} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Descricao</Label>
+              <Label htmlFor="description">{dict.workspaces.fields.description}</Label>
               <Textarea id="description" rows={4} {...form.register("description")} />
             </div>
             <Button type="submit" className="w-fit cursor-pointer">
-              Criar workspace
+              {dict.workspaces.createCta}
             </Button>
           </form>
         </CardContent>
@@ -113,11 +114,11 @@ export function WorkspacesPageClient() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Workspaces</CardTitle>
+          <CardTitle>{dict.workspaces.title}</CardTitle>
         </CardHeader>
         <CardContent>
           {workspacesQuery.isPending ? (
-            <p className="text-sm text-muted-foreground">Carregando workspaces...</p>
+            <p className="text-sm text-muted-foreground">{dict.workspaces.loading}</p>
           ) : workspacesQuery.data && workspacesQuery.data.length > 0 ? (
             <div className="grid gap-2">
               {workspacesQuery.data.map((workspace) => (
@@ -139,13 +140,13 @@ export function WorkspacesPageClient() {
                         updateWorkspace.mutate({ id: workspace.id, values: parsed.data })
                       })}
                     >
-                      <p className="text-sm font-medium">Editar workspace</p>
+                      <p className="text-sm font-medium">{dict.workspaces.editTitle}</p>
                       <div className="grid gap-2">
-                        <Label htmlFor={`edit-workspace-name-${workspace.id}`}>Nome</Label>
+                        <Label htmlFor={`edit-workspace-name-${workspace.id}`}>{dict.workspaces.fields.name}</Label>
                         <Input id={`edit-workspace-name-${workspace.id}`} {...editForm.register("name")} />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor={`edit-workspace-description-${workspace.id}`}>Descricao</Label>
+                        <Label htmlFor={`edit-workspace-description-${workspace.id}`}>{dict.workspaces.fields.description}</Label>
                         <Textarea
                           id={`edit-workspace-description-${workspace.id}`}
                           rows={3}
@@ -155,7 +156,7 @@ export function WorkspacesPageClient() {
                       <div className="flex items-center gap-2">
                         <Button className="cursor-pointer" type="submit" disabled={updateWorkspace.isPending}>
                           <Pencil className="h-4 w-4" />
-                          Salvar
+                          {dict.common.save}
                         </Button>
                         <Button
                           type="button"
@@ -166,7 +167,7 @@ export function WorkspacesPageClient() {
                             editForm.reset()
                           }}
                         >
-                          Cancelar
+                          {dict.common.cancel}
                         </Button>
                       </div>
                     </form>
@@ -175,7 +176,7 @@ export function WorkspacesPageClient() {
                       <div>
                         <p className="font-medium">{workspace.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {workspace.description ?? "Sem descricao"}
+                          {workspace.description ?? dict.workspaces.noDescription}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -191,7 +192,7 @@ export function WorkspacesPageClient() {
                           }}
                         >
                           <Pencil className="h-4 w-4" />
-                          Editar
+                          {dict.common.edit}
                         </Button>
                         <Button
                           variant="destructive"
@@ -199,7 +200,7 @@ export function WorkspacesPageClient() {
                           onClick={() => deleteWorkspace.mutate(workspace.id)}
                         >
                           <Trash2 className="h-4 w-4" />
-                          Remover
+                          {dict.common.delete}
                         </Button>
                       </div>
                     </div>
@@ -210,8 +211,8 @@ export function WorkspacesPageClient() {
           ) : (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>Nenhum workspace cadastrado</EmptyTitle>
-                <EmptyDescription>Crie workspaces para organizar seus prompts.</EmptyDescription>
+                <EmptyTitle>{dict.workspaces.emptyTitle}</EmptyTitle>
+                <EmptyDescription>{dict.workspaces.emptyDescription}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}

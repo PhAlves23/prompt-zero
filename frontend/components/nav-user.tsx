@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation"
 export function NavUser({
   user,
   lang,
+  labels,
 }: {
   user: {
     name: string
@@ -34,6 +35,12 @@ export function NavUser({
     avatar: string
   }
   lang: string
+  labels: {
+    account: string
+    billing: string
+    notifications: string
+    logout: string
+  }
 }) {
   const { isMobile } = useSidebar()
   const router = useRouter()
@@ -90,21 +97,21 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <HugeiconsIcon icon={UserCircle02Icon} strokeWidth={2} />
-                Account
+                {labels.account}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} />
-                Billing
+                {labels.billing}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <HugeiconsIcon icon={Notification03Icon} strokeWidth={2} />
-                Notifications
+                {labels.notifications}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
               <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
-              Log out
+              {labels.logout}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

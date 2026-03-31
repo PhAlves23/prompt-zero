@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { Tag } from "@/lib/api/types"
+import type { Dictionary } from "@/app/[lang]/dictionaries"
 
 const schema = z.object({
   name: z.string().min(2),
@@ -23,7 +24,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 const presetColors = ["#9EFF00", "#22C55E", "#06B6D4", "#8B5CF6", "#EF4444", "#F97316"]
 
-export function TagsPageClient() {
+export function TagsPageClient({ dict }: { dict: Dictionary }) {
   const queryClient = useQueryClient()
   const [editingTagId, setEditingTagId] = useState<string | null>(null)
   const form = useForm<FormValues>({
@@ -44,7 +45,7 @@ export function TagsPageClient() {
     mutationFn: (values: FormValues) =>
       bffFetch<Tag>("/tags", { method: "POST", body: values }),
     onSuccess: () => {
-      toast.success("Tag criada")
+      toast.success(dict.tags.toastCreated)
       form.reset()
       void queryClient.invalidateQueries({ queryKey: queryKeys.tags.list })
     },
@@ -53,7 +54,7 @@ export function TagsPageClient() {
   const deleteTag = useMutation({
     mutationFn: (id: string) => bffFetch<void>(`/tags/${id}`, { method: "DELETE" }),
     onSuccess: () => {
-      toast.success("Tag removida")
+      toast.success(dict.tags.toastRemoved)
       void queryClient.invalidateQueries({ queryKey: queryKeys.tags.list })
     },
   })
@@ -62,7 +63,7 @@ export function TagsPageClient() {
     mutationFn: (input: { id: string; values: FormValues }) =>
       bffFetch<Tag>(`/tags/${input.id}`, { method: "PATCH", body: input.values }),
     onSuccess: () => {
-      toast.success("Tag atualizada")
+      toast.success(dict.tags.toastUpdated)
       setEditingTagId(null)
       editForm.reset()
       void queryClient.invalidateQueries({ queryKey: queryKeys.tags.list })
@@ -73,7 +74,7 @@ export function TagsPageClient() {
     <div className="grid gap-4 px-4 lg:px-6">
       <Card className="border-border/70">
         <CardHeader>
-          <CardTitle>Nova tag</CardTitle>
+          <CardTitle>{dict.tags.newTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -93,11 +94,11 @@ export function TagsPageClient() {
             })}
           >
             <div className="grid gap-2">
-              <Label htmlFor="name">Nome</Label>
+              <Label htmlFor="name">{dict.tags.fields.name}</Label>
               <Input id="name" {...form.register("name")} />
             </div>
             <div className="grid gap-3 rounded-lg border border-border/60 p-3">
-              <Label htmlFor="color" className="text-sm">Cor da tag</Label>
+              <Label htmlFor="color" className="text-sm">{dict.tags.fields.color}</Label>
               <div className="flex flex-wrap items-center gap-3">
                 <Input
                   id="color-picker"
@@ -130,14 +131,14 @@ export function TagsPageClient() {
                     className="h-6 w-6 rounded border cursor-pointer"
                     style={{ backgroundColor: preset }}
                     onClick={() => form.setValue("color", preset)}
-                    aria-label={`Selecionar cor ${preset}`}
+                    aria-label={`${dict.tags.selectColorAria} ${preset}`}
                   />
                 ))}
               </div>
             </div>
             <Button type="submit" className="w-fit cursor-pointer">
               <Plus className="h-4 w-4" />
-              Criar tag
+              {dict.tags.createCta}
             </Button>
           </form>
         </CardContent>
@@ -145,11 +146,11 @@ export function TagsPageClient() {
 
       <Card className="border-border/70">
         <CardHeader>
-          <CardTitle>Tags</CardTitle>
+          <CardTitle>{dict.tags.title}</CardTitle>
         </CardHeader>
         <CardContent>
           {tagsQuery.isPending ? (
-            <p className="text-sm text-muted-foreground">Carregando tags...</p>
+            <p className="text-sm text-muted-foreground">{dict.tags.loading}</p>
           ) : tagsQuery.data && tagsQuery.data.length > 0 ? (
             <div className="grid gap-2">
               {tagsQuery.data.map((tag) => {
@@ -174,13 +175,13 @@ export function TagsPageClient() {
                           updateTag.mutate({ id: tag.id, values: parsed.data })
                         })}
                       >
-                        <p className="text-sm font-medium">Editar tag</p>
+                        <p className="text-sm font-medium">{dict.tags.editTitle}</p>
                         <div className="grid gap-2">
-                          <Label htmlFor={`edit-tag-name-${tag.id}`}>Nome</Label>
+                          <Label htmlFor={`edit-tag-name-${tag.id}`}>{dict.tags.fields.name}</Label>
                           <Input id={`edit-tag-name-${tag.id}`} {...editForm.register("name")} />
                         </div>
                         <div className="grid gap-3 rounded-lg border border-border/60 p-3">
-                          <Label htmlFor={`edit-tag-color-${tag.id}`}>Cor</Label>
+                          <Label htmlFor={`edit-tag-color-${tag.id}`}>{dict.tags.fields.colorShort}</Label>
                           <div className="flex flex-wrap items-center gap-3">
                             <Input
                               id={`edit-tag-color-picker-${tag.id}`}
@@ -209,7 +210,7 @@ export function TagsPageClient() {
                                 className="h-6 w-6 rounded border cursor-pointer"
                                 style={{ backgroundColor: preset }}
                                 onClick={() => editForm.setValue("color", preset)}
-                                aria-label={`Selecionar cor ${preset}`}
+                                aria-label={`${dict.tags.selectColorAria} ${preset}`}
                               />
                             ))}
                           </div>
@@ -217,7 +218,7 @@ export function TagsPageClient() {
                         <div className="flex items-center gap-2">
                           <Button className="cursor-pointer" type="submit" disabled={updateTag.isPending}>
                             <Pencil className="h-4 w-4" />
-                            Salvar
+                            {dict.common.save}
                           </Button>
                           <Button
                             type="button"
@@ -228,7 +229,7 @@ export function TagsPageClient() {
                               editForm.reset()
                             }}
                           >
-                            Cancelar
+                            {dict.common.cancel}
                           </Button>
                         </div>
                       </form>
@@ -258,7 +259,7 @@ export function TagsPageClient() {
                             }}
                           >
                             <Pencil className="h-4 w-4" />
-                            Editar
+                            {dict.common.edit}
                           </Button>
                           <Button
                             variant="destructive"
@@ -266,7 +267,7 @@ export function TagsPageClient() {
                             onClick={() => deleteTag.mutate(tag.id)}
                           >
                             <Trash2 className="h-4 w-4" />
-                            Remover
+                            {dict.common.delete}
                           </Button>
                         </div>
                       </div>
@@ -278,8 +279,8 @@ export function TagsPageClient() {
           ) : (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>Nenhuma tag cadastrada</EmptyTitle>
-                <EmptyDescription>Crie tags para classificar os prompts.</EmptyDescription>
+                <EmptyTitle>{dict.tags.emptyTitle}</EmptyTitle>
+                <EmptyDescription>{dict.tags.emptyDescription}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}

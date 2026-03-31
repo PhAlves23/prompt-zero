@@ -14,6 +14,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "prompts": "Prompts",
+    "explore": "Explorar",
     "playground": "Playground",
     "settings": "Configurações",
     "docs": "Documentação"
@@ -22,7 +23,196 @@
     "title": "Meus prompts",
     "create": "Criar prompt",
     "empty": "Nenhum prompt ainda. Crie o primeiro.",
+    "detailPageTitle": "Detalhes do prompt",
+    "versionDetailPageTitle": "Versão do prompt",
+    "detail": {
+      "labels": {
+        "lastEdit": "Última edição",
+        "dateTime": "Data/hora",
+        "advancedSettings": "Configurações avançadas",
+        "version": "Versão"
+      },
+      "placeholders": {
+        "searchCategory": "Buscar categoria…",
+        "executionInput": "Informe o input para executar",
+        "searchPromptByName": "Buscar prompt por nome…",
+        "exampleSampleSize": "Ex.: 100",
+        "exampleTrafficSplit": "Ex.: 80"
+      },
+      "aria": {
+        "setPublic": "Definir prompt como público"
+      },
+      "toasts": {
+        "promptUpdated": "Prompt atualizado",
+        "promptDuplicated": "Prompt duplicado",
+        "promptRemoved": "Prompt removido",
+        "versionRestored": "Versão restaurada",
+        "versionRemoved": "Versão removida",
+        "cannotRemoveLastVersion": "Não é possível remover a última versão do prompt",
+        "cannotRemoveVersionWithExecutions": "Não é possível remover uma versão com execuções associadas",
+        "removeVersionFailed": "Não foi possível remover a versão",
+        "variablesSynced": "Variáveis sincronizadas",
+        "abExperimentCreated": "Experimento A/B criado",
+        "abExperimentCreateFailed": "Não foi possível criar o experimento",
+        "abRunExecuted": "Rodada executada na variante {variant}",
+        "configureApiKeys": "Configure uma chave de API para o provedor/modelo selecionado em Configurações > Chaves de API.",
+        "abRunFailed": "Falha ao executar rodada A/B",
+        "voteRegistered": "Voto registrado",
+        "voteAlreadyRegistered": "Esse resultado já foi votado. Execute uma nova rodada para votar novamente.",
+        "voteFailed": "Não foi possível registrar o voto",
+        "experimentStopped": "Experimento encerrado",
+        "experimentStopFailed": "Não foi possível encerrar o experimento",
+        "executionCompleted": "Execução concluída",
+        "executePromptFailed": "Falha ao executar prompt",
+        "invalidAdvancedSettings": "Configurações avançadas inválidas",
+        "missingRequiredVariables": "Preencha as variáveis obrigatórias: {variables}",
+        "noOutputToCopy": "Essa execução não possui output para copiar",
+        "outputCopied": "Output copiado",
+        "copyOutputFailed": "Não foi possível copiar o output",
+        "selectPromptB": "Selecione o Prompt B",
+        "invalidTrafficSplit": "Divisão A/B inválida. Use um valor entre 1 e 99 para A."
+      },
+      "errors": {
+        "loadPromptFailed": "Não foi possível carregar o prompt.",
+        "loadCategoriesFailed": "Não foi possível carregar as categorias."
+      },
+      "edit": {
+        "cardTitle": "Editar prompt",
+        "fields": {
+          "title": "Título",
+          "description": "Descrição",
+          "content": "Conteúdo",
+          "categories": "Categorias"
+        },
+        "selectCategories": "Selecione categoria(s)",
+        "emptyCategories": "Nenhuma categoria encontrada.",
+        "loadingCategories": "Carregando categorias…",
+        "noCategoriesHint": "Nenhuma categoria cadastrada. Crie categorias na página de Tags.",
+        "publicLabel": "Prompt público",
+        "actions": {
+          "duplicate": "Duplicar"
+        }
+      },
+      "execute": {
+        "cardTitle": "Executar prompt",
+        "waitingOutput": "Aguardando execução",
+        "advancedSettingsTitle": "Configurações avançadas",
+        "settingsHelp": {
+          "temperature": "Controla a aleatoriedade (0-2)",
+          "topP": "Nucleus sampling (0-1)",
+          "topK": "Limita o número de tokens considerados",
+          "maxTokens": "Número máximo de tokens na resposta"
+        },
+        "templateVariablesTitle": "Variáveis do template",
+        "loadingVariables": "Carregando variáveis…",
+        "variableValuePlaceholder": "Informe um valor",
+        "noVariablesHint": "Nenhuma variável configurada. Sincronize as variáveis do template para evitar erro na execução.",
+        "runCta": "Executar"
+      },
+      "ab": {
+        "cardTitle": "Experimento A/B",
+        "promptBLabel": "Prompt B",
+        "selectPrompt": "Selecione um prompt",
+        "emptyPrompts": "Nenhum prompt encontrado.",
+        "sampleSizeLabel": "Amostra alvo (opcional)",
+        "trafficSplitLabel": "Percentual para Prompt A (1-99)",
+        "promptBReceives": "Prompt B recebe automaticamente {percent}%.",
+        "templateHint": "Se algum prompt do experimento usar template, os campos aparecem aqui automaticamente.",
+        "loadingTemplateVariables": "Carregando variáveis dos prompts A/B…",
+        "variablesDescription": "Variáveis da rodada A/B (união de placeholders dos prompts A e B).",
+        "variableValuePlaceholder": "Informe um valor",
+        "noVariablesForSelectedPrompts": "Nenhuma variável configurada para os prompts selecionados.",
+        "actions": {
+          "createExperiment": "Criar experimento",
+          "creatingExperiment": "Criando…",
+          "runRound": "Executar rodada A/B",
+          "runningRound": "Executando rodada…"
+        }
+      },
+      "versions": {
+        "viewDetails": "Ver detalhes",
+        "emptyTitle": "Nenhuma versão disponível",
+        "emptyDescription": "Edite o prompt para criar novas versões.",
+        "deleteVersion": "Excluir versão",
+        "loadError": "Falha ao carregar versões.",
+        "deleteDialogTitle": "Remover versão?",
+        "deleteDialogDescription": "Essa ação não pode ser desfeita. A versão selecionada será removida permanentemente."
+      },
+      "variables": {
+        "title": "Variáveis",
+        "loading": "Carregando variáveis…",
+        "loadError": "Falha ao carregar variáveis.",
+        "sync": "Sincronizar variáveis",
+        "emptyTitle": "Nenhuma variável detectada",
+        "emptyDescription": "Esse prompt não possui placeholders no template."
+      },
+      "executions": {
+        "run": "Executar",
+        "running": "Executando…",
+        "stopExperiment": "Encerrar experimento",
+        "stopping": "Encerrando…",
+        "voteA": "Votar A",
+        "voteB": "Votar B",
+        "loading": "Carregando execuções…",
+        "loadError": "Falha ao carregar execuções.",
+        "emptyTitle": "Nenhuma execução encontrada",
+        "emptyDescription": "Rode o prompt para ver o histórico de execuções."
+      }
+    },
     "version": "Versão",
+    "versionDetail": {
+      "notFoundTitle": "Versão não encontrada",
+      "notFoundDescription": "Verifique se a versão ainda existe para esse prompt.",
+      "versionLabel": "Versão",
+      "createdAtLabel": "Criada em",
+      "restoreCta": "Restaurar esta versão"
+    },
+    "list": {
+      "searchPlaceholder": "Buscar por título",
+      "onlyPublicAria": "Filtrar apenas prompts públicos",
+      "onlyPublicLabel": "Apenas públicos",
+      "loading": "Carregando prompts…",
+      "loadError": "Erro ao carregar prompts.",
+      "emptyTitle": "Nenhum prompt encontrado",
+      "emptyDescription": "Ajuste os filtros ou cadastre um novo prompt.",
+      "noDescription": "Sem descrição"
+    },
+    "createForm": {
+      "toastCreateError": "Não foi possível criar o prompt",
+      "backToList": "Voltar para listagem",
+      "fields": {
+        "title": "Título",
+        "description": "Descrição",
+        "content": "Conteúdo",
+        "language": "Idioma",
+        "model": "Modelo",
+        "workspace": "Workspace",
+        "type": "Tipo",
+        "name": "Nome",
+        "default": "Padrão"
+      },
+      "promptSettings": "Configurações do prompt",
+      "advancedSettings": "Configurações avançadas",
+      "selectLanguage": "Selecione o idioma",
+      "selectModel": "Selecione o modelo",
+      "selectWorkspace": "Selecione um workspace (opcional)",
+      "selectType": "Selecione o tipo",
+      "noWorkspace": "Sem workspace",
+      "selectCategories": "Selecione categoria(s)",
+      "searchCategory": "Buscar categoria...",
+      "emptyCategories": "Nenhuma categoria encontrada.",
+      "loadingCategories": "Carregando categorias...",
+      "loadingWorkspaces": "Carregando workspaces...",
+      "emptyCategoriesHintPrefix": "Nenhuma categoria cadastrada. Crie em",
+      "publicPromptAria": "Definir prompt como público",
+      "publicPromptLabel": "Prompt público",
+      "creating": "Criando...",
+      "templateVariablesTitle": "Variáveis do template (passo único)",
+      "addVariable": "Adicionar variável",
+      "templateHint": "Dica: use placeholders no conteúdo como {{produto}} para auto-detectar variáveis.",
+      "noVariables": "Nenhuma variável detectada/adicionada.",
+      "removeVariable": "Remover variável"
+    },
     "executions": "execuções",
     "lastEdit": "Última edição",
     "tokens": "tokens",
@@ -38,7 +228,36 @@
     "signup": "Criar conta",
     "email": "E-mail",
     "password": "Senha",
-    "forgotPassword": "Esqueceu a senha?"
+    "forgotPassword": "Esqueceu a senha?",
+    "loginPage": {
+      "title": "Entrar",
+      "description": "Acesse sua conta para gerenciar seus prompts.",
+      "footerText": "Ainda não possui conta?",
+      "footerActionLabel": "Criar conta"
+    },
+    "registerPage": {
+      "title": "Criar conta",
+      "description": "Crie sua conta para começar a versionar e testar seus prompts.",
+      "footerText": "Já possui conta?",
+      "footerActionLabel": "Entrar"
+    },
+    "shell": {
+      "leftTagline": "Versione, teste e evolua prompts com consistência e contexto."
+    },
+    "loginForm": {
+      "submit": "Entrar",
+      "submitting": "Entrando…",
+      "emailPlaceholder": "voce@empresa.com",
+      "toastAuthFailed": "Falha ao autenticar",
+      "toastSessionStarted": "Sessão iniciada"
+    },
+    "registerForm": {
+      "nameLabel": "Nome",
+      "submit": "Criar conta",
+      "submitting": "Criando…",
+      "toastRegisterFailed": "Falha ao criar conta",
+      "toastRegisterSuccess": "Conta criada com sucesso"
+    }
   },
   "settings": {
     "title": "Configurações",
@@ -46,7 +265,45 @@
     "configureApiKey": "Configure sua API key para testar prompts.",
     "profile": "Perfil",
     "preferences": "Preferências",
-    "language": "Idioma"
+    "language": "Idioma",
+    "pageTitle": "Configurações",
+    "tabs": {
+      "user": "Usuário",
+      "apiKeys": "Chaves de API"
+    },
+    "profileCard": {
+      "title": "Perfil do usuário",
+      "loading": "Carregando perfil…",
+      "loadError": "Falha ao carregar perfil.",
+      "nameLabel": "Nome",
+      "save": "Salvar perfil",
+      "saving": "Salvando…",
+      "toastUpdated": "Perfil atualizado"
+    },
+    "apiKeysCard": {
+      "loadError": "Falha ao carregar status das chaves.",
+      "pasteBeforeSave": "Cole uma chave de API antes de salvar",
+      "invalidMinChars": "Chave de API inválida: mínimo de 10 caracteres",
+      "connectedSuccess": "Conectado com sucesso",
+      "sentButNotConfirmed": "A chave foi enviada, mas não foi possível confirmar a conexão",
+      "saveFailed": "Não foi possível salvar a chave",
+      "disconnectNoCredentials": "Não há credenciais para desconectar este provedor",
+      "disconnectedSuccess": "Desconectado com sucesso",
+      "disconnectFailed": "Não foi possível desconectar o provedor",
+      "providerStatus": {
+        "connected": "Conectado",
+        "notConfigured": "Não configurado",
+        "ok": "OK",
+        "pending": "Pendente"
+      },
+      "apiKeyLabel": "Chave de API",
+      "apiKeyPlaceholder": "Cole a chave de API",
+      "connect": "Conectar",
+      "connecting": "Conectando…",
+      "updateKey": "Atualizar chave",
+      "disconnect": "Desconectar",
+      "disconnecting": "Desconectando…"
+    }
   },
   "meta": {
     "title": "PromptZero — Versione, teste e evolua seus prompts de IA",
@@ -59,5 +316,67 @@
       "running": "Em andamento",
       "stopped": "Encerrado"
     }
+  },
+  "explore": {
+    "common": {
+      "noDescription": "Sem descrição",
+      "publicLabel": "Público"
+    },
+    "list": {
+      "title": "Explore prompts públicos",
+      "results": "resultados",
+      "searchPlaceholder": "Buscar prompts públicos",
+      "loading": "Carregando prompts públicos…",
+      "forksLabel": "Forks",
+      "emptyTitle": "Nenhum resultado",
+      "emptyDescription": "Tente ajustar o termo de busca."
+    },
+    "detail": {
+      "pageTitle": "Prompt público",
+      "loading": "Carregando prompt público…",
+      "notFoundTitle": "Prompt não encontrado",
+      "notFoundDescription": "Esse prompt pode não ser público ou não existir mais.",
+      "checkingSession": "Verificando sessão…",
+      "forking": "Duplicando…",
+      "forkCta": "Duplicar este prompt",
+      "loginToFork": "Fazer login para duplicar este prompt",
+      "toastForkSuccess": "Prompt duplicado com sucesso",
+      "toastForkError": "Não foi possível duplicar este prompt"
+    }
+  },
+  "workspaces": {
+    "title": "Workspaces",
+    "newTitle": "Novo workspace",
+    "fields": {
+      "name": "Nome",
+      "description": "Descrição"
+    },
+    "createCta": "Criar workspace",
+    "loading": "Carregando workspaces…",
+    "editTitle": "Editar workspace",
+    "noDescription": "Sem descrição",
+    "emptyTitle": "Nenhum workspace cadastrado",
+    "emptyDescription": "Crie workspaces para organizar seus prompts.",
+    "toastCreated": "Workspace criado",
+    "toastUpdated": "Workspace atualizado",
+    "toastRemoved": "Workspace removido"
+  },
+  "tags": {
+    "title": "Tags",
+    "newTitle": "Nova tag",
+    "fields": {
+      "name": "Nome",
+      "color": "Cor da tag",
+      "colorShort": "Cor"
+    },
+    "selectColorAria": "Selecionar cor",
+    "createCta": "Criar tag",
+    "editTitle": "Editar tag",
+    "loading": "Carregando tags…",
+    "emptyTitle": "Nenhuma tag cadastrada",
+    "emptyDescription": "Crie tags para classificar os prompts.",
+    "toastCreated": "Tag criada",
+    "toastUpdated": "Tag atualizada",
+    "toastRemoved": "Tag removida"
   }
 }

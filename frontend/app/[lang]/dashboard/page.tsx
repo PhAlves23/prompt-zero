@@ -23,7 +23,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
   const dict = await getDictionary(lang as Locale)
 
   return (
-    <AppShell title="Dashboard" lang={lang} user={{ name: user.name, email: user.email }}>
+    <AppShell title={dict.nav.dashboard} lang={lang} user={{ name: user.name, email: user.email }}>
       <DashboardPageClient lang={lang} experiments={dict.experiments} />
     </AppShell>
   )

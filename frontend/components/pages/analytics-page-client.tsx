@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { parseAsString, useQueryState } from "nuqs"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
@@ -50,6 +50,40 @@ export function AnalyticsPageClient() {
   }, [period, setSelectedPeriod])
 
   const periodValue = selectedPeriod
+  const locale = useMemo(() => (typeof navigator !== "undefined" ? navigator.language : "pt-BR"), [])
+  const isPt = locale.startsWith("pt")
+  const isEs = locale.startsWith("es")
+  const t = {
+    loadingSeries: isEs ? "Cargando serie de ejecuciones..." : isPt ? "Carregando série de execuções..." : "Loading executions series...",
+    loadExecError: isEs ? "Error al cargar ejecuciones por día." : isPt ? "Falha ao carregar execuções por dia." : "Failed to load executions per day.",
+    loadingRanking: isEs ? "Cargando ranking..." : isPt ? "Carregando ranking..." : "Loading ranking...",
+    loadTopError: isEs ? "Error al cargar top prompts." : isPt ? "Falha ao carregar top prompts." : "Failed to load top prompts.",
+    loadingCost: isEs ? "Cargando costo por modelo..." : isPt ? "Carregando custo por modelo..." : "Loading model costs...",
+    loadCostError: isEs ? "Error al cargar costo por modelo." : isPt ? "Falha ao carregar custo por modelo." : "Failed to load model costs.",
+    loadingData: isEs ? "Cargando datos..." : isPt ? "Carregando dados..." : "Loading data...",
+    loading: isEs ? "Cargando..." : isPt ? "Carregando..." : "Loading...",
+    loadError: isEs ? "Error al cargar." : isPt ? "Falha ao carregar." : "Failed to load.",
+    executions: isEs ? "Ejecuciones" : isPt ? "Execuções" : "Executions",
+    totalConsumption: isEs ? "Consumo total" : isPt ? "Consumo total" : "Total consumption",
+    avgTokens: isEs ? "Media de tokens" : isPt ? "Média de tokens" : "Average tokens",
+    perExecution: isEs ? "Por ejecución" : isPt ? "Por execução" : "Per execution",
+    avgCost: isEs ? "Costo medio" : isPt ? "Custo médio" : "Average cost",
+    executionsPerDay: isEs ? "Ejecuciones por día" : isPt ? "Execuções por dia" : "Executions per day",
+    dayComparison: isEs ? "Comparativo diario para identificar estacionalidad" : isPt ? "Comparativo diário para identificar sazonalidade" : "Daily comparison to identify seasonality",
+    noExecutionsPeriod: isEs ? "Sin ejecuciones en el período" : isPt ? "Sem execuções no período" : "No executions in period",
+    runToGenerateData: isEs ? "Ejecuta prompts para generar datos." : isPt ? "Execute alguns prompts para gerar dados." : "Run prompts to generate data.",
+    topPrompts: isEs ? "Top prompts" : "Top prompts",
+    mostExecuted: isEs ? "Más ejecutados" : isPt ? "Mais executados" : "Most executed",
+    shortExec: isEs ? "ejec." : isPt ? "exec." : "exec.",
+    noRankedPrompts: isEs ? "Sin prompts en ranking" : isPt ? "Sem prompts ranqueados" : "No ranked prompts",
+    runToRank: isEs ? "Ejecuta prompts para aparecer en el ranking." : isPt ? "Execute prompts para aparecer no ranking." : "Run prompts to appear in ranking.",
+    costLatency: isEs ? "Costo y latencia por modelo" : isPt ? "Custo e latência por modelo" : "Cost and latency by model",
+    costLatencyDesc: isEs ? "Qué modelo cuesta más y cuál responde más rápido" : isPt ? "Qual modelo custa mais e qual responde mais rápido" : "Which model costs more and which responds faster",
+    costLabel: isEs ? "Costo" : isPt ? "Custo" : "Cost",
+    avgLatency: isEs ? "Latencia media" : isPt ? "Latência média" : "Average latency",
+    noCostRecorded: isEs ? "Sin costo registrado" : isPt ? "Sem custo registrado" : "No recorded cost",
+    noModelUsagePeriod: isEs ? "Sin consumo de modelos en el período seleccionado." : isPt ? "Sem consumo de modelos no período selecionado." : "No model usage in selected period.",
+  }
   const overviewQuery = useQuery({
     queryKey: queryKeys.analytics.overview(periodValue),
     queryFn: () => bffFetch<AnalyticsOverview>(`/analytics/overview?period=${periodValue}`),
@@ -94,46 +128,54 @@ export function AnalyticsPageClient() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Execucoes"
+          label={t.executions}
           description={`Total no periodo ${periodValue}`}
           value={overviewQuery.data?.executionsTotal ?? 0}
           isPending={overviewQuery.isPending}
           isError={overviewQuery.isError}
+          loadingLabel={t.loading}
+          errorLabel={t.loadError}
         />
         <MetricCard
           label="Tokens"
-          description="Consumo total"
+          description={t.totalConsumption}
           value={overviewQuery.data?.totalTokens ?? 0}
           isPending={overviewQuery.isPending}
           isError={overviewQuery.isError}
+          loadingLabel={t.loading}
+          errorLabel={t.loadError}
         />
         <MetricCard
-          label="Media de tokens"
-          description="Por execucao"
+          label={t.avgTokens}
+          description={t.perExecution}
           value={avgTokensPerExecution}
           isPending={overviewQuery.isPending}
           isError={overviewQuery.isError}
+          loadingLabel={t.loading}
+          errorLabel={t.loadError}
         />
         <MetricCard
-          label="Custo medio"
-          description="Por execucao"
+          label={t.avgCost}
+          description={t.perExecution}
           value={formatCurrency(avgCostPerExecution)}
           isPending={overviewQuery.isPending}
           isError={overviewQuery.isError}
+          loadingLabel={t.loading}
+          errorLabel={t.loadError}
         />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>Execucoes por dia</CardTitle>
-            <CardDescription>Comparativo diario para identificar sazonalidade</CardDescription>
+            <CardTitle>{t.executionsPerDay}</CardTitle>
+            <CardDescription>{t.dayComparison}</CardDescription>
           </CardHeader>
           <CardContent>
             {executionsPerDayQuery.isPending ? (
-              <p className="text-sm text-muted-foreground">Carregando serie de execucoes...</p>
+              <p className="text-sm text-muted-foreground">{t.loadingSeries}</p>
             ) : executionsPerDayQuery.isError ? (
-              <p className="text-sm text-destructive">Falha ao carregar execucoes por dia.</p>
+              <p className="text-sm text-destructive">{t.loadExecError}</p>
             ) : executionsPerDayQuery.data && executionsPerDayQuery.data.length > 0 ? (
               <ChartContainer config={executionsChartConfig} className="aspect-auto h-[280px] w-full">
                 <AreaChart data={executionsPerDayQuery.data}>
@@ -151,7 +193,7 @@ export function AnalyticsPageClient() {
                     tickMargin={8}
                     minTickGap={24}
                     tickFormatter={(value) =>
-                      new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+                      new Date(value).toLocaleDateString(locale, { day: "2-digit", month: "2-digit" })
                     }
                   />
                   <ChartTooltip
@@ -159,7 +201,7 @@ export function AnalyticsPageClient() {
                     content={
                       <ChartTooltipContent
                         labelFormatter={(value) =>
-                          new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })
+                          new Date(value).toLocaleDateString(locale, { day: "2-digit", month: "long" })
                         }
                       />
                     }
@@ -176,8 +218,8 @@ export function AnalyticsPageClient() {
             ) : (
               <Empty className="border">
                 <EmptyHeader>
-                  <EmptyTitle>Sem execucoes no periodo</EmptyTitle>
-                  <EmptyDescription>Execute alguns prompts para gerar dados.</EmptyDescription>
+                  <EmptyTitle>{t.noExecutionsPeriod}</EmptyTitle>
+                  <EmptyDescription>{t.runToGenerateData}</EmptyDescription>
                 </EmptyHeader>
               </Empty>
             )}
@@ -186,14 +228,14 @@ export function AnalyticsPageClient() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Top prompts</CardTitle>
-            <CardDescription>Mais executados</CardDescription>
+            <CardTitle>{t.topPrompts}</CardTitle>
+            <CardDescription>{t.mostExecuted}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2">
             {topPromptsQuery.isPending ? (
-              <p className="text-sm text-muted-foreground">Carregando ranking...</p>
+              <p className="text-sm text-muted-foreground">{t.loadingRanking}</p>
             ) : topPromptsQuery.isError ? (
-              <p className="text-sm text-destructive">Falha ao carregar top prompts.</p>
+              <p className="text-sm text-destructive">{t.loadTopError}</p>
             ) : topPromptsQuery.data && topPromptsQuery.data.length > 0 ? (
               topPromptsQuery.data.map((item, index) => (
                 <div key={item.promptId} className="rounded-lg border p-3">
@@ -201,15 +243,15 @@ export function AnalyticsPageClient() {
                     <span className="font-medium">
                       {index + 1}. {item.promptTitle}
                     </span>
-                    <span className="text-muted-foreground">{item.executions} exec.</span>
+                    <span className="text-muted-foreground">{item.executions} {t.shortExec}</span>
                   </div>
                 </div>
               ))
             ) : (
               <Empty className="border">
                 <EmptyHeader>
-                  <EmptyTitle>Sem prompts ranqueados</EmptyTitle>
-                  <EmptyDescription>Execute prompts para aparecer no ranking.</EmptyDescription>
+                  <EmptyTitle>{t.noRankedPrompts}</EmptyTitle>
+                  <EmptyDescription>{t.runToRank}</EmptyDescription>
                 </EmptyHeader>
               </Empty>
             )}
@@ -219,14 +261,14 @@ export function AnalyticsPageClient() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Custo e latencia por modelo</CardTitle>
-          <CardDescription>Qual modelo custa mais e qual responde mais rapido</CardDescription>
+          <CardTitle>{t.costLatency}</CardTitle>
+          <CardDescription>{t.costLatencyDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           {costPerModelQuery.isPending ? (
-            <p className="text-sm text-muted-foreground">Carregando custo por modelo...</p>
+            <p className="text-sm text-muted-foreground">{t.loadingCost}</p>
           ) : costPerModelQuery.isError ? (
-            <p className="text-sm text-destructive">Falha ao carregar custo por modelo.</p>
+            <p className="text-sm text-destructive">{t.loadCostError}</p>
           ) : costPerModelQuery.data && costPerModelQuery.data.length > 0 ? (
             <ChartContainer config={costChartConfig} className="aspect-auto h-[340px] w-full">
               <BarChart data={costPerModelQuery.data} layout="vertical" margin={{ left: 16, right: 16 }}>
@@ -246,9 +288,9 @@ export function AnalyticsPageClient() {
                       formatter={(_value, _name, item) => (
                         <div className="grid gap-1 text-xs">
                           <span className="font-medium">{item.payload.model}</span>
-                          <span>Custo: {formatCurrency(item.payload.estimatedCost)}</span>
-                          <span>Latencia media: {item.payload.avgLatencyMs} ms</span>
-                          <span>Tokens: {item.payload.totalTokens.toLocaleString("pt-BR")}</span>
+                          <span>{t.costLabel}: {formatCurrency(item.payload.estimatedCost, locale)}</span>
+                          <span>{t.avgLatency}: {item.payload.avgLatencyMs} ms</span>
+                          <span>Tokens: {item.payload.totalTokens.toLocaleString(locale)}</span>
                         </div>
                       )}
                     />
@@ -261,12 +303,12 @@ export function AnalyticsPageClient() {
           ) : overviewQuery.data ? (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>Sem custo registrado</EmptyTitle>
-                <EmptyDescription>Sem consumo de modelos no periodo selecionado.</EmptyDescription>
+                  <EmptyTitle>{t.noCostRecorded}</EmptyTitle>
+                  <EmptyDescription>{t.noModelUsagePeriod}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           ) : (
-            <p className="text-sm text-muted-foreground">Carregando dados...</p>
+            <p className="text-sm text-muted-foreground">{t.loadingData}</p>
           )}
         </CardContent>
       </Card>
@@ -280,12 +322,16 @@ function MetricCard({
   value,
   isPending,
   isError,
+  loadingLabel,
+  errorLabel,
 }: {
   label: string
   description: string
   value: number | string
   isPending: boolean
   isError: boolean
+  loadingLabel: string
+  errorLabel: string
 }) {
   return (
     <Card>
@@ -295,9 +341,9 @@ function MetricCard({
       </CardHeader>
       <CardContent>
         {isPending ? (
-          <p className="text-sm text-muted-foreground">Carregando...</p>
+          <p className="text-sm text-muted-foreground">{loadingLabel}</p>
         ) : isError ? (
-          <p className="text-sm text-destructive">Falha ao carregar.</p>
+          <p className="text-sm text-destructive">{errorLabel}</p>
         ) : (
           <p className="text-2xl font-semibold">{value}</p>
         )}
@@ -306,11 +352,11 @@ function MetricCard({
   )
 }
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
+function formatCurrency(value: number, locale = "pt-BR") {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "USD",
-    minimumFractionDigits: 4,
-    maximumFractionDigits: 4,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(value)
 }

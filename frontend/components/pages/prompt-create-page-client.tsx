@@ -21,6 +21,7 @@ import { bffFetch, ClientHttpError } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { Prompt, Tag, Workspace } from "@/lib/api/types"
 import { cn } from "@/lib/utils"
+import type { Dictionary } from "@/app/[lang]/dictionaries"
 
 const languageByLocalePrefix = {
   pt: "pt",
@@ -73,7 +74,7 @@ function extractVariableNames(content: string): string[] {
   return Array.from(unique)
 }
 
-export function PromptCreatePageClient({ lang }: { lang: string }) {
+export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dictionary }) {
   const router = useRouter()
   const [openTags, setOpenTags] = useState(false)
   const localePrefix = (lang.split("-")[0] ?? "pt") as keyof typeof languageByLocalePrefix
@@ -170,7 +171,7 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
       return createdPrompt
     },
     onSuccess: () => {
-      toast.success("Prompt criado")
+      toast.success(dict.prompts.create)
       router.push(`/${lang}/prompts`)
       router.refresh()
     },
@@ -179,7 +180,7 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
         toast.error(error.payload.message)
         return
       }
-      toast.error("Nao foi possivel criar o prompt")
+      toast.error(dict.prompts.createForm.toastCreateError)
     },
   })
   const workspacesQuery = useQuery({
@@ -200,11 +201,11 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
-            <CardTitle>Novo prompt</CardTitle>
+            <CardTitle>{dict.prompts.create}</CardTitle>
             <Button asChild variant="outline" className="cursor-pointer">
               <Link href={`/${lang}/prompts`}>
                 <ArrowLeft className="h-4 w-4" />
-                Voltar para listagem
+                {dict.prompts.createForm.backToList}
               </Link>
             </Button>
           </div>
@@ -256,22 +257,22 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
             })}
           >
             <div className="grid gap-2">
-              <Label htmlFor="title">Titulo</Label>
+              <Label htmlFor="title">{dict.prompts.createForm.fields.title}</Label>
               <Input id="title" {...form.register("title")} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Descricao</Label>
+              <Label htmlFor="description">{dict.prompts.createForm.fields.description}</Label>
               <Input id="description" {...form.register("description")} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="content">Conteudo</Label>
+              <Label htmlFor="content">{dict.prompts.createForm.fields.content}</Label>
               <Textarea id="content" rows={8} {...form.register("content")} />
             </div>
             <div className="grid gap-4 rounded-lg border p-4">
-              <p className="text-sm font-medium">Configuracoes do prompt</p>
+              <p className="text-sm font-medium">{dict.prompts.createForm.promptSettings}</p>
               <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                 <div className="grid gap-2">
-                  <Label htmlFor="language">Idioma</Label>
+                  <Label htmlFor="language">{dict.prompts.createForm.fields.language}</Label>
                   <Select
                     value={createLanguage}
                     onValueChange={(value) => {
@@ -281,7 +282,7 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                     }}
                   >
                     <SelectTrigger id="language" className="cursor-pointer">
-                      <SelectValue placeholder="Selecione o idioma" />
+                      <SelectValue placeholder={dict.prompts.createForm.selectLanguage} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pt" className="cursor-pointer">Portugues</SelectItem>
@@ -291,7 +292,7 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="category-tags">Categorias</Label>
+                  <Label htmlFor="category-tags">{dict.prompts.detail.edit.fields.categories}</Label>
                   <Popover open={openTags} onOpenChange={setOpenTags}>
                     <PopoverTrigger asChild>
                       <Button
@@ -305,15 +306,15 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                       >
                         {selectedTags.length > 0
                           ? selectedTags.map((tag) => tag.name).join(", ")
-                          : "Selecione categoria(s)"}
+                          : dict.prompts.createForm.selectCategories}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent align="start" className="w-(--radix-popover-trigger-width) p-0">
                       <Command>
-                        <CommandInput placeholder="Buscar categoria..." />
+                        <CommandInput placeholder={dict.prompts.createForm.searchCategory} />
                         <CommandList>
-                          <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
+                          <CommandEmpty>{dict.prompts.createForm.emptyCategories}</CommandEmpty>
                           <CommandGroup>
                             {(tagsQuery.data ?? []).map((tag) => {
                               const isSelected = (selectedTagIds ?? []).includes(tag.id)
@@ -340,25 +341,25 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                     </PopoverContent>
                   </Popover>
                   {tagsQuery.isPending ? (
-                    <p className="text-xs text-muted-foreground">Carregando categorias...</p>
+                    <p className="text-xs text-muted-foreground">{dict.prompts.createForm.loadingCategories}</p>
                   ) : null}
                   {tagsQuery.isError ? (
                     <p className="text-xs text-destructive">Nao foi possivel carregar as categorias.</p>
                   ) : null}
                   {!tagsQuery.isPending && !tagsQuery.isError && (tagsQuery.data?.length ?? 0) === 0 ? (
                     <p className="text-xs text-muted-foreground">
-                      Nenhuma categoria cadastrada. Crie em <Link href={`/${lang}/tags`} className="underline">Tags</Link>.
+                      {dict.prompts.createForm.emptyCategoriesHintPrefix} <Link href={`/${lang}/tags`} className="underline">Tags</Link>.
                     </p>
                   ) : null}
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="model">Modelo</Label>
+                  <Label htmlFor="model">{dict.prompts.createForm.fields.model}</Label>
                   <Select
                     value={createModel}
                     onValueChange={(value) => form.setValue("model", value)}
                   >
                     <SelectTrigger id="model" className="cursor-pointer">
-                      <SelectValue placeholder="Selecione o modelo" />
+                      <SelectValue placeholder={dict.prompts.createForm.selectModel} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="gpt-4o-mini" className="cursor-pointer">gpt-4o-mini</SelectItem>
@@ -370,17 +371,17 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="workspace">Workspace</Label>
+                  <Label htmlFor="workspace">{dict.prompts.createForm.fields.workspace}</Label>
                   <Select
                     value={createWorkspaceId?.trim() ? createWorkspaceId : "__none"}
                     onValueChange={(value) => form.setValue("workspaceId", value === "__none" ? "" : value)}
                   >
                     <SelectTrigger id="workspace" className="cursor-pointer">
-                      <SelectValue placeholder="Selecione um workspace (opcional)" />
+                      <SelectValue placeholder={dict.prompts.createForm.selectWorkspace} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none" className="cursor-pointer">
-                        Sem workspace
+                        {dict.prompts.createForm.noWorkspace}
                       </SelectItem>
                       {(workspacesQuery.data ?? []).map((workspace) => (
                         <SelectItem key={workspace.id} value={workspace.id} className="cursor-pointer">
@@ -390,7 +391,7 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                     </SelectContent>
                   </Select>
                   {workspacesQuery.isPending ? (
-                    <p className="text-xs text-muted-foreground">Carregando workspaces...</p>
+                    <p className="text-xs text-muted-foreground">{dict.prompts.createForm.loadingWorkspaces}</p>
                   ) : null}
                   {workspacesQuery.isError ? (
                     <p className="text-xs text-destructive">Nao foi possivel carregar os workspaces.</p>
@@ -399,7 +400,7 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
               </div>
             </div>
             <div className="grid gap-3 rounded-lg border p-4 md:grid-cols-2">
-              <p className="md:col-span-2 text-sm font-medium">Configuracoes avancadas</p>
+              <p className="md:col-span-2 text-sm font-medium">{dict.prompts.createForm.advancedSettings}</p>
               <div className="grid gap-1.5">
                 <Label htmlFor="temperature">Temperature</Label>
                 <Input
@@ -449,7 +450,7 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
             </div>
             <div className="grid gap-3 rounded-lg border p-4">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium">Variaveis do template (passo unico)</p>
+                <p className="text-sm font-medium">{dict.prompts.createForm.templateVariablesTitle}</p>
                 <Button
                   type="button"
                   variant="outline"
@@ -465,14 +466,14 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                   }
                 >
                   <Plus className="h-4 w-4" />
-                  Adicionar variavel
+                  {dict.prompts.createForm.addVariable}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Dica: use placeholders no conteudo como {"{{produto}}"} para auto-detectar variaveis.
+                {dict.prompts.createForm.templateHint}
               </p>
               {fields.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhuma variavel detectada/adicionada.</p>
+                <p className="text-sm text-muted-foreground">{dict.prompts.createForm.noVariables}</p>
               ) : (
                 <div className="grid gap-3">
                   {fields.map((field, index) => {
@@ -480,11 +481,11 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                     return (
                       <div key={field.id} className="grid gap-3 rounded-md border p-3 md:grid-cols-2">
                         <div className="grid gap-1.5">
-                          <Label htmlFor={`variable-name-${field.id}`}>Nome</Label>
+                          <Label htmlFor={`variable-name-${field.id}`}>{dict.prompts.createForm.fields.name}</Label>
                           <Input id={`variable-name-${field.id}`} {...form.register(`variables.${index}.name`)} />
                         </div>
                         <div className="grid gap-1.5">
-                          <Label htmlFor={`variable-type-${field.id}`}>Tipo</Label>
+                          <Label htmlFor={`variable-type-${field.id}`}>{dict.prompts.createForm.fields.type}</Label>
                           <Select
                             value={variableType}
                             onValueChange={(value) => {
@@ -494,7 +495,7 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                             }}
                           >
                             <SelectTrigger id={`variable-type-${field.id}`} className="cursor-pointer">
-                              <SelectValue placeholder="Selecione o tipo" />
+                              <SelectValue placeholder={dict.prompts.createForm.selectType} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="text" className="cursor-pointer">Text</SelectItem>
@@ -504,11 +505,11 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                           </Select>
                         </div>
                         <div className="grid gap-1.5">
-                          <Label htmlFor={`variable-default-${field.id}`}>Default</Label>
+                          <Label htmlFor={`variable-default-${field.id}`}>{dict.prompts.createForm.fields.default}</Label>
                           <Input id={`variable-default-${field.id}`} {...form.register(`variables.${index}.defaultValue`)} />
                         </div>
                         <div className="grid gap-1.5">
-                          <Label htmlFor={`variable-description-${field.id}`}>Descricao</Label>
+                          <Label htmlFor={`variable-description-${field.id}`}>{dict.prompts.createForm.fields.description}</Label>
                           <Input
                             id={`variable-description-${field.id}`}
                             {...form.register(`variables.${index}.description`)}
@@ -532,7 +533,7 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                             onClick={() => remove(index)}
                           >
                             <Trash2 className="h-4 w-4" />
-                            Remover variavel
+                            {dict.prompts.createForm.removeVariable}
                           </Button>
                         </div>
                       </div>
@@ -545,16 +546,16 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
               <Switch
                 checked={createIsPublic}
                 onCheckedChange={(checked) => form.setValue("isPublic", checked)}
-                aria-label="Definir prompt como publico"
+                aria-label={dict.prompts.createForm.publicPromptAria}
               />
-              <span className="text-sm text-muted-foreground">Prompt publico</span>
+              <span className="text-sm text-muted-foreground">{dict.prompts.createForm.publicPromptLabel}</span>
             </div>
             <Button
               type="submit"
               className="w-fit cursor-pointer"
               disabled={createPrompt.isPending || form.formState.isSubmitting}
             >
-              {createPrompt.isPending ? "Criando..." : "Criar prompt"}
+              {createPrompt.isPending ? dict.prompts.createForm.creating : dict.prompts.create}
             </Button>
           </form>
         </CardContent>
