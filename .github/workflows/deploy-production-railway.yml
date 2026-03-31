@@ -80,6 +80,28 @@ jobs:
   frontend-validate:
     name: Frontend Validate
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: promptzero
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d promptzero"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/promptzero
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/promptzero
+      JWT_ACCESS_SECRET: dev-access-secret
+      JWT_REFRESH_SECRET: dev-refresh-secret
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      ENCRYPTION_SECRET: dev-encryption-secret
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -94,8 +116,19 @@ jobs:
         with:
           node-version: 20
 
+      - name: Setup Node (Yarn cache — backend E2E)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: backend/yarn.lock
+
       - name: Validate pnpm availability
         run: pnpm --version
+
+      - name: Install backend dependencies (Playwright stack)
+        run: yarn --frozen-lockfile
+        working-directory: backend
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --prefer-offline

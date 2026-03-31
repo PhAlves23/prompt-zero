@@ -12,7 +12,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/main.js",
     "lint": "eslint \"{src,apps,libs,test,prisma}/**/*.ts\"",
     "lint:fix": "eslint \"{src,apps,libs,test,prisma}/**/*.ts\" --fix",
     "test": "jest",
@@ -109,6 +109,6 @@
     ]
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "npx --no-install tsx prisma/seed.ts"
   }
 }

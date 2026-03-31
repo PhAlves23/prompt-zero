@@ -54,7 +54,14 @@ export function LoginForm({ lang, dict }: { lang: string; dict: Dictionary }) {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <form
+      noValidate
+      className="space-y-4"
+      onSubmit={(event) => {
+        event.preventDefault()
+        void form.handleSubmit(onSubmit)(event)
+      }}
+    >
       <div className="space-y-2">
         <Label htmlFor="email">{dict.auth.email}</Label>
         <Input

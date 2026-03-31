@@ -212,49 +212,87 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
         </CardHeader>
         <CardContent>
           <form
+            method="post"
+            noValidate
             className="grid gap-4"
-            onSubmit={form.handleSubmit((values) => {
-              const parsed = createPromptSchema.safeParse(values)
-              if (!parsed.success) {
-                parsed.error.issues.forEach((issue) => {
-                  const field = issue.path[0]
-                  if (
-                    field === "title" ||
-                    field === "description" ||
-                    field === "content" ||
-                    field === "isPublic"
-                  ) {
-                    form.setError(field, { message: issue.message })
+            onSubmit={(event) => {
+              event.preventDefault()
+              void form.handleSubmit(
+                (data) => {
+                  const baseline = form.getValues()
+                  const values: CreatePromptValues = {
+                    ...baseline,
+                    ...data,
+                    variables: data.variables ?? baseline.variables,
+                    tagIds: data.tagIds ?? baseline.tagIds,
+                    model: data.model ?? baseline.model,
+                    language: data.language ?? baseline.language,
+                    workspaceId: data.workspaceId ?? baseline.workspaceId,
+                    isPublic: data.isPublic ?? baseline.isPublic,
+                    temperature: Number.isFinite(data.temperature)
+                      ? data.temperature
+                      : baseline.temperature,
+                    topP: Number.isFinite(data.topP) ? data.topP : baseline.topP,
+                    topK: Number.isFinite(data.topK) ? data.topK : baseline.topK,
+                    maxTokens: Number.isFinite(data.maxTokens)
+                      ? data.maxTokens
+                      : baseline.maxTokens,
                   }
-                })
-                return
-              }
-              createPrompt.mutate({
-                prompt: {
-                  title: parsed.data.title,
-                  description: parsed.data.description,
-                  content: parsed.data.content,
-                  workspaceId: parsed.data.workspaceId?.trim() ? parsed.data.workspaceId : undefined,
-                  isPublic: parsed.data.isPublic,
-                  language: parsed.data.language,
-                  model: parsed.data.model,
-                  tagIds: parsed.data.tagIds?.length ? parsed.data.tagIds : undefined,
+                  const parsed = createPromptSchema.safeParse(values)
+                  if (!parsed.success) {
+                    const [first] = parsed.error.issues
+                    if (first?.message) {
+                      toast.error(first.message)
+                    }
+                    parsed.error.issues.forEach((issue) => {
+                      const field = issue.path[0]
+                      if (
+                        field === "title" ||
+                        field === "description" ||
+                        field === "content" ||
+                        field === "isPublic"
+                      ) {
+                        form.setError(field, { message: issue.message })
+                      }
+                    })
+                    return
+                  }
+                  createPrompt.mutate({
+                    prompt: {
+                      title: parsed.data.title,
+                      description: parsed.data.description,
+                      content: parsed.data.content,
+                      workspaceId: parsed.data.workspaceId?.trim() ? parsed.data.workspaceId : undefined,
+                      isPublic: parsed.data.isPublic,
+                      language: parsed.data.language,
+                      model: parsed.data.model,
+                      tagIds: parsed.data.tagIds?.length ? parsed.data.tagIds : undefined,
+                    },
+                    variables: parsed.data.variables.map((variable) => ({
+                      name: variable.name,
+                      type: variable.type,
+                      defaultValue: variable.defaultValue?.trim() || undefined,
+                      description: variable.description?.trim() || undefined,
+                      options:
+                        variable.type === "select"
+                          ? (variable.optionsText ?? "")
+                              .split(",")
+                              .map((item) => item.trim())
+                              .filter(Boolean)
+                          : undefined,
+                    })),
+                  })
                 },
-                variables: parsed.data.variables.map((variable) => ({
-                  name: variable.name,
-                  type: variable.type,
-                  defaultValue: variable.defaultValue?.trim() || undefined,
-                  description: variable.description?.trim() || undefined,
-                  options:
-                    variable.type === "select"
-                      ? (variable.optionsText ?? "")
-                          .split(",")
-                          .map((item) => item.trim())
-                          .filter(Boolean)
-                      : undefined,
-                })),
-              })
-            })}
+                (errors) => {
+                  const first = Object.entries(errors)[0]
+                  toast.error(
+                    first
+                      ? `${String(first[0])}: ${first[1]?.message ?? "inválido"}`
+                      : dict.prompts.createForm.toastCreateError,
+                  )
+                },
+              )(event)
+            }}
           >
             <div className="grid gap-2">
               <Label htmlFor="title">{dict.prompts.createForm.fields.title}</Label>
