@@ -1,6 +1,17 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Fluxos principais (autenticado)", () => {
+  test.beforeEach(async ({ page }) => {
+    page.on("console", (msg) => {
+      if (msg.type() === "error") {
+        console.error("Browser console error:", msg.text());
+      }
+    });
+    page.on("pageerror", (error) => {
+      console.error("Page error:", error.message);
+    });
+  });
+
   test("dashboard carrega após login", async ({ page }) => {
     await page.goto("/pt-BR/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible({
@@ -31,17 +42,34 @@ test.describe("Fluxos principais (autenticado)", () => {
     await page.getByLabel("Título", { exact: true }).fill(title);
     await page.getByLabel("Conteúdo", { exact: true }).fill(content);
 
-    const createPromptResponse = page.waitForResponse(
-      (res) =>
-        res.request().method() === "POST" &&
-        res.url().includes("/api/bff/prompts") &&
-        !res.url().includes("/variables"),
-    );
-    await page.locator("form[method='post']").getByRole("button", { name: "Criar prompt" }).click();
-    const res = await createPromptResponse;
-    if (!res.ok()) {
-      const body = await res.text().catch(() => "");
-      throw new Error(`criar prompt falhou: HTTP ${res.status()} ${body.slice(0, 300)}`);
+    const submitButton = page.locator("form[method='post']").getByRole("button", { name: "Criar prompt" });
+    await expect(submitButton).toBeEnabled({ timeout: 10_000 });
+
+    const [response] = await Promise.all([
+      page.waitForResponse(
+        (res) => {
+          const isMatch =
+            res.request().method() === "POST" &&
+            res.url().includes("/api/bff/prompts") &&
+            !res.url().includes("/variables");
+          if (isMatch) {
+            console.log(`Matched response: ${res.url()} - ${res.status()}`);
+          }
+          return isMatch;
+        },
+        { timeout: 90_000 },
+      ).catch(async (error) => {
+        const screenshot = await page.screenshot();
+        console.error("Failed to receive response. Current URL:", page.url());
+        console.error("Screenshot captured:", screenshot.length, "bytes");
+        throw error;
+      }),
+      submitButton.click(),
+    ]);
+
+    if (!response.ok()) {
+      const body = await response.text().catch(() => "");
+      throw new Error(`criar prompt falhou: HTTP ${response.status()} ${body.slice(0, 300)}`);
     }
 
     await expect(page).toHaveURL(/\/pt-BR\/prompts$/, { timeout: 60_000 });
