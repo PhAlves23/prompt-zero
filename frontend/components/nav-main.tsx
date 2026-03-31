@@ -9,7 +9,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { PlusSignCircleIcon, Mail01Icon } from "@hugeicons/core-free-icons"
+import { PlusSignCircleIcon } from "@hugeicons/core-free-icons"
+import { Store } from "lucide-react"
 import Link from "next/link"
 
 export function NavMain({
@@ -21,6 +22,10 @@ export function NavMain({
     icon?: React.ReactNode
   }[]
 }) {
+  const promptsUrl = items.find((item) => item.title === "Prompts")?.url
+  const quickCreateUrl = promptsUrl ? `${promptsUrl}/new` : "#"
+  const exploreUrl = items.find((item) => item.title === "Explore")?.url ?? "#"
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
@@ -31,18 +36,21 @@ export function NavMain({
               tooltip="Quick Create"
               className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
             >
-              <Link href={items[1]?.url ?? "#"} className="cursor-pointer">
+              <Link href={quickCreateUrl} className="cursor-pointer">
                 <HugeiconsIcon icon={PlusSignCircleIcon} strokeWidth={2} />
                 <span>Quick Create</span>
               </Link>
             </SidebarMenuButton>
             <Button
+              asChild
               size="icon"
               className="size-8 group-data-[collapsible=icon]:opacity-0"
               variant="outline"
             >
-              <HugeiconsIcon icon={Mail01Icon} strokeWidth={2} />
-              <span className="sr-only">Inbox</span>
+              <Link href={exploreUrl} className="cursor-pointer">
+                <Store className="h-4 w-4" />
+                <span className="sr-only">Marketplace de prompts</span>
+              </Link>
             </Button>
           </SidebarMenuItem>
         </SidebarMenu>

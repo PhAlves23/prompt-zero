@@ -12,6 +12,8 @@
   "errors.promptExecuteForbidden": "Sin permiso para ejecutar este prompt",
   "errors.promptVersionNotFound": "No se encontró una versión para este prompt",
   "errors.versionNotFound": "Versión no encontrada",
+  "errors.versionDeleteLastNotAllowed": "No es posible eliminar la última versión del prompt",
+  "errors.versionHasExecutions": "No es posible eliminar una versión con ejecuciones asociadas",
   "errors.promptWithoutVersionsForFork": "Prompt sin versiones para fork",
   "errors.templateVariablesNotConfigured": "La plantilla tiene variables sin configurar",
   "errors.requiredVariablesMissing": "Faltan variables obligatorias",

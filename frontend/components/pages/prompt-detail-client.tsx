@@ -12,6 +12,17 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -27,6 +38,7 @@ import type {
   ExperimentRunResult,
   PaginatedResult,
   Prompt,
+  Tag,
   PromptVariable,
   PromptVersion,
 } from "@/lib/api/types"
@@ -36,6 +48,7 @@ const updateSchema = z.object({
   description: z.string().optional(),
   content: z.string().min(10),
   isPublic: z.boolean(),
+  tagIds: z.array(z.string()).optional(),
 })
 
 const executeSettingsSchema = z.object({
@@ -47,6 +60,18 @@ const executeSettingsSchema = z.object({
 
 type UpdatePromptValues = z.infer<typeof updateSchema>
 type ExecuteSettingsValues = z.infer<typeof executeSettingsSchema>
+
+function extractPromptTagIds(prompt: Prompt | undefined): string[] {
+  if (!prompt?.tags || prompt.tags.length === 0) {
+    return []
+  }
+  return prompt.tags
+    .map((tagItem) => {
+      const candidate = tagItem as unknown as { id?: string; tagId?: string; tag?: { id?: string } }
+      return candidate.id ?? candidate.tagId ?? candidate.tag?.id
+    })
+    .filter((value): value is string => typeof value === "string" && value.length > 0)
+}
 
 function formatDateTime(value: string) {
   return new Date(value).toLocaleString("pt-BR")
@@ -77,6 +102,7 @@ export function PromptDetailClient({
   const [abLastExposureId, setAbLastExposureId] = useState("")
   const [abLastVariant, setAbLastVariant] = useState<"A" | "B" | null>(null)
   const [abLastOutput, setAbLastOutput] = useState("")
+  const [openPromptTags, setOpenPromptTags] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
   const promptQuery = useQuery({
@@ -92,6 +118,10 @@ export function PromptDetailClient({
   const variablesQuery = useQuery({
     queryKey: queryKeys.prompts.variables(promptId),
     queryFn: () => bffFetch<PromptVariable[]>(`/prompts/${promptId}/variables`),
+  })
+  const tagsQuery = useQuery({
+    queryKey: queryKeys.tags.list,
+    queryFn: () => bffFetch<Tag[]>("/tags"),
   })
 
   const executionsQuery = useQuery({
@@ -149,12 +179,21 @@ export function PromptDetailClient({
       description: promptQuery.data?.description ?? "",
       content: promptQuery.data?.content ?? "",
       isPublic: promptQuery.data?.isPublic ?? false,
+      tagIds: extractPromptTagIds(promptQuery.data),
     },
   })
   const updateIsPublic = useWatch({
     control: form.control,
     name: "isPublic",
   })
+  const updateTagIds = useWatch({
+    control: form.control,
+    name: "tagIds",
+  })
+  const selectedPromptTags = useMemo(
+    () => (tagsQuery.data ?? []).filter((tag) => (updateTagIds ?? []).includes(tag.id)),
+    [tagsQuery.data, updateTagIds],
+  )
 
   const executeSettingsForm = useForm<ExecuteSettingsValues>({
     defaultValues: {
@@ -205,6 +244,37 @@ export function PromptDetailClient({
       toast.success("Versao restaurada")
       void queryClient.invalidateQueries({ queryKey: queryKeys.prompts.detail(promptId) })
       void queryClient.invalidateQueries({ queryKey: queryKeys.prompts.versions(promptId) })
+    },
+  })
+  const removeVersion = useMutation({
+    mutationFn: (versionId: string) =>
+      bffFetch<{ deleted: boolean }>(`/prompts/${promptId}/versions/${versionId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      toast.success("Versao removida")
+      void queryClient.invalidateQueries({ queryKey: queryKeys.prompts.versions(promptId) })
+    },
+    onError: (error) => {
+      if (error instanceof ClientHttpError) {
+        if (
+          error.payload.message === "errors.versionDeleteLastNotAllowed" ||
+          error.payload.message === "Cannot delete the last prompt version"
+        ) {
+          toast.error("Nao e possivel remover a ultima versao do prompt")
+          return
+        }
+        if (
+          error.payload.message === "errors.versionHasExecutions" ||
+          error.payload.message === "Cannot delete a version with associated executions"
+        ) {
+          toast.error("Nao e possivel remover uma versao com execucoes associadas")
+          return
+        }
+        toast.error(error.payload.message)
+        return
+      }
+      toast.error("Nao foi possivel remover a versao")
     },
   })
 
@@ -514,6 +584,65 @@ export function PromptDetailClient({
             <div className="grid gap-2">
               <Label htmlFor="content">Conteudo</Label>
               <Textarea id="content" rows={10} {...form.register("content")} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="prompt-categories">Categorias</Label>
+              <Popover open={openPromptTags} onOpenChange={setOpenPromptTags}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="prompt-categories"
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openPromptTags}
+                    className="justify-between"
+                    disabled={tagsQuery.isPending || tagsQuery.isError}
+                  >
+                    {selectedPromptTags.length > 0
+                      ? selectedPromptTags.map((tag) => tag.name).join(", ")
+                      : "Selecione categoria(s)"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-(--radix-popover-trigger-width) p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar categoria..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
+                      <CommandGroup>
+                        {(tagsQuery.data ?? []).map((tag) => {
+                          const isSelected = (updateTagIds ?? []).includes(tag.id)
+                          return (
+                            <CommandItem
+                              key={tag.id}
+                              value={`${tag.name} ${tag.id}`}
+                              onSelect={() => {
+                                const current = updateTagIds ?? []
+                                const next = isSelected
+                                  ? current.filter((id) => id !== tag.id)
+                                  : [...current, tag.id]
+                                form.setValue("tagIds", next, { shouldDirty: true })
+                              }}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")} />
+                              {tag.name}
+                            </CommandItem>
+                          )
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {tagsQuery.isPending ? <p className="text-xs text-muted-foreground">Carregando categorias...</p> : null}
+              {tagsQuery.isError ? (
+                <p className="text-xs text-destructive">Nao foi possivel carregar as categorias.</p>
+              ) : null}
+              {!tagsQuery.isPending && !tagsQuery.isError && (tagsQuery.data?.length ?? 0) === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Nenhuma categoria cadastrada. Crie categorias na pagina de Tags.
+                </p>
+              ) : null}
             </div>
             <div className="flex items-center gap-2">
               <Switch
@@ -902,6 +1031,36 @@ export function PromptDetailClient({
                     >
                       Restaurar
                     </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          className="cursor-pointer"
+                          disabled={removeVersion.isPending}
+                        >
+                          Excluir versao
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remover versao?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Essa acao nao pode ser desfeita. A versao selecionada sera removida permanentemente.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            variant="destructive"
+                            onClick={() => removeVersion.mutate(version.id)}
+                            disabled={removeVersion.isPending}
+                          >
+                            Confirmar exclusao
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                     <Button type="button" variant="outline" asChild>
                       <Link href={`/${lang}/prompts/${promptId}/versions/${version.id}`} className="cursor-pointer">
                         Ver detalhes

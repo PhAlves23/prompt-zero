@@ -21,6 +21,35 @@ export type PromptsPageDictionary = {
   }
 }
 
+type PromptTagChip = {
+  name: string
+  color: string | null
+}
+
+function extractPromptTags(prompt: Prompt): PromptTagChip[] {
+  if (!prompt.tags || prompt.tags.length === 0) {
+    return []
+  }
+  return prompt.tags
+    .map((tagItem) => {
+      const candidate = tagItem as unknown as {
+        name?: string
+        color?: string | null
+        tag?: { name?: string; color?: string | null }
+      }
+      const name = candidate.name ?? candidate.tag?.name
+      const color = candidate.color ?? candidate.tag?.color ?? null
+      if (!name || name.trim().length === 0) {
+        return null
+      }
+      return {
+        name,
+        color,
+      }
+    })
+    .filter((value): value is PromptTagChip => value !== null)
+}
+
 export function PromptsPageClient({
   lang,
   prompts: promptsI18n,
@@ -87,26 +116,55 @@ export function PromptsPageClient({
             </Empty>
           ) : (
             <div className="grid gap-3">
-              {promptsQuery.data.data.map((prompt) => (
-                <Link
-                  href={`/${lang}/prompts/${prompt.id}`}
-                  key={prompt.id}
-                  className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent cursor-pointer"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-medium">{prompt.title}</h3>
-                    <Badge
-                      variant={prompt.isPublic ? "outline" : "secondary"}
-                      className="shrink-0"
-                    >
-                      {prompt.isPublic ? promptsI18n.visibility.public : promptsI18n.visibility.private}
-                    </Badge>
-                  </div>
-                  <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                    {prompt.description ?? "Sem descricao"}
-                  </p>
-                </Link>
-              ))}
+              {promptsQuery.data.data.map((prompt) => {
+                const promptTags = extractPromptTags(prompt)
+                return (
+                  <Link
+                    href={`/${lang}/prompts/${prompt.id}`}
+                    key={prompt.id}
+                    className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-medium">{prompt.title}</h3>
+                      <Badge
+                        variant={prompt.isPublic ? "outline" : "secondary"}
+                        className="shrink-0"
+                      >
+                        {prompt.isPublic ? promptsI18n.visibility.public : promptsI18n.visibility.private}
+                      </Badge>
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                      {prompt.description ?? "Sem descricao"}
+                    </p>
+                    {promptTags.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {promptTags.slice(0, 3).map((tag) => (
+                          <Badge
+                            key={`${prompt.id}-${tag.name}`}
+                            variant="outline"
+                            className="text-xs"
+                            style={
+                              tag.color
+                                ? {
+                                    borderColor: tag.color,
+                                    color: tag.color,
+                                  }
+                                : undefined
+                            }
+                          >
+                            {tag.name}
+                          </Badge>
+                        ))}
+                        {promptTags.length > 3 ? (
+                          <Badge variant="outline" className="text-xs">
+                            +{promptTags.length - 3}
+                          </Badge>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </Link>
+                )
+              })}
             </div>
           )}
         </CardContent>

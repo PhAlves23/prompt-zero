@@ -85,6 +85,17 @@ export class PromptsController {
     return this.promptsService.getVersion(user.sub, id, versionId);
   }
 
+  @Delete(':id/versions/:versionId')
+  @ApiOperation({ summary: 'Delete prompt version' })
+  @ApiParam({ name: 'versionId' })
+  removeVersion(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('versionId') versionId: string,
+  ) {
+    return this.promptsService.removeVersion(user.sub, id, versionId);
+  }
+
   @Post(':id/versions/:versionId/restore')
   @ApiOperation({ summary: 'Restore version by creating new N+1 version' })
   restoreVersion(

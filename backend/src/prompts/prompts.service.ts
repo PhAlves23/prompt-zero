@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePromptDto } from './dto/create-prompt.dto';
@@ -140,9 +140,7 @@ export class PromptsService {
     }
 
     await this.prisma.$transaction(async (tx) => {
-      const versionsCount = await tx.promptVersion.count({
-        where: { promptId },
-      });
+      const nextVersionNumber = await this.getNextVersionNumber(tx, promptId);
 
       const workspaceId = dto.workspaceId
         ? await this.resolveWorkspaceId(userId, dto.workspaceId)
@@ -173,7 +171,7 @@ export class PromptsService {
         await tx.promptVersion.create({
           data: {
             promptId,
-            versionNumber: versionsCount + 1,
+            versionNumber: nextVersionNumber,
             content: dto.content,
           },
         });
@@ -232,9 +230,7 @@ export class PromptsService {
     }
 
     await this.prisma.$transaction(async (tx) => {
-      const count = await tx.promptVersion.count({
-        where: { promptId },
-      });
+      const nextVersionNumber = await this.getNextVersionNumber(tx, promptId);
       await tx.prompt.update({
         where: { id: promptId },
         data: { content: version.content },
@@ -242,13 +238,42 @@ export class PromptsService {
       await tx.promptVersion.create({
         data: {
           promptId,
-          versionNumber: count + 1,
+          versionNumber: nextVersionNumber,
           content: version.content,
         },
       });
     });
 
     return this.findOne(userId, promptId);
+  }
+
+  async removeVersion(userId: string, promptId: string, versionId: string) {
+    await this.ensureOwnership(userId, promptId);
+    const version = await this.prisma.promptVersion.findFirst({
+      where: { id: versionId, promptId },
+      select: { id: true },
+    });
+    if (!version) {
+      throw new NotFoundException('errors.versionNotFound');
+    }
+
+    const [versionsCount, executionsCount] = await this.prisma.$transaction([
+      this.prisma.promptVersion.count({ where: { promptId } }),
+      this.prisma.execution.count({ where: { promptVersionId: versionId } }),
+    ]);
+
+    if (versionsCount <= 1) {
+      throw new BadRequestException('errors.versionDeleteLastNotAllowed');
+    }
+    if (executionsCount > 0) {
+      throw new BadRequestException('errors.versionHasExecutions');
+    }
+
+    await this.prisma.promptVersion.delete({
+      where: { id: versionId },
+    });
+
+    return { deleted: true };
   }
 
   async getTemplateVariables(userId: string, promptId: string) {
@@ -442,5 +467,16 @@ export class PromptsService {
     if (tagsCount !== tagIds.length) {
       throw new ForbiddenException('errors.tagsOwnershipInvalid');
     }
+  }
+
+  private async getNextVersionNumber(
+    tx: Prisma.TransactionClient,
+    promptId: string,
+  ) {
+    const maxVersion = await tx.promptVersion.aggregate({
+      where: { promptId },
+      _max: { versionNumber: true },
+    });
+    return (maxVersion._max.versionNumber ?? 0) + 1;
   }
 }

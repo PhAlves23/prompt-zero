@@ -3,21 +3,24 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useFieldArray, useForm, useWatch } from "react-hook-form"
-import { ArrowLeft, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, Check, ChevronsUpDown, Plus, Trash2 } from "lucide-react"
 import { z } from "zod/v4"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { bffFetch, ClientHttpError } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
-import type { Prompt, Workspace } from "@/lib/api/types"
+import type { Prompt, Tag, Workspace } from "@/lib/api/types"
+import { cn } from "@/lib/utils"
 
 const languageByLocalePrefix = {
   pt: "pt",
@@ -39,6 +42,7 @@ const createPromptSchema = z.object({
   topP: z.number().min(0).max(1),
   topK: z.number().int().min(1).max(200),
   maxTokens: z.number().int().min(1).max(4000),
+  tagIds: z.array(z.string()).optional(),
   variables: z.array(
     z.object({
       name: z.string().min(1),
@@ -53,7 +57,7 @@ const createPromptSchema = z.object({
 type CreatePromptValues = z.infer<typeof createPromptSchema>
 type CreatePromptPayload = Pick<
   CreatePromptValues,
-  "title" | "description" | "content" | "workspaceId" | "isPublic" | "language" | "model"
+  "title" | "description" | "content" | "workspaceId" | "isPublic" | "language" | "model" | "tagIds"
 >
 type SyncVariablePayload = {
   name: string
@@ -71,6 +75,7 @@ function extractVariableNames(content: string): string[] {
 
 export function PromptCreatePageClient({ lang }: { lang: string }) {
   const router = useRouter()
+  const [openTags, setOpenTags] = useState(false)
   const localePrefix = (lang.split("-")[0] ?? "pt") as keyof typeof languageByLocalePrefix
   const defaultLanguage: PromptLanguage = languageByLocalePrefix[localePrefix] ?? "pt"
 
@@ -87,6 +92,7 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
       topP: 0.95,
       topK: 40,
       maxTokens: 2048,
+      tagIds: [],
       variables: [],
     },
   })
@@ -109,6 +115,10 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
   const createWorkspaceId = useWatch({
     control: form.control,
     name: "workspaceId",
+  })
+  const selectedTagIds = useWatch({
+    control: form.control,
+    name: "tagIds",
   })
   const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
@@ -176,6 +186,14 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
     queryKey: queryKeys.workspaces.list,
     queryFn: () => bffFetch<Workspace[]>("/workspaces"),
   })
+  const tagsQuery = useQuery({
+    queryKey: queryKeys.tags.list,
+    queryFn: () => bffFetch<Tag[]>("/tags"),
+  })
+  const selectedTags = useMemo(
+    () => (tagsQuery.data ?? []).filter((tag) => (selectedTagIds ?? []).includes(tag.id)),
+    [tagsQuery.data, selectedTagIds],
+  )
 
   return (
     <div className="grid gap-4 px-4 lg:px-6">
@@ -219,6 +237,7 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                   isPublic: parsed.data.isPublic,
                   language: parsed.data.language,
                   model: parsed.data.model,
+                  tagIds: parsed.data.tagIds?.length ? parsed.data.tagIds : undefined,
                 },
                 variables: parsed.data.variables.map((variable) => ({
                   name: variable.name,
@@ -270,6 +289,67 @@ export function PromptCreatePageClient({ lang }: { lang: string }) {
                       <SelectItem value="es" className="cursor-pointer">Espanol</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="category-tags">Categorias</Label>
+                  <Popover open={openTags} onOpenChange={setOpenTags}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="category-tags"
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openTags}
+                        className="justify-between"
+                        disabled={tagsQuery.isPending || tagsQuery.isError}
+                      >
+                        {selectedTags.length > 0
+                          ? selectedTags.map((tag) => tag.name).join(", ")
+                          : "Selecione categoria(s)"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="w-(--radix-popover-trigger-width) p-0">
+                      <Command>
+                        <CommandInput placeholder="Buscar categoria..." />
+                        <CommandList>
+                          <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
+                          <CommandGroup>
+                            {(tagsQuery.data ?? []).map((tag) => {
+                              const isSelected = (selectedTagIds ?? []).includes(tag.id)
+                              return (
+                                <CommandItem
+                                  key={tag.id}
+                                  value={`${tag.name} ${tag.id}`}
+                                  onSelect={() => {
+                                    const current = selectedTagIds ?? []
+                                    const next = isSelected
+                                      ? current.filter((id) => id !== tag.id)
+                                      : [...current, tag.id]
+                                    form.setValue("tagIds", next, { shouldDirty: true })
+                                  }}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")} />
+                                  {tag.name}
+                                </CommandItem>
+                              )
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {tagsQuery.isPending ? (
+                    <p className="text-xs text-muted-foreground">Carregando categorias...</p>
+                  ) : null}
+                  {tagsQuery.isError ? (
+                    <p className="text-xs text-destructive">Nao foi possivel carregar as categorias.</p>
+                  ) : null}
+                  {!tagsQuery.isPending && !tagsQuery.isError && (tagsQuery.data?.length ?? 0) === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      Nenhuma categoria cadastrada. Crie em <Link href={`/${lang}/tags`} className="underline">Tags</Link>.
+                    </p>
+                  ) : null}
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="model">Modelo</Label>
