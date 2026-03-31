@@ -18,8 +18,8 @@ Este projeto está configurado com dois workflows no GitHub Actions:
 
 Os jobs de deploy usam o environment **`fantastic-bravery / production`**. Configure os secrets nesse environment (ou no repositório, se não usar environment).
 
-- **`RAILWAY_API_TOKEN`** (recomendado): **Account API Token** em Railway → **Account → Tokens**. O CLI usa isso para `railway whoami` e `railway status`. Um *project token* em `RAILWAY_TOKEN` **não** autentica esses comandos.
-- **`RAILWAY_TOKEN`** (opcional): *project token* ou o mesmo valor do API token, conforme a [documentação do CLI](https://docs.railway.com/reference/cli-api) (`RAILWAY_TOKEN` vs `RAILWAY_API_TOKEN`). O workflow define `RAILWAY_API_TOKEN` no job como `secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN` para quem só preencheu um dos dois.
+- **`RAILWAY_API_TOKEN`**: **Account API Token** (Railway → **Account → Tokens**). O workflow injeta só essa variável de ambiente no runner (`RAILWAY_API_TOKEN`), **sem** definir `RAILWAY_TOKEN`. Motivo: no código do CLI, se `RAILWAY_TOKEN` existir no ambiente, ele tem prioridade e é enviado como `project-access-token`; nesse caso o token de conta em `RAILWAY_API_TOKEN` é **ignorado** e `railway whoami` pode responder `Unauthorized` citando `RAILWAY_TOKEN`.
+- **Secret `RAILWAY_TOKEN` no GitHub** (opcional): usado apenas como *fallback* na expressão `secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN` para preencher o **valor** de `RAILWAY_API_TOKEN` no job quando `RAILWAY_API_TOKEN` está vazio. Esse secret **não** é exportado como variável de ambiente `RAILWAY_TOKEN` no workflow.
 - `RAILWAY_PROJECT_ID`
 - `RAILWAY_ENVIRONMENT_ID`
 - `RAILWAY_BACKEND_SERVICE_ID`

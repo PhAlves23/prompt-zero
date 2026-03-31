@@ -156,9 +156,9 @@ jobs:
     needs: [backend-validate]
     environment: fantastic-bravery / production
     env:
-      # Conta/workspace: obrigatório para `railway whoami` / `railway status`. Project token não serve para whoami.
+      # Só Bearer (conta): o CLI prioriza RAILWAY_TOKEN e envia como project-access-token; com RAILWAY_TOKEN
+      # definido, RAILWAY_API_TOKEN é ignorado e whoami falha se o valor não for project token válido.
       RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN }}
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
       DATABASE_URL: ${{ secrets.RAILWAY_BACKEND_DATABASE_URL_PROD }}
     steps:
       - name: Checkout
@@ -181,6 +181,7 @@ jobs:
 
       - name: Validate Railway token and project access
         run: |
+          unset RAILWAY_TOKEN
           railway whoami
           railway status --project "${{ secrets.RAILWAY_PROJECT_ID }}"
 
@@ -193,7 +194,9 @@ jobs:
         working-directory: backend
 
       - name: Deploy backend service
-        run: railway up --ci --service "${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}" --environment "${{ secrets.RAILWAY_ENVIRONMENT_ID }}" --project "${{ secrets.RAILWAY_PROJECT_ID }}"
+        run: |
+          unset RAILWAY_TOKEN
+          railway up --ci --service "${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}" --environment "${{ secrets.RAILWAY_ENVIRONMENT_ID }}" --project "${{ secrets.RAILWAY_PROJECT_ID }}"
         working-directory: backend
 
   frontend-deploy:
@@ -203,7 +206,6 @@ jobs:
     environment: fantastic-bravery / production
     env:
       RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN }}
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -227,9 +229,12 @@ jobs:
       - name: Validate Railway token and project access
         run: |
           [ -n "${RAILWAY_API_TOKEN}" ] || (echo "Defina RAILWAY_API_TOKEN ou RAILWAY_TOKEN com o Account API Token." && exit 1)
+          unset RAILWAY_TOKEN
           railway whoami
           railway status --project "${{ secrets.RAILWAY_PROJECT_ID }}"
 
       - name: Deploy frontend service
-        run: railway up --ci --service "${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}" --environment "${{ secrets.RAILWAY_ENVIRONMENT_ID }}" --project "${{ secrets.RAILWAY_PROJECT_ID }}"
+        run: |
+          unset RAILWAY_TOKEN
+          railway up --ci --service "${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}" --environment "${{ secrets.RAILWAY_ENVIRONMENT_ID }}" --project "${{ secrets.RAILWAY_PROJECT_ID }}"
         working-directory: frontend
