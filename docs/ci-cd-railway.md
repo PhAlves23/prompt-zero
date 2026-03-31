@@ -16,9 +16,10 @@ Este projeto está configurado com dois workflows no GitHub Actions:
 
 ## Secrets obrigatórios no GitHub
 
-Configure estes secrets no repositório (`Settings > Secrets and variables > Actions`):
+Os jobs de deploy usam o environment **`fantastic-bravery / production`**. Configure os secrets nesse environment (ou no repositório, se não usar environment).
 
-- `RAILWAY_TOKEN`
+- **`RAILWAY_API_TOKEN`** (recomendado): **Account API Token** em Railway → **Account → Tokens**. O CLI usa isso para `railway whoami` e `railway status`. Um *project token* em `RAILWAY_TOKEN` **não** autentica esses comandos.
+- **`RAILWAY_TOKEN`** (opcional): *project token* ou o mesmo valor do API token, conforme a [documentação do CLI](https://docs.railway.com/reference/cli-api) (`RAILWAY_TOKEN` vs `RAILWAY_API_TOKEN`). O workflow define `RAILWAY_API_TOKEN` no job como `secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN` para quem só preencheu um dos dois.
 - `RAILWAY_PROJECT_ID`
 - `RAILWAY_ENVIRONMENT_ID`
 - `RAILWAY_BACKEND_SERVICE_ID`

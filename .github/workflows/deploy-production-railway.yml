@@ -156,8 +156,9 @@ jobs:
     needs: [backend-validate]
     environment: fantastic-bravery / production
     env:
+      # Conta/workspace: obrigatório para `railway whoami` / `railway status`. Project token não serve para whoami.
+      RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN }}
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
       DATABASE_URL: ${{ secrets.RAILWAY_BACKEND_DATABASE_URL_PROD }}
     steps:
       - name: Checkout
@@ -175,7 +176,7 @@ jobs:
 
       - name: Validate required deploy secrets
         run: |
-          [ -n "${RAILWAY_TOKEN}" ] || (echo "Missing secret: RAILWAY_TOKEN" && exit 1)
+          [ -n "${RAILWAY_API_TOKEN}" ] || (echo "Defina RAILWAY_API_TOKEN ou RAILWAY_TOKEN com o Account API Token (Railway → Account → Tokens)." && exit 1)
           [ -n "${DATABASE_URL}" ] || (echo "Missing secret: RAILWAY_BACKEND_DATABASE_URL_PROD" && exit 1)
 
       - name: Validate Railway token and project access
@@ -201,8 +202,8 @@ jobs:
     needs: [frontend-validate]
     environment: fantastic-bravery / production
     env:
+      RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN }}
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -225,6 +226,7 @@ jobs:
 
       - name: Validate Railway token and project access
         run: |
+          [ -n "${RAILWAY_API_TOKEN}" ] || (echo "Defina RAILWAY_API_TOKEN ou RAILWAY_TOKEN com o Account API Token." && exit 1)
           railway whoami
           railway status --project "${{ secrets.RAILWAY_PROJECT_ID }}"
 
