@@ -194,10 +194,8 @@ jobs:
           [ -n "${RAILWAY_API_TOKEN}" ] || (echo "Token Railway não propagado (passo Prepare)." && exit 1)
           [ -n "${DATABASE_URL}" ] || (echo "Missing secret: RAILWAY_BACKEND_DATABASE_URL_PROD" && exit 1)
 
-      - name: Validate Railway token and project access
-        run: |
-          unset RAILWAY_TOKEN
-          railway status
+      # `railway status` / whoami exigem escopo de conta ou queries que tokens de workspace rejeitam.
+      # Validação real: `railway up` abaixo.
 
       - name: Install backend dependencies
         run: yarn --frozen-lockfile
@@ -254,11 +252,9 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli@4.36.0
 
-      - name: Validate Railway token and project access
+      - name: Check Railway token present
         run: |
           [ -n "${RAILWAY_API_TOKEN}" ] || (echo "Token Railway não propagado." && exit 1)
-          unset RAILWAY_TOKEN
-          railway status
 
       - name: Deploy frontend service
         run: |

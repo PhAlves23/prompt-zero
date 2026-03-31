@@ -312,7 +312,7 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                 <div className="grid gap-2">
                   <Label htmlFor="language">{dict.prompts.createForm.fields.language}</Label>
                   <Select
-                    value={createLanguage}
+                    value={createLanguage ?? defaultLanguage}
                     onValueChange={(value) => {
                       if (value === "pt" || value === "en" || value === "es") {
                         form.setValue("language", value)
@@ -393,7 +393,7 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                 <div className="grid gap-2">
                   <Label htmlFor="model">{dict.prompts.createForm.fields.model}</Label>
                   <Select
-                    value={createModel}
+                    value={createModel ?? "gpt-4o-mini"}
                     onValueChange={(value) => form.setValue("model", value)}
                   >
                     <SelectTrigger id="model" className="cursor-pointer">

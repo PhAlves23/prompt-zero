@@ -30,7 +30,19 @@ test.describe("Fluxos principais (autenticado)", () => {
 
     await page.getByLabel("Título", { exact: true }).fill(title);
     await page.getByLabel("Conteúdo", { exact: true }).fill(content);
-    await page.getByRole("button", { name: "Criar prompt" }).click();
+
+    const createPromptResponse = page.waitForResponse(
+      (res) =>
+        res.request().method() === "POST" &&
+        res.url().includes("/api/bff/prompts") &&
+        !res.url().includes("/variables"),
+    );
+    await page.locator("form[method='post']").getByRole("button", { name: "Criar prompt" }).click();
+    const res = await createPromptResponse;
+    if (!res.ok()) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`criar prompt falhou: HTTP ${res.status()} ${body.slice(0, 300)}`);
+    }
 
     await expect(page).toHaveURL(/\/pt-BR\/prompts$/, { timeout: 60_000 });
     await expect(page.getByText(title, { exact: true })).toBeVisible({ timeout: 60_000 });
