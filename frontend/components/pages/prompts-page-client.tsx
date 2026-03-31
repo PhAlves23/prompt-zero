@@ -5,6 +5,7 @@ import { parseAsBoolean, parseAsString, useQueryState } from "nuqs"
 import { useQuery } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,7 +14,20 @@ import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { PaginatedResult, Prompt } from "@/lib/api/types"
 
-export function PromptsPageClient({ lang }: { lang: string }) {
+export type PromptsPageDictionary = {
+  visibility: {
+    public: string
+    private: string
+  }
+}
+
+export function PromptsPageClient({
+  lang,
+  prompts: promptsI18n,
+}: {
+  lang: string
+  prompts: PromptsPageDictionary
+}) {
   const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""))
   const [isPublic, setIsPublic] = useQueryState("isPublic", parseAsBoolean.withDefault(false))
   const listQueryString = new URLSearchParams({
@@ -81,9 +95,12 @@ export function PromptsPageClient({ lang }: { lang: string }) {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="font-medium">{prompt.title}</h3>
-                    <span className="text-xs text-muted-foreground">
-                      {prompt.isPublic ? "Publico" : "Privado"}
-                    </span>
+                    <Badge
+                      variant={prompt.isPublic ? "outline" : "secondary"}
+                      className="shrink-0"
+                    >
+                      {prompt.isPublic ? promptsI18n.visibility.public : promptsI18n.visibility.private}
+                    </Badge>
                   </div>
                   <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
                     {prompt.description ?? "Sem descricao"}

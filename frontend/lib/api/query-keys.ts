@@ -26,9 +26,16 @@ export const queryKeys = {
     costPerModel: (period: string) => ["analytics", "cost-per-model", period] as const,
     topPrompts: (period: string, limit: number) =>
       ["analytics", "top-prompts", period, limit] as const,
+    abHistory: (period: string) => ["analytics", "ab-history", period] as const,
+    abRanking: (period: string, limit: number) =>
+      ["analytics", "ab-ranking", period, limit] as const,
   },
   explore: {
     list: (query: string) => ["explore", "list", query] as const,
     detail: (id: string) => ["explore", "detail", id] as const,
+  },
+  experiments: {
+    list: ["experiments", "list"] as const,
+    results: (id: string) => ["experiments", "results", id] as const,
   },
 }

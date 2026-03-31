@@ -52,4 +52,20 @@ export class AnalyticsController {
       query.limit,
     );
   }
+
+  @Get('ab-history')
+  @ApiOperation({ summary: 'A/B votes and experiments per day' })
+  abHistory(@CurrentUser() user: AuthUser, @Query() query: AnalyticsQueryDto) {
+    return this.analyticsService.getAbHistory(user.sub, query.period);
+  }
+
+  @Get('ab-ranking')
+  @ApiOperation({ summary: 'Top A/B experiments by votes' })
+  abRanking(@CurrentUser() user: AuthUser, @Query() query: TopPromptsQueryDto) {
+    return this.analyticsService.getAbRanking(
+      user.sub,
+      query.period,
+      query.limit,
+    );
+  }
 }

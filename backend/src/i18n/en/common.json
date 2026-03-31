@@ -33,6 +33,13 @@
   "errors.openaiExecutionFailed": "Failed to execute prompt with OpenAI provider",
   "errors.anthropicExecutionFailed": "Failed to execute prompt with Anthropic provider",
   "errors.googleExecutionFailed": "Failed to execute prompt with Google provider",
+  "errors.experimentNotFound": "Experiment not found",
+  "errors.experimentForbidden": "No permission for this experiment",
+  "errors.experimentNotRunning": "Experiment is not running",
+  "errors.experimentPromptNotFound": "One or more experiment prompts were not found",
+  "errors.experimentPromptsMustDiffer": "Prompt A and B must be different",
+  "errors.experimentExposureNotFound": "Experiment exposure not found",
+  "errors.experimentVoteAlreadyRegistered": "Vote already registered for this exposure",
   "responses.healthOk": "API is healthy",
   "responses.promptRemoved": "Removed prompt",
   "responses.executionFailed": "Execution failed"

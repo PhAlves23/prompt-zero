@@ -71,6 +71,13 @@ const buildSidebarData = (lang: string, user: SessionUser | null) => ({
         <HugeiconsIcon icon={Compass01Icon} strokeWidth={2} />
       ),
     },
+    {
+      title: "Experimentos A/B",
+      url: `/${lang}/experiments`,
+      icon: (
+        <HugeiconsIcon icon={Database01Icon} strokeWidth={2} />
+      ),
+    },
   ],
   navSecondary: [
     {

@@ -137,9 +137,92 @@ export type AnalyticsTopPrompt = {
   executions: number
 }
 
+export type AnalyticsAbHistory = {
+  day: string
+  votes: number
+  experiments: number
+}
+
+export type AnalyticsAbRanking = {
+  experimentId: string
+  status: "running" | "stopped"
+  promptATitle: string
+  promptBTitle: string
+  votesA: number
+  votesB: number
+  totalVotes: number
+  winnerVariant: "A" | "B"
+  winnerPercent: number
+}
+
 export type ExplorePrompt = Prompt
 
 export type SessionUser = {
   name: string
   email: string
+}
+
+export type Experiment = {
+  id: string
+  userId: string
+  promptAId: string
+  promptBId: string
+  trafficSplitA: number
+  status: "running" | "stopped"
+  sampleSizeTarget: number | null
+  startedAt: string
+  endedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type ExperimentRunResult = {
+  experimentId: string
+  promptId: string
+  variant: "A" | "B"
+  exposureId: string
+  output: string
+  meta: {
+    model: string
+    inputTokens: number
+    outputTokens: number
+    totalTokens: number
+    latencyMs: number
+    estimatedCost: number
+    pricingSource: "dynamic" | "fallback"
+  }
+}
+
+export type ExperimentResults = {
+  experimentId: string
+  status: "running" | "stopped"
+  trafficSplitA: number
+  trafficSplitB: number
+  startedAt: string
+  endedAt: string | null
+  votesA: number
+  votesB: number
+  totalVotes: number
+  percentA: number
+  percentB: number
+}
+
+export type ExperimentListItem = {
+  id: string
+  status: "running" | "stopped"
+  promptAId: string
+  promptBId: string
+  promptATitle: string
+  promptBTitle: string
+  trafficSplitA: number
+  trafficSplitB: number
+  sampleSizeTarget: number | null
+  startedAt: string
+  endedAt: string | null
+  createdAt: string
+  votesA: number
+  votesB: number
+  totalVotes: number
+  percentA: number
+  percentB: number
 }

@@ -26,6 +26,16 @@ enum ProviderType {
   openrouter
 }
 
+enum ExperimentStatus {
+  running
+  stopped
+}
+
+enum ExperimentVariant {
+  A
+  B
+}
+
 model User {
   id                 String   @id @default(uuid())
   name               String
@@ -43,6 +53,7 @@ model User {
   executions Execution[]
   refreshSessions RefreshTokenSession[]
   providerCredentials ProviderCredential[]
+  experiments PromptExperiment[]
 }
 
 model Workspace {
@@ -86,6 +97,8 @@ model Prompt {
   tags       PromptTag[]
   variables  TemplateVariable[]
   executions Execution[]
+  experimentsAsA PromptExperiment[] @relation("PromptExperimentA")
+  experimentsAsB PromptExperiment[] @relation("PromptExperimentB")
   forkedFrom Prompt?            @relation("PromptFork", fields: [forkedFromId], references: [id], onDelete: SetNull)
   forks      Prompt[]           @relation("PromptFork")
 
@@ -173,11 +186,65 @@ model Execution {
   promptVersion PromptVersion @relation(fields: [promptVersionId], references: [id], onDelete: Cascade)
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   credential    ProviderCredential? @relation(fields: [credentialId], references: [id], onDelete: SetNull)
+  experimentExposure PromptExperimentExposure?
 
   @@index([userId, createdAt])
   @@index([promptId, createdAt])
   @@index([model, createdAt])
   @@index([provider, model, createdAt])
+}
+
+model PromptExperiment {
+  id               String           @id @default(uuid())
+  userId           String
+  promptAId        String
+  promptBId        String
+  trafficSplitA    Int              @default(50)
+  status           ExperimentStatus @default(running)
+  sampleSizeTarget Int?
+  startedAt        DateTime         @default(now())
+  endedAt          DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promptA   Prompt @relation("PromptExperimentA", fields: [promptAId], references: [id], onDelete: Cascade)
+  promptB   Prompt @relation("PromptExperimentB", fields: [promptBId], references: [id], onDelete: Cascade)
+  exposures PromptExperimentExposure[]
+  votes     PromptExperimentVote[]
+
+  @@index([userId, status, createdAt])
+  @@index([promptAId])
+  @@index([promptBId])
+}
+
+model PromptExperimentExposure {
+  id            String            @id @default(uuid())
+  experimentId  String
+  requestId     String
+  chosenVariant ExperimentVariant
+  executionId   String            @unique
+  createdAt     DateTime          @default(now())
+
+  experiment PromptExperiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  execution  Execution        @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  vote       PromptExperimentVote?
+
+  @@index([experimentId, createdAt])
+  @@index([experimentId, chosenVariant, createdAt])
+}
+
+model PromptExperimentVote {
+  id            String            @id @default(uuid())
+  experimentId  String
+  exposureId    String            @unique
+  winnerVariant ExperimentVariant
+  createdAt     DateTime          @default(now())
+
+  experiment PromptExperiment         @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  exposure   PromptExperimentExposure @relation(fields: [exposureId], references: [id], onDelete: Cascade)
+
+  @@index([experimentId, winnerVariant, createdAt])
 }
 
 model RefreshTokenSession {

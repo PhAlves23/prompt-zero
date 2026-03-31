@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
 import { PromptsPageClient } from "@/components/pages/prompts-page-client"
 import { getSessionUser } from "@/lib/auth/session"
-import { hasLocale } from "../dictionaries"
+import { getDictionary, hasLocale, type Locale } from "../dictionaries"
 
 type PromptsPageProps = {
   params: Promise<{ lang: string }>
@@ -18,9 +18,11 @@ export default async function PromptsPage({ params }: PromptsPageProps) {
     redirect(`/${lang}/auth/login`)
   }
 
+  const dict = await getDictionary(lang as Locale)
+
   return (
     <AppShell title="Prompts" lang={lang} user={{ name: user.name, email: user.email }}>
-      <PromptsPageClient lang={lang} />
+      <PromptsPageClient lang={lang} prompts={dict.prompts} />
     </AppShell>
   )
 }

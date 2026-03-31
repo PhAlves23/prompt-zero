@@ -26,7 +26,11 @@
     "executions": "executions",
     "lastEdit": "Last edited",
     "tokens": "tokens",
-    "cost": "estimated cost"
+    "cost": "estimated cost",
+    "visibility": {
+      "public": "Public",
+      "private": "Private"
+    }
   },
   "auth": {
     "login": "Sign in",
@@ -48,5 +52,12 @@
     "title": "PromptZero — Version, test and evolve your AI prompts",
     "description": "AI prompt management platform with automatic versioning. Zero loss. Total control.",
     "tagline": "Stop losing your best prompts."
+  },
+  "experiments": {
+    "title": "A/B experiments",
+    "status": {
+      "running": "Running",
+      "stopped": "Stopped"
+    }
   }
 }

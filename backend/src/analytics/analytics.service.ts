@@ -105,4 +105,100 @@ export class AnalyticsService {
       executions: item._count.promptId,
     }));
   }
+
+  async getAbHistory(userId: string, period?: string) {
+    const normalized = parsePeriod(period);
+    const fromDate = getPeriodStartDate(normalized);
+
+    const rows = await this.prisma.$queryRaw<
+      Array<{ day: string; votes: bigint; experiments: bigint }>
+    >`SELECT DATE_TRUNC('day', v."createdAt")::date::text AS day,
+      COUNT(*)::bigint AS votes,
+      COUNT(DISTINCT v."experimentId")::bigint AS experiments
+      FROM "PromptExperimentVote" v
+      INNER JOIN "PromptExperiment" e ON e."id" = v."experimentId"
+      WHERE e."userId" = ${userId}
+        AND v."createdAt" >= ${fromDate}
+      GROUP BY day
+      ORDER BY day ASC`;
+
+    return rows.map((row) => ({
+      day: row.day,
+      votes: Number(row.votes),
+      experiments: Number(row.experiments),
+    }));
+  }
+
+  async getAbRanking(userId: string, period?: string, limit = 5) {
+    const normalized = parsePeriod(period);
+    const fromDate = getPeriodStartDate(normalized);
+
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        experimentId: string;
+        votesA: bigint;
+        votesB: bigint;
+        totalVotes: bigint;
+      }>
+    >`SELECT v."experimentId",
+      SUM(CASE WHEN v."winnerVariant" = 'A' THEN 1 ELSE 0 END)::bigint AS "votesA",
+      SUM(CASE WHEN v."winnerVariant" = 'B' THEN 1 ELSE 0 END)::bigint AS "votesB",
+      COUNT(*)::bigint AS "totalVotes"
+      FROM "PromptExperimentVote" v
+      INNER JOIN "PromptExperiment" e ON e."id" = v."experimentId"
+      WHERE e."userId" = ${userId}
+        AND v."createdAt" >= ${fromDate}
+      GROUP BY v."experimentId"
+      ORDER BY "totalVotes" DESC
+      LIMIT ${limit}`;
+
+    if (rows.length === 0) {
+      return [];
+    }
+
+    const experiments = await this.prisma.promptExperiment.findMany({
+      where: { id: { in: rows.map((row) => row.experimentId) }, userId },
+      select: {
+        id: true,
+        status: true,
+        promptA: { select: { title: true } },
+        promptB: { select: { title: true } },
+      },
+    });
+    const byId = new Map(experiments.map((item) => [item.id, item]));
+
+    return rows
+      .map((row) => {
+        const experiment = byId.get(row.experimentId);
+        if (!experiment) {
+          return null;
+        }
+
+        const votesA = Number(row.votesA);
+        const votesB = Number(row.votesB);
+        const totalVotes = Number(row.totalVotes);
+        const winnerVariant = votesA >= votesB ? 'A' : 'B';
+
+        return {
+          experimentId: row.experimentId,
+          status: experiment.status,
+          promptATitle: experiment.promptA.title,
+          promptBTitle: experiment.promptB.title,
+          votesA,
+          votesB,
+          totalVotes,
+          winnerVariant,
+          winnerPercent:
+            totalVotes === 0
+              ? 0
+              : Number(
+                  (
+                    ((winnerVariant === 'A' ? votesA : votesB) / totalVotes) *
+                    100
+                  ).toFixed(2),
+                ),
+        };
+      })
+      .filter((item) => item !== null);
+  }
 }

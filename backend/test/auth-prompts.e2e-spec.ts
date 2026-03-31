@@ -14,6 +14,7 @@ import { AuthService } from '../src/auth/auth.service';
 import { PromptsService } from '../src/prompts/prompts.service';
 import { ExecutionsService } from '../src/executions/executions.service';
 import { ExploreService } from '../src/explore/explore.service';
+import { ExperimentsService } from '../src/experiments/experiments.service';
 import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter';
 
 describe('Auth + Prompts (e2e)', () => {
@@ -96,6 +97,58 @@ describe('Auth + Prompts (e2e)', () => {
     }),
   };
 
+  const experimentsServiceMock = {
+    createExperiment: jest.fn().mockResolvedValue({
+      id: 'exp-1',
+      promptAId: 'prompt-1',
+      promptBId: 'prompt-2',
+      status: 'running',
+    }),
+    runExperiment: jest.fn().mockResolvedValue({
+      experimentId: 'exp-1',
+      promptId: 'prompt-1',
+      variant: 'A',
+      exposureId: 'exposure-1',
+      output: 'Resposta A',
+      meta: {
+        model: 'gpt-4o-mini',
+        inputTokens: 10,
+        outputTokens: 20,
+        totalTokens: 30,
+        latencyMs: 500,
+        estimatedCost: 0.0012,
+        pricingSource: 'fallback',
+      },
+    }),
+    voteExperiment: jest.fn().mockResolvedValue({
+      experimentId: 'exp-1',
+      status: 'running',
+      votesA: 1,
+      votesB: 0,
+      totalVotes: 1,
+      percentA: 100,
+      percentB: 0,
+    }),
+    getResults: jest.fn().mockResolvedValue({
+      experimentId: 'exp-1',
+      status: 'running',
+      votesA: 1,
+      votesB: 0,
+      totalVotes: 1,
+      percentA: 100,
+      percentB: 0,
+    }),
+    stopExperiment: jest.fn().mockResolvedValue({
+      experimentId: 'exp-1',
+      status: 'stopped',
+      votesA: 1,
+      votesB: 0,
+      totalVotes: 1,
+      percentA: 100,
+      percentB: 0,
+    }),
+  };
+
   beforeAll(async () => {
     process.env.JWT_ACCESS_SECRET = 'dev-access-secret';
     process.env.JWT_REFRESH_SECRET = 'dev-refresh-secret';
@@ -111,6 +164,8 @@ describe('Auth + Prompts (e2e)', () => {
       .useValue(executionsServiceMock)
       .overrideProvider(ExploreService)
       .useValue(exploreServiceMock)
+      .overrideProvider(ExperimentsService)
+      .useValue(experimentsServiceMock)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -276,5 +331,44 @@ describe('Auth + Prompts (e2e)', () => {
         credentialId: 'cred-1',
       }),
     );
+  });
+
+  it('fluxo básico de experimento A/B', async () => {
+    const token = sign(
+      { sub: 'user-1', email: 'user@test.com' },
+      'dev-access-secret',
+    );
+    const server = app.getHttpServer() as Parameters<typeof request>[0];
+
+    await request(server)
+      .post('/api/v1/experiments')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        promptAId: 'prompt-1',
+        promptBId: 'prompt-2',
+      })
+      .expect(201);
+
+    await request(server)
+      .post('/api/v1/experiments/exp-1/run')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ model: 'gpt-4o-mini' })
+      .expect(201);
+
+    await request(server)
+      .post('/api/v1/experiments/exp-1/vote')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ exposureId: 'exposure-1', winnerVariant: 'A' })
+      .expect(201);
+
+    await request(server)
+      .get('/api/v1/experiments/exp-1/results')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    await request(server)
+      .post('/api/v1/experiments/exp-1/stop')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
   });
 });

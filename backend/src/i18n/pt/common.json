@@ -33,6 +33,13 @@
   "errors.openaiExecutionFailed": "Falha ao executar prompt no provedor OpenAI",
   "errors.anthropicExecutionFailed": "Falha ao executar prompt no provedor Anthropic",
   "errors.googleExecutionFailed": "Falha ao executar prompt no provedor Google",
+  "errors.experimentNotFound": "Experimento não encontrado",
+  "errors.experimentForbidden": "Sem permissão para este experimento",
+  "errors.experimentNotRunning": "Experimento não está em execução",
+  "errors.experimentPromptNotFound": "Um ou mais prompts do experimento não foram encontrados",
+  "errors.experimentPromptsMustDiffer": "Os prompts A e B devem ser diferentes",
+  "errors.experimentExposureNotFound": "Exposição do experimento não encontrada",
+  "errors.experimentVoteAlreadyRegistered": "Voto já registrado para esta exposição",
   "responses.healthOk": "API saudável",
   "responses.promptRemoved": "Prompt removido",
   "responses.executionFailed": "Falha na execução"

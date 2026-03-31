@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { parseAsString, useQueryState } from "nuqs"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
@@ -11,6 +12,8 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type {
+  AnalyticsAbHistory,
+  AnalyticsAbRanking,
   AnalyticsCostPerModel,
   AnalyticsExecutionsPerDay,
   AnalyticsOverview,
@@ -18,6 +21,7 @@ import type {
   Tag,
   Workspace,
 } from "@/lib/api/types"
+import type { ExperimentsPageDictionary } from "@/components/pages/experiments-page-client"
 
 const periods = ["7d", "30d", "90d"] as const
 
@@ -35,7 +39,20 @@ const costChartConfig = {
   },
 } satisfies ChartConfig
 
-export function DashboardPageClient({ lang }: { lang: string }) {
+const abHistoryChartConfig = {
+  votes: {
+    label: "Votos A/B",
+    color: "var(--chart-4)",
+  },
+} satisfies ChartConfig
+
+export function DashboardPageClient({
+  lang,
+  experiments: experimentsI18n,
+}: {
+  lang: string
+  experiments: ExperimentsPageDictionary
+}) {
   const [period, setPeriod] = useQueryState("period", parseAsString.withDefault("30d"))
   const selectedPeriod = period === "7d" || period === "30d" || period === "90d" ? period : "30d"
 
@@ -55,6 +72,14 @@ export function DashboardPageClient({ lang }: { lang: string }) {
   const topPromptsQuery = useQuery({
     queryKey: queryKeys.analytics.topPrompts(selectedPeriod, 5),
     queryFn: () => bffFetch<AnalyticsTopPrompt[]>(`/analytics/top-prompts?period=${selectedPeriod}&limit=5`),
+  })
+  const abHistoryQuery = useQuery({
+    queryKey: queryKeys.analytics.abHistory(selectedPeriod),
+    queryFn: () => bffFetch<AnalyticsAbHistory[]>(`/analytics/ab-history?period=${selectedPeriod}`),
+  })
+  const abRankingQuery = useQuery({
+    queryKey: queryKeys.analytics.abRanking(selectedPeriod, 5),
+    queryFn: () => bffFetch<AnalyticsAbRanking[]>(`/analytics/ab-ranking?period=${selectedPeriod}&limit=5`),
   })
   const workspacesQuery = useQuery({
     queryKey: queryKeys.workspaces.list,
@@ -290,6 +315,119 @@ export function DashboardPageClient({ lang }: { lang: string }) {
           )}
         </CardContent>
       </Card>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <Card className="xl:col-span-2">
+          <CardHeader>
+            <CardTitle>Historico A/B por dia</CardTitle>
+            <CardDescription>Volume de votos de experimentos A/B no periodo</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {abHistoryQuery.isPending ? (
+              <p className="text-sm text-muted-foreground">Carregando historico A/B...</p>
+            ) : abHistoryQuery.isError ? (
+              <p className="text-sm text-destructive">Falha ao carregar historico A/B.</p>
+            ) : abHistoryQuery.data && abHistoryQuery.data.length > 0 ? (
+              <ChartContainer config={abHistoryChartConfig} className="aspect-auto h-[260px] w-full">
+                <AreaChart data={abHistoryQuery.data}>
+                  <defs>
+                    <linearGradient id="fillAbVotes" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-votes)" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="var(--color-votes)" stopOpacity={0.1} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="day"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    minTickGap={24}
+                    tickFormatter={(value) =>
+                      new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+                    }
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={(value) =>
+                          new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })
+                        }
+                        formatter={(_value, _name, item) => (
+                          <div className="grid gap-1 text-xs">
+                            <span>Votos: {item.payload.votes}</span>
+                            <span>Experimentos: {item.payload.experiments}</span>
+                          </div>
+                        )}
+                      />
+                    }
+                  />
+                  <Area
+                    dataKey="votes"
+                    type="monotone"
+                    stroke="var(--color-votes)"
+                    fill="url(#fillAbVotes)"
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ChartContainer>
+            ) : (
+              <Empty className="border">
+                <EmptyHeader>
+                  <EmptyTitle>Sem historico A/B no periodo</EmptyTitle>
+                  <EmptyDescription>Crie experimentos e registre votos para popular este grafico.</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Ranking de experimentos A/B</CardTitle>
+            <CardDescription>Experimentos com mais votos no periodo</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {abRankingQuery.isPending ? (
+              <p className="text-sm text-muted-foreground">Carregando ranking A/B...</p>
+            ) : abRankingQuery.isError ? (
+              <p className="text-sm text-destructive">Falha ao carregar ranking A/B.</p>
+            ) : abRankingQuery.data && abRankingQuery.data.length > 0 ? (
+              abRankingQuery.data.map((item, index) => (
+                <div key={item.experimentId} className="grid gap-1 rounded-lg border p-3 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">#{index + 1}</span>
+                      <Badge
+                        variant={item.status === "running" ? "default" : "secondary"}
+                        className="shrink-0"
+                      >
+                        {item.status === "running"
+                          ? experimentsI18n.status.running
+                          : experimentsI18n.status.stopped}
+                      </Badge>
+                    </div>
+                    <span className="text-muted-foreground">{item.totalVotes} votos</span>
+                  </div>
+                  <p className="text-muted-foreground">A: {item.promptATitle}</p>
+                  <p className="text-muted-foreground">B: {item.promptBTitle}</p>
+                  <p className="text-xs">
+                    Vencedor: <span className="font-medium">{item.winnerVariant}</span> ({item.winnerPercent}%)
+                  </p>
+                </div>
+              ))
+            ) : (
+              <Empty className="border">
+                <EmptyHeader>
+                  <EmptyTitle>Sem ranking A/B ainda</EmptyTitle>
+                  <EmptyDescription>Ainda nao ha votos de experimento no periodo selecionado.</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

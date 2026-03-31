@@ -3,11 +3,17 @@ import "server-only"
 import { serverFetch } from "@/lib/api/http"
 import type {
   AnalyticsCostPerModel,
+  AnalyticsAbHistory,
+  AnalyticsAbRanking,
   AnalyticsExecutionsPerDay,
   AnalyticsOverview,
   AnalyticsTopPrompt,
   ApiKeyStatus,
   AuthTokens,
+  Experiment,
+  ExperimentListItem,
+  ExperimentResults,
+  ExperimentRunResult,
   Execution,
   ExplorePrompt,
   PaginatedResult,
@@ -130,9 +136,44 @@ export const apiServices = {
       serverFetch<AnalyticsTopPrompt[]>("/analytics/top-prompts", {
         query: new URLSearchParams({ period, limit: String(limit) }),
       }),
+    abHistory: (period: "7d" | "30d" | "90d") =>
+      serverFetch<AnalyticsAbHistory[]>("/analytics/ab-history", {
+        query: new URLSearchParams({ period }),
+      }),
+    abRanking: (period: "7d" | "30d" | "90d", limit = 5) =>
+      serverFetch<AnalyticsAbRanking[]>("/analytics/ab-ranking", {
+        query: new URLSearchParams({ period, limit: String(limit) }),
+      }),
   },
   explore: {
     list: (query?: URLSearchParams) => serverFetch<PaginatedResult<ExplorePrompt>>("/explore", { query }),
     get: (id: string) => serverFetch<ExplorePrompt>(`/explore/${id}`),
+  },
+  experiments: {
+    list: () => serverFetch<ExperimentListItem[]>("/experiments"),
+    create: (body: {
+      promptAId: string
+      promptBId: string
+      sampleSizeTarget?: number
+      trafficSplitA?: number
+    }) =>
+      serverFetch<Experiment>("/experiments", { method: "POST", body }),
+    run: (
+      id: string,
+      body: {
+        model?: string
+        provider?: string
+        credentialId?: string
+        temperature?: number
+        topP?: number
+        topK?: number
+        maxTokens?: number
+        variables?: Record<string, string>
+      },
+    ) => serverFetch<ExperimentRunResult>(`/experiments/${id}/run`, { method: "POST", body }),
+    vote: (id: string, body: { exposureId: string; winnerVariant: "A" | "B" }) =>
+      serverFetch<ExperimentResults>(`/experiments/${id}/vote`, { method: "POST", body }),
+    results: (id: string) => serverFetch<ExperimentResults>(`/experiments/${id}/results`),
+    stop: (id: string) => serverFetch<ExperimentResults>(`/experiments/${id}/stop`, { method: "POST" }),
   },
 }

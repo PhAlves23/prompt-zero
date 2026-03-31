@@ -26,7 +26,11 @@
     "executions": "execuções",
     "lastEdit": "Última edição",
     "tokens": "tokens",
-    "cost": "custo estimado"
+    "cost": "custo estimado",
+    "visibility": {
+      "public": "Público",
+      "private": "Privado"
+    }
   },
   "auth": {
     "login": "Entrar",
@@ -48,5 +52,12 @@
     "title": "PromptZero — Versione, teste e evolua seus prompts de IA",
     "description": "Plataforma de gerenciamento de prompts de IA com versionamento automático. Zero perda. Total controle.",
     "tagline": "Pare de perder seus melhores prompts."
+  },
+  "experiments": {
+    "title": "Experimentos A/B",
+    "status": {
+      "running": "Em andamento",
+      "stopped": "Encerrado"
+    }
   }
 }

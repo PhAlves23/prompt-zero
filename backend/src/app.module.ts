@@ -13,6 +13,7 @@ import { ExecutionsModule } from './executions/executions.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ExploreModule } from './explore/explore.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { ExperimentsModule } from './experiments/experiments.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import {
@@ -39,6 +40,7 @@ import { AppThrottlerGuard } from './common/guards/app-throttler.guard';
     AnalyticsModule,
     ExploreModule,
     MetricsModule,
+    ExperimentsModule,
     I18nModule.forRoot({
       fallbackLanguage: 'pt',
       loader: I18nJsonLoader,
