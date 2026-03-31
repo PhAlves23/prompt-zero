@@ -103,8 +103,8 @@ export default defineConfig({
           use: { ...devices["Desktop Chrome"] },
         },
         {
-          name: "features",
-          testMatch: /features\.e2e\.spec\.ts/,
+          name: "e2e-authenticated",
+          testMatch: /\.e2e\.spec\.ts$/,
           use: {
             ...devices["Desktop Chrome"],
             storageState: authStatePath,

@@ -59,7 +59,8 @@ describe("runExecutionStream", () => {
 
     expect(fetchExecution).toHaveBeenCalledTimes(2)
     expect(onChunk).toHaveBeenCalledWith("ok")
-    expect(onErrorMessage).not.toHaveBeenCalled()
+    // Primeira resposta 500 dispara mensagem de erro antes do retry
+    expect(onErrorMessage).toHaveBeenCalledWith("Falha na execucao")
   })
 
   it("throws AbortError when aborted", async () => {

@@ -968,6 +968,8 @@ Wrappers shadcn para integração com react-hook-form:
 
 ## Testes
 
+Guia consolidado (comandos, Playwright full stack, CI): [TESTING.md](./TESTING.md). Mapa por módulo: [TEST-COVERAGE.md](./TEST-COVERAGE.md).
+
 ### Framework
 
 **Vitest 4.1.2** configurado em `vitest.config.ts`:
