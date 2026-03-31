@@ -1,12 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 import path from "node:path";
 
-function useFullStack(): boolean {
+function isE2EFullStack(): boolean {
   return process.env.CI === "true" || process.env.E2E_FULL_STACK === "1";
 }
 
 function reuseDevServer(): boolean {
-  if (useFullStack()) {
+  if (isE2EFullStack()) {
     return false;
   }
   return true;
@@ -46,7 +46,7 @@ const backendEnv: Record<string, string> = {
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 120_000,
-  globalSetup: useFullStack()
+  globalSetup: isE2EFullStack()
     ? path.join(process.cwd(), "tests/e2e/global-setup.ts")
     : undefined,
   fullyParallel: true,
@@ -68,7 +68,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "retain-on-failure",
   },
-  webServer: useFullStack()
+  webServer: isE2EFullStack()
     ? [
         {
           command:
@@ -95,7 +95,7 @@ export default defineConfig({
         reuseExistingServer: reuseDevServer(),
         timeout: 120_000,
       },
-  projects: useFullStack()
+  projects: isE2EFullStack()
     ? [
         {
           name: "smoke",

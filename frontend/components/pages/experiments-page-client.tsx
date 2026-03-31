@@ -145,17 +145,18 @@ export function ExperimentsPageClient({
     queryKey: queryKeys.experiments.list,
     queryFn: () => bffFetch<ExperimentListItem[]>("/experiments"),
   })
-  const availablePrompts = promptsQuery.data?.data ?? []
-  const promptBOptions = availablePrompts.filter((prompt) => prompt.id !== promptAId)
-
-  const selectedPromptA = useMemo(
-    () => availablePrompts.find((prompt) => prompt.id === promptAId),
+  const promptsPage = promptsQuery.data
+  const availablePrompts = useMemo(
+    () => (promptsPage?.data ? [...promptsPage.data] : []),
+    [promptsPage],
+  )
+  const promptBOptions = useMemo(
+    () => availablePrompts.filter((prompt) => prompt.id !== promptAId),
     [availablePrompts, promptAId],
   )
-  const selectedPromptB = useMemo(
-    () => availablePrompts.find((prompt) => prompt.id === promptBId),
-    [availablePrompts, promptBId],
-  )
+
+  const selectedPromptA = availablePrompts.find((prompt) => prompt.id === promptAId)
+  const selectedPromptB = availablePrompts.find((prompt) => prompt.id === promptBId)
 
   const promptAVariablesQuery = useQuery({
     queryKey: queryKeys.prompts.variables(promptAId),
@@ -185,6 +186,8 @@ export function ExperimentsPageClient({
   const isLoadingTemplateVariables =
     selectedUsesTemplate && (promptAVariablesQuery.isFetching || promptBVariablesQuery.isFetching)
 
+  // Mantém defaults de template e valores já preenchidos alinhados à lista de variáveis.
+  /* eslint-disable react-hooks/set-state-in-effect -- sincronização derivada (lista de variáveis / modo template) */
   useEffect(() => {
     if (!selectedUsesTemplate) {
       setRunVariables({})
@@ -206,6 +209,7 @@ export function ExperimentsPageClient({
       return next
     })
   }, [selectedUsesTemplate, templateVariables])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const runExperiment = useMutation({
     mutationFn: async (experiment: Pick<ExperimentListItem, "id">) => {

@@ -2,7 +2,7 @@ import { request, type FullConfig } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 
-function useFullStack(): boolean {
+function isE2EFullStack(): boolean {
   return process.env.CI === "true" || process.env.E2E_FULL_STACK === "1";
 }
 
@@ -29,7 +29,7 @@ async function waitForBackendReady(maxMs: number): Promise<void> {
 }
 
 export default async function globalSetup(config: FullConfig): Promise<void> {
-  if (!useFullStack()) {
+  if (!isE2EFullStack()) {
     return;
   }
 

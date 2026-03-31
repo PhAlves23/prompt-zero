@@ -8,6 +8,7 @@ import type { ReactNode } from "react"
 import { Bot, Brain, KeyRound, Orbit, Sparkles, Unplug } from "lucide-react"
 import { z } from "zod/v4"
 import { toast } from "sonner"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -408,10 +409,12 @@ function ProviderStatusCard({
               {logoFailed ? (
                 icon
               ) : (
-                <img
+                <Image
                   src={logoSrc}
                   alt=""
-                  aria-hidden="true"
+                  width={20}
+                  height={20}
+                  aria-hidden
                   className={`h-5 w-5 object-contain ${forceWhiteLogoOnDark ? "dark:brightness-0 dark:invert" : ""}`}
                   onError={() => {
                     setLogoIndex((current) => {
