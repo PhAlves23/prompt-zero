@@ -18,8 +18,9 @@ Este projeto está configurado com dois workflows no GitHub Actions:
 
 Os jobs de deploy usam o environment **`fantastic-bravery / production`**. Configure os secrets nesse environment (ou no repositório, se não usar environment).
 
-- **`RAILWAY_API_TOKEN`**: **Account API Token** (Railway → **Account → Tokens**). O workflow injeta só essa variável de ambiente no runner (`RAILWAY_API_TOKEN`), **sem** definir `RAILWAY_TOKEN`. Motivo: no código do CLI, se `RAILWAY_TOKEN` existir no ambiente, ele tem prioridade e é enviado como `project-access-token`; nesse caso o token de conta em `RAILWAY_API_TOKEN` é **ignorado** e `railway whoami` pode responder `Unauthorized` citando `RAILWAY_TOKEN`.
-- **Secret `RAILWAY_TOKEN` no GitHub** (opcional): usado apenas como *fallback* na expressão `secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN` para preencher o **valor** de `RAILWAY_API_TOKEN` no job quando `RAILWAY_API_TOKEN` está vazio. Esse secret **não** é exportado como variável de ambiente `RAILWAY_TOKEN` no workflow.
+- **`RAILWAY_API_TOKEN`** (ou fallback **`RAILWAY_TOKEN`** no GitHub): use um token **Account** (“No workspace”) ou **Workspace** (ex.: “PH’s Projects”), criado em [Account → Tokens](https://railway.com/account/tokens). O workflow **não** define a variável de ambiente `RAILWAY_TOKEN`, para o CLI usar `Authorization: Bearer` (veja [CLI / tokens](https://docs.railway.com/reference/cli-api)).
+- **Não use `railway whoami` no CI** com token de workspace: a query GraphQL `me` só aceita token de **conta** global; com workspace token a API responde “Not authorized” ([API / tipos de token](https://docs.railway.com/integrations/api)). O deploy valida com `railway status` e `RAILWAY_PROJECT_ID` + `RAILWAY_ENVIRONMENT_ID` no ambiente.
+- **Project token** (por ambiente): usa header `Project-Access-Token` e variável `RAILWAY_TOKEN` no CLI — este workflow assume Bearer (`RAILWAY_API_TOKEN`); para só project token seria outro fluxo.
 - `RAILWAY_PROJECT_ID`
 - `RAILWAY_ENVIRONMENT_ID`
 - `RAILWAY_BACKEND_SERVICE_ID`

@@ -156,9 +156,9 @@ jobs:
     needs: [backend-validate]
     environment: fantastic-bravery / production
     env:
-      # Só Bearer (conta): o CLI prioriza RAILWAY_TOKEN e envia como project-access-token; com RAILWAY_TOKEN
-      # definido, RAILWAY_API_TOKEN é ignorado e whoami falha se o valor não for project token válido.
-      RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN }}
+      # O CLI resolve projeto/ambiente via env (get_linked_project); `railway status` não aceita --project.
+      RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+      RAILWAY_ENVIRONMENT_ID: ${{ secrets.RAILWAY_ENVIRONMENT_ID }}
       DATABASE_URL: ${{ secrets.RAILWAY_BACKEND_DATABASE_URL_PROD }}
     steps:
       - name: Checkout
@@ -171,19 +171,33 @@ jobs:
           cache: yarn
           cache-dependency-path: backend/yarn.lock
 
+      # Não exportar RAILWAY_TOKEN (CLI prioriza project-access-token e ignora Bearer).
+      # whoami usa query `me` — falha com token de workspace/projeto (docs.railway.com/integrations/api).
+      - name: Prepare Railway API token
+        run: |
+          unset RAILWAY_TOKEN
+          raw='${{ secrets.RAILWAY_API_TOKEN }}'
+          if [ -z "$raw" ]; then raw='${{ secrets.RAILWAY_TOKEN }}'; fi
+          if [ -z "$raw" ]; then echo "Defina o secret RAILWAY_API_TOKEN (ou RAILWAY_TOKEN) com Account ou Workspace token." && exit 1; fi
+          clean=$(printf '%s' "$raw" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          {
+            echo "RAILWAY_API_TOKEN<<__RWT__"
+            echo "$clean"
+            echo "__RWT__"
+          } >> "$GITHUB_ENV"
+
       - name: Install Railway CLI
-        run: npm install -g @railway/cli
+        run: npm install -g @railway/cli@4.36.0
 
       - name: Validate required deploy secrets
         run: |
-          [ -n "${RAILWAY_API_TOKEN}" ] || (echo "Defina RAILWAY_API_TOKEN ou RAILWAY_TOKEN com o Account API Token (Railway → Account → Tokens)." && exit 1)
+          [ -n "${RAILWAY_API_TOKEN}" ] || (echo "Token Railway não propagado (passo Prepare)." && exit 1)
           [ -n "${DATABASE_URL}" ] || (echo "Missing secret: RAILWAY_BACKEND_DATABASE_URL_PROD" && exit 1)
 
       - name: Validate Railway token and project access
         run: |
           unset RAILWAY_TOKEN
-          railway whoami
-          railway status --project "${{ secrets.RAILWAY_PROJECT_ID }}"
+          railway status
 
       - name: Install backend dependencies
         run: yarn --frozen-lockfile
@@ -205,7 +219,8 @@ jobs:
     needs: [frontend-validate]
     environment: fantastic-bravery / production
     env:
-      RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_API_TOKEN || secrets.RAILWAY_TOKEN }}
+      RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+      RAILWAY_ENVIRONMENT_ID: ${{ secrets.RAILWAY_ENVIRONMENT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -223,15 +238,27 @@ jobs:
       - name: Validate pnpm availability
         run: pnpm --version
 
+      - name: Prepare Railway API token
+        run: |
+          unset RAILWAY_TOKEN
+          raw='${{ secrets.RAILWAY_API_TOKEN }}'
+          if [ -z "$raw" ]; then raw='${{ secrets.RAILWAY_TOKEN }}'; fi
+          if [ -z "$raw" ]; then echo "Defina RAILWAY_API_TOKEN (ou RAILWAY_TOKEN)." && exit 1; fi
+          clean=$(printf '%s' "$raw" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          {
+            echo "RAILWAY_API_TOKEN<<__RWT__"
+            echo "$clean"
+            echo "__RWT__"
+          } >> "$GITHUB_ENV"
+
       - name: Install Railway CLI
-        run: npm install -g @railway/cli
+        run: npm install -g @railway/cli@4.36.0
 
       - name: Validate Railway token and project access
         run: |
-          [ -n "${RAILWAY_API_TOKEN}" ] || (echo "Defina RAILWAY_API_TOKEN ou RAILWAY_TOKEN com o Account API Token." && exit 1)
+          [ -n "${RAILWAY_API_TOKEN}" ] || (echo "Token Railway não propagado." && exit 1)
           unset RAILWAY_TOKEN
-          railway whoami
-          railway status --project "${{ secrets.RAILWAY_PROJECT_ID }}"
+          railway status
 
       - name: Deploy frontend service
         run: |
