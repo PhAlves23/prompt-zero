@@ -52,6 +52,7 @@ export class UsersService {
         id: true,
         name: true,
         email: true,
+        avatarUrl: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -66,6 +67,37 @@ export class UsersService {
         id: true,
         name: true,
         email: true,
+        avatarUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  updateAvatar(userId: string, avatarUrl: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatarUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  removeAvatar(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: null },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatarUrl: true,
         createdAt: true,
         updatedAt: true,
       },

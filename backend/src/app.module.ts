@@ -25,11 +25,13 @@ import {
 } from 'nestjs-i18n';
 import { join } from 'path';
 import { AppThrottlerGuard } from './common/guards/app-throttler.guard';
+import { ObservabilityModule } from './observability/observability.module';
 
 @Module({
   imports: [
     ConfigModule,
     PrismaModule,
+    ObservabilityModule,
     AuthModule,
     UsersModule,
     PromptsModule,

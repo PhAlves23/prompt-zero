@@ -6,6 +6,14 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { requestIdMiddleware } from './common/middleware/request-id.middleware';
 import { structuredLoggerMiddleware } from './common/middleware/structured-logger.middleware';
+import { initTracing } from './observability/tracing';
+import { logger } from './observability/logger';
+
+const tracingEnabled = process.env.TRACING_ENABLED === 'true';
+if (tracingEnabled) {
+  logger.info('Initializing OpenTelemetry tracing...');
+  initTracing();
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -60,6 +68,13 @@ async function bootstrap() {
     jsonDocumentUrl: 'api/docs-json',
   });
 
-  await app.listen(configService.get<number>('PORT', 3001));
+  const port = configService.get<number>('PORT', 3001);
+  await app.listen(port);
+
+  const env = configService.get<string>('NODE_ENV');
+  logger.info(`Application is running on port ${port}`, {
+    environment: env,
+    tracingEnabled,
+  });
 }
 void bootstrap();

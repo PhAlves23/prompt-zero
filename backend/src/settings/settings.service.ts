@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdateApiKeysDto } from './dto/update-api-keys.dto';
@@ -9,13 +9,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { getEnvSecret } from '../common/utils/env.util';
 import { ProviderType } from '@prisma/client';
 import { UpsertProviderCredentialDto } from './dto/upsert-provider-credential.dto';
+import { MinioService } from '../minio/minio.service';
 
 @Injectable()
 export class SettingsService {
+  private readonly logger = new Logger(SettingsService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly minioService: MinioService,
   ) {}
 
   updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -154,5 +158,79 @@ export class SettingsService {
       where: { id: credentialId },
     });
     return { deleted: true };
+  }
+
+  async uploadAvatar(userId: string, file: Express.Multer.File) {
+    try {
+      const user = await this.usersService.findById(userId);
+      if (!user) {
+        throw new NotFoundException('errors.userNotFound');
+      }
+
+      if (user.avatarUrl) {
+        const fileName = this.extractFileNameFromUrl(user.avatarUrl);
+        if (fileName) {
+          await this.minioService.deleteAvatar(fileName);
+        }
+      }
+
+      const { fileName, url } = await this.minioService.uploadAvatar(
+        file.buffer,
+        userId,
+        file.originalname,
+      );
+
+      this.logger.log(`Avatar uploaded for user ${userId}: ${fileName}`);
+
+      await this.minioService.deleteOldAvatars(userId, fileName);
+
+      return this.usersService.updateAvatar(userId, url);
+    } catch (error) {
+      this.logger.error(
+        `Error uploading avatar for user ${userId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
+    }
+  }
+
+  async removeAvatar(userId: string) {
+    try {
+      const user = await this.usersService.findById(userId);
+      if (!user) {
+        throw new NotFoundException('errors.userNotFound');
+      }
+
+      if (user.avatarUrl) {
+        const fileName = this.extractFileNameFromUrl(user.avatarUrl);
+        if (fileName) {
+          await this.minioService.deleteAvatar(fileName);
+        }
+      }
+
+      this.logger.log(`Avatar removed for user ${userId}`);
+
+      return this.usersService.removeAvatar(userId);
+    } catch (error) {
+      this.logger.error(
+        `Error removing avatar for user ${userId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      throw error;
+    }
+  }
+
+  private extractFileNameFromUrl(url: string): string | null {
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/');
+      const bucketIndex = pathParts.findIndex(
+        (part) => part === this.configService.get('MINIO_BUCKET_NAME'),
+      );
+      if (bucketIndex !== -1 && bucketIndex < pathParts.length - 1) {
+        return pathParts.slice(bucketIndex + 1).join('/');
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 }

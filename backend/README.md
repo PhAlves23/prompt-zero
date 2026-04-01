@@ -64,11 +64,35 @@ yarn prisma:seed
 yarn start:dev
 ```
 
-## Documentação Swagger
+## Documentação e Observabilidade
 
-- UI: `http://localhost:3001/api/docs`
-- JSON OpenAPI: `http://localhost:3001/api/docs-json`
-- Metrics Prometheus: `http://localhost:3001/metrics`
+- Swagger UI: `http://localhost:3001/api/docs`
+- Swagger JSON OpenAPI: `http://localhost:3001/api/docs-json`
+- Métricas Prometheus: `http://localhost:3001/metrics`
+
+### Observabilidade com Prometheus + Grafana
+
+Para visualizar métricas com Prometheus e Grafana localmente:
+
+```bash
+# Suba o backend
+yarn start:dev
+
+# Em outro terminal, suba Prometheus + Grafana
+docker compose -f docker-compose.prometheus.yml up -d
+```
+
+Acesse:
+
+- **Prometheus UI**: `http://localhost:9090` - Interface web do Prometheus para queries
+- **Grafana**: `http://localhost:3030` - Dashboards avançados (usuário: `admin`, senha: `admin`)
+
+O Grafana já vem configurado com:
+
+- Data source Prometheus
+- Dashboard "PromptZero Backend Metrics" com principais métricas
+
+Para mais detalhes sobre configuração no Railway, veja: `../docs/PROMETHEUS-RAILWAY.md`
 
 ## Funcionalidades implementadas
 

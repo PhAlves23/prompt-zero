@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AvatarUpload } from "@/components/ui/avatar-upload"
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { ApiKeyStatus, ProviderCredential, UserProfile } from "@/lib/api/types"
@@ -67,6 +68,47 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
       queryClient.setQueryData(queryKeys.settings.profile, updatedProfile)
       queryClient.setQueryData(queryKeys.auth.me, updatedProfile)
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings.profile })
+    },
+  })
+
+  const uploadAvatar = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData()
+      formData.append("avatar", file)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/avatar`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+        body: formData,
+      })
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Failed to upload avatar")
+      }
+      return response.json() as Promise<UserProfile>
+    },
+    onSuccess: (updatedProfile) => {
+      toast.success("Avatar updated successfully")
+      queryClient.setQueryData(queryKeys.settings.profile, updatedProfile)
+      queryClient.setQueryData(queryKeys.auth.me, updatedProfile)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settings.profile })
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to upload avatar")
+    },
+  })
+
+  const removeAvatar = useMutation({
+    mutationFn: () => bffFetch<UserProfile>("/users/avatar", { method: "DELETE" }),
+    onSuccess: (updatedProfile) => {
+      toast.success("Avatar removed successfully")
+      queryClient.setQueryData(queryKeys.settings.profile, updatedProfile)
+      queryClient.setQueryData(queryKeys.auth.me, updatedProfile)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settings.profile })
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to remove avatar")
     },
   })
 
@@ -210,42 +252,63 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
         </TabsList>
 
         <TabsContent value="user">
-          <Card>
-            <CardHeader>
-              <CardTitle>{dict.settings.profileCard.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {profileQuery.isPending ? (
-                <p className="text-sm text-muted-foreground">{dict.settings.profileCard.loading}</p>
-              ) : null}
-              {profileQuery.isError ? (
-                <p className="text-sm text-destructive">{dict.settings.profileCard.loadError}</p>
-              ) : null}
-              <form
-                onSubmit={profileForm.handleSubmit((values) => {
-                  const parsed = profileSchema.safeParse(values)
-                  if (!parsed.success) {
-                    parsed.error.issues.forEach((issue) => {
-                      if (issue.path[0] === "name") {
-                        profileForm.setError("name", { message: issue.message })
-                      }
-                    })
-                    return
-                  }
-                  updateProfile.mutate(parsed.data)
-                })}
-                className="grid gap-4"
-              >
-                <div className="grid gap-2">
-                  <Label htmlFor="profile-name">{dict.settings.profileCard.nameLabel}</Label>
-                  <Input id="profile-name" {...profileForm.register("name")} />
+          <div className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>{dict.settings.profileCard.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-6">
+                <div>
+                  <h3 className="mb-3 text-sm font-medium">Avatar</h3>
+                  <AvatarUpload
+                    currentAvatarUrl={profileQuery.data?.avatarUrl}
+                    userName={profileQuery.data?.name}
+                    onUpload={async (file) => {
+                      await uploadAvatar.mutateAsync(file)
+                    }}
+                    onRemove={async () => {
+                      await removeAvatar.mutateAsync()
+                    }}
+                    isUploading={uploadAvatar.isPending}
+                    isRemoving={removeAvatar.isPending}
+                  />
                 </div>
-                <Button className="w-fit cursor-pointer" type="submit">
-                  {updateProfile.isPending ? dict.settings.profileCard.saving : dict.settings.profileCard.save}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+
+                <div className="border-t pt-6">
+                  <h3 className="mb-3 text-sm font-medium">Profile Information</h3>
+                  {profileQuery.isPending ? (
+                    <p className="text-sm text-muted-foreground">{dict.settings.profileCard.loading}</p>
+                  ) : null}
+                  {profileQuery.isError ? (
+                    <p className="text-sm text-destructive">{dict.settings.profileCard.loadError}</p>
+                  ) : null}
+                  <form
+                    onSubmit={profileForm.handleSubmit((values) => {
+                      const parsed = profileSchema.safeParse(values)
+                      if (!parsed.success) {
+                        parsed.error.issues.forEach((issue) => {
+                          if (issue.path[0] === "name") {
+                            profileForm.setError("name", { message: issue.message })
+                          }
+                        })
+                        return
+                      }
+                      updateProfile.mutate(parsed.data)
+                    })}
+                    className="grid gap-4"
+                  >
+                    <div className="grid gap-2">
+                      <Label htmlFor="profile-name">{dict.settings.profileCard.nameLabel}</Label>
+                      <Input id="profile-name" {...profileForm.register("name")} />
+                    </div>
+                    <Button className="w-fit cursor-pointer" type="submit">
+                      {updateProfile.isPending ? dict.settings.profileCard.saving : dict.settings.profileCard.save}
+                    </Button>
+                  </form>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="api-keys">

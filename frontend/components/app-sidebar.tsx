@@ -217,6 +217,7 @@ export function AppSidebar({ lang, user, ...props }: AppSidebarProps) {
   })
   const data = buildSidebarData(lang, sidebarUser)
   data.user.name = data.user.name === "Guest" ? t.guestName : data.user.name
+  data.user.avatar = profileQuery.data?.avatarUrl || ""
   data.navMain = [
     { ...data.navMain[0], title: t.nav.dashboard },
     { ...data.navMain[1], title: t.nav.prompts },

@@ -46,7 +46,9 @@ Este projeto vai muito além do básico, implementando **10+ funcionalidades ava
 - ✅ **Containerização completa** (Docker + Docker Compose)
 - ✅ **CI/CD robusto** (GitHub Actions com validação automática)
 - ✅ **Deploy automatizado** para Railway com migrations
-- ✅ **Monitoramento Prometheus** com métricas exportadas
+- ✅ **Observabilidade completa** (Prometheus + Loki + Tempo + Grafana)
+- ✅ **Distributed Tracing** com OpenTelemetry
+- ✅ **Logs estruturados** correlacionados com traces
 
 #### Testes e Qualidade
 - ✅ **Testes unitários** (Jest no backend, Vitest no frontend)
@@ -233,12 +235,47 @@ Cada dependência e decisão arquitetural foi cuidadosamente escolhida:
 - **Troca fácil**: Seletor de idioma na interface
 - **URLs localizadas**: `/pt-BR/dashboard`, `/en-US/dashboard`, etc.
 
-### 📈 Monitoramento
+### 📈 Monitoramento e Observabilidade
 
-- **Métricas Prometheus**: Expostas em `/metrics`
-- **Logs estruturados**: JSON para fácil parsing
-- **Request ID**: Correlação de logs entre frontend e backend
-- **Health check**: Endpoint para orquestradores
+Stack completa de observabilidade com **três pilares** (métricas, logs, traces):
+
+#### Métricas (Prometheus)
+- **Endpoint `/api/metrics`**: Scraping automático
+- **HTTP metrics**: Rate, latência (P95, P99), status codes
+- **System metrics**: CPU, memória, event loop
+- **Custom metrics**: Business metrics por feature
+
+#### Logs (Loki)
+- **Logs estruturados JSON**: Fácil parsing e busca
+- **Correlação com traces**: Cada log contém `traceId` e `spanId`
+- **Níveis configuráveis**: debug, info, warn, error
+- **Agregação centralizada**: Busca eficiente com LogQL
+
+#### Traces (Tempo + OpenTelemetry)
+- **Distributed tracing**: Rastreamento end-to-end de requisições
+- **Instrumentação automática**: HTTP, Express, NestJS, Prisma
+- **Spans customizados**: Decorator `@Trace` para métodos
+- **Correlação automática**: Traces → Logs → Métricas
+
+#### Visualização (Grafana)
+- **Dashboard pré-configurado**: Backend overview
+- **Datasources auto-provisionadas**: Prometheus, Loki, Tempo
+- **Navegação fluida**: Clique em log → veja trace completo
+- **Alertas**: Configure alertas baseados em métricas
+
+#### Quick Start
+```bash
+# Iniciar stack completa em 60 segundos
+./quick-start-observability.sh
+
+# Ou manualmente
+docker-compose -f docker-compose.observability.yml up -d
+
+# Acessar Grafana
+open http://localhost:3300  # admin/admin
+```
+
+📚 **Documentação completa**: [`docs/OBSERVABILIDADE.md`](./docs/OBSERVABILIDADE.md)
 
 ---
 
@@ -412,6 +449,19 @@ Documentação completa disponível na pasta `DOCS/`:
 
 - **[ci-cd-railway.md](./docs/ci-cd-railway.md)**: Guia de CI/CD no Railway
 
+- **[PROMETHEUS-QUICKSTART.md](./docs/PROMETHEUS-QUICKSTART.md)**: Guia rápido de Prometheus + Grafana
+  - Como iniciar Prometheus e Grafana localmente
+  - Testando queries e visualizando métricas
+  - Dashboard pré-configurado
+  - Troubleshooting
+
+- **[PROMETHEUS-RAILWAY.md](./docs/PROMETHEUS-RAILWAY.md)**: Guia completo de Prometheus no Railway
+  - Como funciona a integração
+  - Opções de configuração (Railway Observability, Prometheus externo, SaaS)
+  - Configuração de scraping remoto
+  - Criando métricas customizadas
+  - Alertas e monitoramento em produção
+
 - **[TESTING.md](./docs/TESTING.md)**: Guia de testes (Jest, Vitest, Playwright, CI)
 
 - **[TEST-COVERAGE.md](./docs/TEST-COVERAGE.md)**: Mapa de cobertura por módulo e próximos passos
@@ -427,6 +477,46 @@ http://localhost:3001/api/docs
 ---
 
 ## 🛠️ Desenvolvimento
+
+### Estrutura do Monorepo
+
+O projeto está organizado como um monorepo com todas as partes da aplicação:
+
+```
+prompt-zero/
+├── backend/              # API NestJS
+├── frontend/             # App Next.js
+├── prometheus/           # Configuração Prometheus (Railway)
+├── grafana/              # Configuração Grafana (provisioning)
+├── docs/                 # Documentação
+├── .github/workflows/    # CI/CD
+└── docker-compose*.yml   # Docker Compose (local + observability)
+```
+
+**Vantagens da estrutura monorepo:**
+- ✅ Versionamento unificado
+- ✅ Refatorações atômicas
+- ✅ CI/CD simplificado
+- ✅ Histórico completo
+- ✅ Deploy sincronizado
+
+### Observabilidade (Prometheus + Grafana)
+
+O projeto inclui configuração completa de observabilidade:
+
+**Local (desenvolvimento):**
+```bash
+# Backend + PostgreSQL + Redis
+docker compose up -d
+
+# Prometheus + Grafana
+docker compose -f docker-compose.prometheus.yml up -d
+```
+
+**Railway (produção):**
+- Deploy da pasta `prometheus/` como serviço separado
+- Grafana conecta ao Prometheus via private networking
+- Ver: `prometheus/README.md`
 
 ### Estrutura do Projeto
 
@@ -453,9 +543,14 @@ flowchart TD
     BE --> BE_PRISMA["prisma/ (Schema e migrações)"]
     BE --> BE_TEST["test/ (Testes)"]
 
-    ROOT --> DOCS["DOCS/ (Documentação completa)"]
+    ROOT --> OBSERVABILITY["Observabilidade"]
+    OBSERVABILITY --> PROMETHEUS["prometheus/ (Coleta de métricas)"]
+    OBSERVABILITY --> GRAFANA["grafana/ (Visualização)"]
+
+    ROOT --> DOCS["docs/ (Documentação completa)"]
     DOCS --> DOCS_FE["FRONTEND.md"]
     DOCS --> DOCS_BE["BACKEND.md"]
+    DOCS --> DOCS_PROM["PROMETHEUS-*.md"]
     DOCS --> DOCS_ASSETS["assets/"]
 ```
 
@@ -991,7 +1086,32 @@ Endpoint: `http://localhost:3001/metrics`
 
 **Métricas disponíveis:**
 - `http_requests_total`: Total de requisições HTTP
-- `http_request_duration_seconds`: Duração das requisições
+- `http_request_duration_seconds`: Duração das requisições (histograma com buckets)
+- `process_cpu_*`: Uso de CPU do processo
+- `process_heap_*`: Uso de memória heap
+- `nodejs_eventloop_lag_*`: Latência do event loop
+- `nodejs_gc_*`: Estatísticas de garbage collector
+
+### Visualização com Prometheus + Grafana
+
+Para visualizar métricas localmente:
+
+```bash
+# Suba Prometheus + Grafana
+docker compose -f docker-compose.prometheus.yml up -d
+
+# Acesse
+# Prometheus: http://localhost:9090
+# Grafana: http://localhost:3030 (admin/admin)
+```
+
+O Grafana já vem configurado com:
+- Data source Prometheus
+- Dashboard "PromptZero Backend Metrics" com principais métricas
+
+**Ver guia completo:**
+- [PROMETHEUS-QUICKSTART.md](./docs/PROMETHEUS-QUICKSTART.md) - Guia rápido de início
+- [PROMETHEUS-RAILWAY.md](./docs/PROMETHEUS-RAILWAY.md) - Configuração no Railway
 
 ### Logs Estruturados
 
@@ -1009,11 +1129,31 @@ Todos os logs são emitidos em formato JSON:
 }
 ```
 
-### Integração com Grafana
+### Queries úteis no Prometheus
 
-1. Configure Prometheus para scrape do endpoint `/metrics`
-2. Adicione Prometheus como data source no Grafana
-3. Importe dashboards ou crie os seus
+```promql
+# Taxa de requisições por segundo
+rate(http_requests_total[5m])
+
+# Latência P95 por rota
+histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))
+
+# Taxa de erros 5xx
+sum(rate(http_requests_total{status_code=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100
+
+# Event loop lag (ms)
+nodejs_eventloop_lag_seconds * 1000
+```
+
+### Integração com Grafana Cloud
+
+Para monitoramento em produção (Railway), você pode usar Grafana Cloud:
+
+1. Configure Prometheus Agent para fazer scraping remoto do Railway
+2. Use Grafana Cloud para visualização e alertas
+3. Configure notificações (Slack, email, etc.)
+
+Veja detalhes em: [docs/PROMETHEUS-RAILWAY.md](./docs/PROMETHEUS-RAILWAY.md)
 
 ---
 

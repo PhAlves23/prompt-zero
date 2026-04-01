@@ -1,0 +1,27 @@
+# Observability data (Prometheus + Grafana)
+# These are generated when running docker-compose.prometheus.yml
+grafana/provisioning/.generated
+prometheus_data/
+grafana_data/
+
+# Old prometheus folder (deprecated, use /prometheus instead)
+promptzero-railway-prometheus/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
