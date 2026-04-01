@@ -1,10 +1,9 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Upload, X, User } from "lucide-react"
+import { Upload, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar"
 import { Button } from "./button"
-import { cn } from "@/lib/utils"
 
 export interface AvatarUploadProps {
   currentAvatarUrl?: string | null

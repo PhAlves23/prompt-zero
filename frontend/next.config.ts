@@ -14,18 +14,16 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
-  devIndicators: {
-    appIsrStatus: !isE2E,
-    buildActivity: !isE2E,
-    buildActivityPosition: "bottom-right",
-  },
-  experimental: {
-    turbo: {
-      rules: {
-        "*.svg": {
-          loaders: ["@svgr/webpack"],
-          as: "*.js",
-        },
+  devIndicators: isE2E
+    ? false
+    : {
+        position: "bottom-right",
+      },
+  turbopack: {
+    rules: {
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
       },
     },
   },
