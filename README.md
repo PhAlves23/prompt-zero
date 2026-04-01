@@ -55,7 +55,8 @@ Este projeto vai muito além do básico, implementando **10+ funcionalidades ava
 Link: https://railway.com/project/b1adbfa3-a055-426a-9ff5-334b71da2fe9?environmentId=2a2a8cbe-9c1b-4f3d-ab2f-d44700a480c7
 
 ## Grafana
-<img width="1912" height="919" alt="image" src="https://github.com/user-attachments/assets/abd74c96-a019-477e-9f90-f96fb8ef9d8f" />
+<img width="1909" height="922" alt="image" src="https://github.com/user-attachments/assets/75de8ca3-ad3b-49d7-b25f-0ef136c124d5" />
+
 
 URL: http://grafana.promptzero.dev/
 User: PhAlves23
