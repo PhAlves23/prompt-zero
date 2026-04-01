@@ -54,6 +54,14 @@ Este projeto vai muito além do básico, implementando **10+ funcionalidades ava
 <img width="1896" height="917" alt="image" src="https://github.com/user-attachments/assets/11ff213e-e515-4742-9abd-33be9b04bb1e" />
 Link: https://railway.com/project/b1adbfa3-a055-426a-9ff5-334b71da2fe9?environmentId=2a2a8cbe-9c1b-4f3d-ab2f-d44700a480c7
 
+## Grafana
+<img width="1912" height="919" alt="image" src="https://github.com/user-attachments/assets/abd74c96-a019-477e-9f90-f96fb8ef9d8f" />
+
+URL: http://grafana.promptzero.dev/
+User: PhAlves23
+Password: mjbzr0zoclh00ibojl5nrpbi
+
+
 #### Testes e Qualidade
 - ✅ **Testes unitários** (Jest no backend, Vitest no frontend)
 - ✅ **Testes E2E** (Supertest + Playwright)
