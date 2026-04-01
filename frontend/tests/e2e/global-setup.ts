@@ -10,19 +10,28 @@ function isE2EFullStack(): boolean {
 async function waitForBackendReady(maxMs: number): Promise<void> {
   const deadline = Date.now() + maxMs;
   const api = await request.newContext({ baseURL: "http://127.0.0.1:3001" });
+  let lastError: Error | undefined;
+  
   try {
+    console.log("[E2E Global Setup] Aguardando backend ficar pronto...");
     while (Date.now() < deadline) {
       try {
         const res = await api.get("/api/v1", { timeout: 5_000 });
         if (res.ok()) {
+          console.log("[E2E Global Setup] Backend pronto!");
           return;
         }
-      } catch {
-        /* ECONNREFUSED ou timeout — tentar de novo */
+        lastError = new Error(`Backend retornou status ${res.status()}`);
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
       }
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 1000));
     }
-    throw new Error(`Backend em http://127.0.0.1:3001/api/v1 nao ficou pronto em ${maxMs}ms`);
+    const elapsed = Math.round((Date.now() - (deadline - maxMs)) / 1000);
+    throw new Error(
+      `Backend em http://127.0.0.1:3001/api/v1 nao ficou pronto em ${elapsed}s. ` +
+      `Ultimo erro: ${lastError?.message}`
+    );
   } finally {
     await api.dispose();
   }
@@ -30,6 +39,7 @@ async function waitForBackendReady(maxMs: number): Promise<void> {
 
 export default async function globalSetup(config: FullConfig): Promise<void> {
   if (!isE2EFullStack()) {
+    console.log("[E2E Global Setup] Modo smoke-only (sem backend), pulando setup");
     return;
   }
 
@@ -40,22 +50,31 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   const authFile = path.join(authDir, "user.json");
   fs.mkdirSync(authDir, { recursive: true });
 
+  console.log("[E2E Global Setup] Aguardando backend...");
   await waitForBackendReady(360_000);
 
+  console.log("[E2E Global Setup] Tentando login em", baseURL);
   const ctx = await request.newContext({ baseURL });
-  const loginRes = await ctx.post("/api/session/login", {
-    data: {
-      email: "admin@promptvault.com",
-      password: "Password@123",
-    },
-    headers: { "Content-Type": "application/json" },
-  });
+  
+  try {
+    const loginRes = await ctx.post("/api/session/login", {
+      data: {
+        email: "admin@promptvault.com",
+        password: "Password@123",
+      },
+      headers: { "Content-Type": "application/json" },
+      timeout: 30_000,
+    });
 
-  if (!loginRes.ok()) {
-    const body = await loginRes.text();
-    throw new Error(`E2E global-setup: login falhou (${loginRes.status()}): ${body}`);
+    if (!loginRes.ok()) {
+      const body = await loginRes.text();
+      throw new Error(`E2E global-setup: login falhou (${loginRes.status()}): ${body}`);
+    }
+
+    console.log("[E2E Global Setup] Login bem-sucedido, salvando estado...");
+    await ctx.storageState({ path: authFile });
+    console.log("[E2E Global Setup] Setup completo!");
+  } finally {
+    await ctx.dispose();
   }
-
-  await ctx.storageState({ path: authFile });
-  await ctx.dispose();
 }

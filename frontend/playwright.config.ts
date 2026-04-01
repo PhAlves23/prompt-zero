@@ -67,6 +67,8 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
   },
   webServer: isE2EFullStack()
     ? [
@@ -77,23 +79,30 @@ export default defineConfig({
           timeout: 360_000,
           reuseExistingServer: reuseDevServer(),
           env: backendEnv,
+          stdout: "pipe",
+          stderr: "pipe",
         },
         {
           command: "pnpm dev:e2e",
           url: "http://127.0.0.1:3000",
-          timeout: 180_000,
+          timeout: 240_000,
           reuseExistingServer: reuseDevServer(),
           env: {
             ...stringEnv(process.env),
             BACKEND_API_URL: "http://127.0.0.1:3001/api/v1",
+            WATCHPACK_POLLING: "true",
           },
+          stdout: "pipe",
+          stderr: "pipe",
         },
       ]
     : {
         command: "pnpm dev:e2e",
         url: "http://127.0.0.1:3000",
         reuseExistingServer: reuseDevServer(),
-        timeout: 120_000,
+        timeout: 180_000,
+        stdout: "pipe",
+        stderr: "pipe",
       },
   projects: isE2EFullStack()
     ? [

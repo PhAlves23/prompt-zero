@@ -102,6 +102,7 @@ jobs:
       JWT_ACCESS_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
       ENCRYPTION_SECRET: dev-encryption-secret
+      CI: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
