@@ -9,8 +9,9 @@ COPY prisma ./prisma
 RUN yarn prisma:generate
 
 COPY . .
-RUN rm -f tsconfig.build.tsbuildinfo && yarn build
+RUN rm -f tsconfig.build.tsbuildinfo && yarn build && echo "✅ Build completed" && ls -la dist/ | head -20
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "yarn prisma:migrate:deploy && node dist/main.js"]
+# Use exec form and add explicit error handling
+CMD sh -c "yarn prisma:migrate:deploy && echo '✅ Migrations completed, starting application...' && node dist/main.js || (echo '❌ Application failed to start' && exit 1)"
