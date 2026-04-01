@@ -1,6 +1,6 @@
 "use client"
 
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
@@ -76,6 +76,7 @@ function extractVariableNames(content: string): string[] {
 
 export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dictionary }) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [openTags, setOpenTags] = useState(false)
   const localePrefix = (lang.split("-")[0] ?? "pt") as keyof typeof languageByLocalePrefix
   const defaultLanguage: PromptLanguage = languageByLocalePrefix[localePrefix] ?? "pt"
@@ -172,6 +173,7 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
     },
     onSuccess: () => {
       toast.success(dict.prompts.create)
+      void queryClient.invalidateQueries({ queryKey: ["prompts", "list"] })
       router.push(`/${lang}/prompts`)
       router.refresh()
     },

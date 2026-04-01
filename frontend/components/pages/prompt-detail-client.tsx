@@ -229,6 +229,7 @@ export function PromptDetailClient({
     mutationFn: () => bffFetch<Prompt>(`/prompts/${promptId}/fork`, { method: "POST" }),
     onSuccess: (prompt) => {
       toast.success(dict.prompts.detail.toasts.promptDuplicated)
+      void queryClient.invalidateQueries({ queryKey: ["prompts", "list"] })
       router.push(`/${lang}/prompts/${prompt.id}`)
       router.refresh()
     },
@@ -238,6 +239,7 @@ export function PromptDetailClient({
     mutationFn: () => bffFetch<void>(`/prompts/${promptId}`, { method: "DELETE" }),
     onSuccess: () => {
       toast.success(dict.prompts.detail.toasts.promptRemoved)
+      void queryClient.invalidateQueries({ queryKey: ["prompts", "list"] })
       router.push(`/${lang}/prompts`)
       router.refresh()
     },
@@ -314,6 +316,7 @@ export function PromptDetailClient({
       setAbLastVariant(null)
       toast.success(dict.prompts.detail.toasts.abExperimentCreated)
       void queryClient.invalidateQueries({ queryKey: queryKeys.experiments.results(result.id) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.experiments.list })
     },
     onError: () => {
       toast.error(dict.prompts.detail.toasts.abExperimentCreateFailed)
@@ -379,6 +382,7 @@ export function PromptDetailClient({
       }),
     onSuccess: (result) => {
       queryClient.setQueryData(queryKeys.experiments.results(experimentId), result)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.experiments.list })
       setAbLastExposureId("")
       setAbLastVariant(null)
       setAbLastOutput("")
@@ -407,6 +411,7 @@ export function PromptDetailClient({
       }),
     onSuccess: (result) => {
       queryClient.setQueryData(queryKeys.experiments.results(experimentId), result)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.experiments.list })
       toast.success(dict.prompts.detail.toasts.experimentStopped)
     },
     onError: () => {

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Copy, LogIn } from "lucide-react"
@@ -23,6 +23,7 @@ export function ExploreDetailPageClient({
   dict: Dictionary
 }) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const promptQuery = useQuery({
     queryKey: queryKeys.explore.detail(promptId),
     queryFn: () => bffFetch<ExplorePrompt>(`/explore/${promptId}`),
@@ -36,6 +37,7 @@ export function ExploreDetailPageClient({
     mutationFn: () => bffFetch<Prompt>(`/prompts/${promptId}/fork`, { method: "POST" }),
     onSuccess: (forkedPrompt) => {
       toast.success(dict.explore.detail.toastForkSuccess)
+      void queryClient.invalidateQueries({ queryKey: ["prompts", "list"] })
       router.push(`/${lang}/prompts/${forkedPrompt.id}`)
       router.refresh()
     },

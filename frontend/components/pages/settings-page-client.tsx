@@ -142,6 +142,12 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
           Object.entries(values).filter(([, value]) => typeof value === "string" && value.trim().length > 0),
         ),
       }),
+    onSuccess: () => {
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.settings.apiKeys }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.settings.providerCredentials }),
+      ])
+    },
   })
 
   const providersStatus = useMemo(
@@ -199,10 +205,6 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
 
     try {
       const status = await updateApiKeys.mutateAsync(payloadByProvider[provider])
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.settings.apiKeys }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.settings.providerCredentials }),
-      ])
       const connected =
         provider === "openai"
           ? Boolean(status.openaiConfigured) || status.providers.some((item) => item.provider === "openai")
