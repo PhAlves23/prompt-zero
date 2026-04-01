@@ -4,7 +4,7 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://prometheus:9090
+    url: ${PROMETHEUS_INTERNAL_URL}
     isDefault: true
     jsonData:
       httpMethod: POST
@@ -16,7 +16,7 @@ datasources:
   - name: Loki
     type: loki
     access: proxy
-    url: http://loki:3100
+    url: ${LOKI_INTERNAL_URL}
     jsonData:
       maxLines: 1000
       derivedFields:
@@ -29,7 +29,7 @@ datasources:
   - name: Tempo
     type: tempo
     access: proxy
-    url: http://tempo:3200
+    url: ${TEMPO_INTERNAL_URL}
     uid: tempo
     jsonData:
       httpMethod: GET
