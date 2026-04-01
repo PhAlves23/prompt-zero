@@ -1,0 +1,86 @@
+# Prometheus Configuration for Railway
+# Este arquivo deve ser montado no Prometheus na Railway
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'promptzero-production'
+    environment: 'railway'
+
+# Regras de alertas (opcional)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Configurações de scrape
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # PromptZero Backend (Railway)
+  - job_name: 'promptzero-backend'
+    # Usar DNS interno do Railway
+    static_configs:
+      - targets: ['back-end.railway.internal:3001']
+    
+    # Caminho das métricas
+    metrics_path: '/api/metrics'
+    
+    # Intervalo de coleta
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    
+    # Labels adicionais
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'backend-production'
+      
+      - source_labels: [__address__]
+        target_label: service
+        replacement: 'promptzero-backend'
+
+  # PromptZero Frontend (Railway) - se expuser métricas
+  - job_name: 'promptzero-frontend'
+    static_configs:
+      - targets: ['front-end.railway.internal:3000']
+    
+    # Next.js pode expor métricas em /_next/metrics ou custom endpoint
+    metrics_path: '/api/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'frontend-production'
+      
+      - source_labels: [__address__]
+        target_label: service
+        replacement: 'promptzero-frontend'
+
+  # Postgres Exporter (se houver)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter.railway.internal:9187']
+    scrape_interval: 30s
+    honor_labels: true
+
+  # Redis Exporter (se houver)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter.railway.internal:9121']
+    scrape_interval: 30s
+    honor_labels: true
+
+# Configuração de armazenamento
+storage:
+  tsdb:
+    retention:
+      time: 30d
+      size: 50GB
+    wal_compression: true
