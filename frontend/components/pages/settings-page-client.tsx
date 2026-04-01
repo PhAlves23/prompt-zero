@@ -75,16 +75,22 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
     mutationFn: async (file: File) => {
       const formData = new FormData()
       formData.append("avatar", file)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/avatar`, {
+      
+      const response = await fetch("/api/avatar", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
         body: formData,
       })
+      
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || "Failed to upload avatar")
+        if (response.status === 401) {
+          throw new Error("Not authenticated. Please log in again.")
+        }
+        try {
+          const error = await response.json()
+          throw new Error(error.message || "Failed to upload avatar")
+        } catch {
+          throw new Error("Failed to upload avatar")
+        }
       }
       return response.json() as Promise<UserProfile>
     },
@@ -100,7 +106,17 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
   })
 
   const removeAvatar = useMutation({
-    mutationFn: () => bffFetch<UserProfile>("/users/avatar", { method: "DELETE" }),
+    mutationFn: async () => {
+      const response = await fetch("/api/avatar", { method: "DELETE" })
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Failed to remove avatar")
+      }
+      if (response.status === 204) {
+        return null
+      }
+      return response.json() as Promise<UserProfile>
+    },
     onSuccess: (updatedProfile) => {
       toast.success("Avatar removed successfully")
       queryClient.setQueryData(queryKeys.settings.profile, updatedProfile)
