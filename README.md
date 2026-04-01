@@ -72,7 +72,7 @@ Password: mjbzr0zoclh00ibojl5nrpbi
 <img width="1904" height="926" alt="image" src="https://github.com/user-attachments/assets/7d651bee-89bd-47dc-932e-b2ebecf55034" />
 
 
-URL: http://minio.promptzero.dev/<br/>
+URL: https://console-production-d3dc.up.railway.app/<br/>
 User: ung9qSSm6sMC37YWCyYPtd4Lb3Guv3a2<br/>
 Password: EOderOIO7IInxaP9w1fmlYA79HODGdL6XJYE6t6XRrE7nJXY
 
