@@ -7,14 +7,42 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
+import {
+  I18nValidationException,
+  I18nValidationExceptionFilter,
+  I18nContext,
+} from 'nestjs-i18n';
 import { RequestWithContext } from '../interfaces/request-context.interface';
-import { I18nContext } from 'nestjs-i18n';
+
+const i18nValidationExceptionFilter = new I18nValidationExceptionFilter({
+  detailedErrors: false,
+  responseBodyFormatter: (host, exc, formattedErrors) => {
+    const request = host.switchToHttp().getRequest<RequestWithContext>();
+    const message = Array.isArray(formattedErrors)
+      ? formattedErrors.join(', ')
+      : typeof formattedErrors === 'string'
+        ? formattedErrors
+        : JSON.stringify(formattedErrors);
+    return {
+      code: exc.getStatus(),
+      message,
+      path: request.url,
+      requestId: request.requestId ?? null,
+      timestamp: new Date().toISOString(),
+    };
+  },
+});
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost): void {
+    if (exception instanceof I18nValidationException) {
+      i18nValidationExceptionFilter.catch(exception, host);
+      return;
+    }
+
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<RequestWithContext>();

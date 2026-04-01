@@ -20,7 +20,7 @@ export default async function PromptCreatePage({ params }: PromptCreatePageProps
   const dict = await getDictionary(lang as Locale)
 
   return (
-    <AppShell title={dict.prompts.create} lang={lang} user={{ name: user.name, email: user.email }}>
+    <AppShell title={dict.prompts.create} lang={lang} user={{ name: user.name, email: user.email }} dict={dict}>
       <PromptCreatePageClient lang={lang} dict={dict} />
     </AppShell>
   )

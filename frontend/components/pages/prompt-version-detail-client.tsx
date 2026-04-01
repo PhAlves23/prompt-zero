@@ -9,12 +9,15 @@ import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { PromptVersion } from "@/lib/api/types"
 import type { Dictionary } from "@/app/[lang]/dictionaries"
+import { formatDateTimeLocale } from "@/lib/format-datetime"
 
 export function PromptVersionDetailClient({
+  lang,
   promptId,
   versionId,
   dict,
 }: {
+  lang: string
   promptId: string
   versionId: string
   dict: Dictionary
@@ -59,7 +62,7 @@ export function PromptVersionDetailClient({
         </CardHeader>
         <CardContent className="grid gap-3">
           <p className="text-xs text-muted-foreground">
-            {dict.prompts.versionDetail.createdAtLabel} {new Date(versionQuery.data.createdAt).toLocaleString()}
+            {dict.prompts.detail.versions.dateTimePrefix} {formatDateTimeLocale(versionQuery.data.createdAt, lang)}
           </p>
           <pre className="max-h-[480px] overflow-auto rounded border bg-card p-3 text-sm whitespace-pre-wrap">
             {versionQuery.data.content}

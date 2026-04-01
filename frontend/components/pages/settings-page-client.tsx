@@ -71,6 +71,8 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
     },
   })
 
+  const avatarI18n = dict.settings.profileCard.avatar
+
   const uploadAvatar = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData()
@@ -83,25 +85,29 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
       
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Not authenticated. Please log in again.")
+          throw new Error(avatarI18n.notAuthenticated)
         }
+        let message = avatarI18n.uploadFailed
         try {
-          const error = await response.json()
-          throw new Error(error.message || "Failed to upload avatar")
+          const error = (await response.json()) as { message?: string }
+          if (error?.message) {
+            message = error.message
+          }
         } catch {
-          throw new Error("Failed to upload avatar")
+          /* use default message */
         }
+        throw new Error(message)
       }
       return response.json() as Promise<UserProfile>
     },
     onSuccess: (updatedProfile) => {
-      toast.success("Avatar updated successfully")
+      toast.success(avatarI18n.updated)
       queryClient.setQueryData(queryKeys.settings.profile, updatedProfile)
       queryClient.setQueryData(queryKeys.auth.me, updatedProfile)
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings.profile })
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to upload avatar")
+      toast.error(error instanceof Error ? error.message : avatarI18n.uploadFailed)
     },
   })
 
@@ -110,7 +116,7 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
       const response = await fetch("/api/avatar", { method: "DELETE" })
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || "Failed to remove avatar")
+        throw new Error(error.message || avatarI18n.removeFailed)
       }
       if (response.status === 204) {
         return null
@@ -118,13 +124,13 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
       return response.json() as Promise<UserProfile>
     },
     onSuccess: (updatedProfile) => {
-      toast.success("Avatar removed successfully")
+      toast.success(avatarI18n.removed)
       queryClient.setQueryData(queryKeys.settings.profile, updatedProfile)
       queryClient.setQueryData(queryKeys.auth.me, updatedProfile)
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings.profile })
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to remove avatar")
+      toast.error(error instanceof Error ? error.message : avatarI18n.removeFailed)
     },
   })
 
@@ -275,10 +281,21 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
               </CardHeader>
               <CardContent className="grid gap-6">
                 <div>
-                  <h3 className="mb-3 text-sm font-medium">Avatar</h3>
+                  <h3 className="mb-3 text-sm font-medium">{dict.settings.profileCard.avatarSectionTitle}</h3>
                   <AvatarUpload
                     currentAvatarUrl={profileQuery.data?.avatarUrl}
                     userName={profileQuery.data?.name}
+                    defaultUserName={dict.common.userDefaultName}
+                    labels={{
+                      invalidFormat: avatarI18n.invalidFormat,
+                      tooLarge: avatarI18n.tooLarge,
+                      uploadFailed: avatarI18n.uploadFailed,
+                      removeFailed: avatarI18n.removeFailed,
+                      change: avatarI18n.change,
+                      upload: avatarI18n.upload,
+                      remove: avatarI18n.remove,
+                      recommended: avatarI18n.recommended,
+                    }}
                     onUpload={async (file) => {
                       await uploadAvatar.mutateAsync(file)
                     }}
@@ -291,7 +308,7 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
                 </div>
 
                 <div className="border-t pt-6">
-                  <h3 className="mb-3 text-sm font-medium">Profile Information</h3>
+                  <h3 className="mb-3 text-sm font-medium">{dict.settings.profileCard.profileInfoSectionTitle}</h3>
                   {profileQuery.isPending ? (
                     <p className="text-sm text-muted-foreground">{dict.settings.profileCard.loading}</p>
                   ) : null}

@@ -1,13 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsHexColor, IsString, MinLength } from 'class-validator';
+import { i18nValidationMessage } from 'nestjs-i18n';
 
 export class CreateTagDto {
   @ApiProperty({ example: 'Marketing' })
-  @IsString()
-  @MinLength(2)
+  @IsString({ message: i18nValidationMessage('validation.isString') })
+  @MinLength(2, { message: i18nValidationMessage('validation.minLength') })
   name!: string;
 
   @ApiProperty({ example: '#EF4444' })
-  @IsHexColor()
+  @IsHexColor({ message: i18nValidationMessage('validation.isHexColor') })
   color!: string;
 }

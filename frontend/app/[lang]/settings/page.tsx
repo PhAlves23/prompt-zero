@@ -21,7 +21,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   const dict = await getDictionary(lang as Locale)
 
   return (
-    <AppShell title={dict.settings.pageTitle} lang={lang} user={{ name: user.name, email: user.email }}>
+    <AppShell title={dict.settings.pageTitle} lang={lang} user={{ name: user.name, email: user.email }} dict={dict}>
       <SettingsPageClient dict={dict} />
     </AppShell>
   )

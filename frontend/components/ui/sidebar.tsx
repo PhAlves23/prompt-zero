@@ -257,8 +257,9 @@ function Sidebar({
 function SidebarTrigger({
   className,
   onClick,
+  srOnlyLabel = "Toggle Sidebar",
   ...props
-}: React.ComponentProps<typeof Button>) {
+}: React.ComponentProps<typeof Button> & { srOnlyLabel?: string }) {
   const { toggleSidebar } = useSidebar()
 
   return (
@@ -275,7 +276,7 @@ function SidebarTrigger({
       {...props}
     >
       <HugeiconsIcon icon={SidebarLeftIcon} strokeWidth={2} />
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">{srOnlyLabel}</span>
     </Button>
   )
 }

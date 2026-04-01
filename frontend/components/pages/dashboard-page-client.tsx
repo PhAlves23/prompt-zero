@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { parseAsString, useQueryState } from "nuqs"
@@ -11,6 +12,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/u
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
+import type { Dictionary } from "@/app/[lang]/dictionaries"
 import type {
   AnalyticsAbHistory,
   AnalyticsAbRanking,
@@ -21,94 +23,48 @@ import type {
   Tag,
   Workspace,
 } from "@/lib/api/types"
-import type { ExperimentsPageDictionary } from "@/components/pages/experiments-page-client"
 
 const periods = ["7d", "30d", "90d"] as const
 
-const executionsChartConfig = {
-  total: {
-    label: "Execucoes",
-    color: "var(--primary)",
-  },
-} satisfies ChartConfig
-
-const costChartConfig = {
-  estimatedCost: {
-    label: "Custo",
-    color: "var(--chart-2)",
-  },
-} satisfies ChartConfig
-
-const abHistoryChartConfig = {
-  votes: {
-    label: "Votos A/B",
-    color: "var(--chart-4)",
-  },
-} satisfies ChartConfig
-
 export function DashboardPageClient({
   lang,
-  experiments: experimentsI18n,
+  dict,
 }: {
   lang: string
-  experiments: ExperimentsPageDictionary
+  dict: Dictionary
 }) {
   const [period, setPeriod] = useQueryState("period", parseAsString.withDefault("30d"))
-  const isPt = lang.startsWith("pt")
-  const isEs = lang.startsWith("es")
-  const t = {
-    loadingSeries: isEs ? "Cargando serie temporal..." : isPt ? "Carregando série temporal..." : "Loading time series...",
-    loadExecPerDayError:
-      isEs ? "Error al cargar ejecuciones por día." : isPt ? "Falha ao carregar execuções por dia." : "Failed to load executions per day.",
-    loadingRanking: isEs ? "Cargando ranking..." : isPt ? "Carregando ranking..." : "Loading ranking...",
-    loadRankingError:
-      isEs ? "Error al cargar ranking de prompts." : isPt ? "Falha ao carregar ranking de prompts." : "Failed to load prompts ranking.",
-    loadingCost: isEs ? "Cargando distribución de costos..." : isPt ? "Carregando distribuição de custos..." : "Loading cost distribution...",
-    loadCostError:
-      isEs ? "Error al cargar costo por modelo." : isPt ? "Falha ao carregar custo por modelo." : "Failed to load model costs.",
-    noModelUsage: isEs ? "No se registró consumo de modelo." : isPt ? "Nenhum consumo de modelo foi registrado ainda." : "No model usage registered yet.",
-    loadingAbHistory: isEs ? "Cargando histórico A/B..." : isPt ? "Carregando histórico A/B..." : "Loading A/B history...",
-    loadAbHistoryError: isEs ? "Error al cargar histórico A/B." : isPt ? "Falha ao carregar histórico A/B." : "Failed to load A/B history.",
-    loadingAbRanking: isEs ? "Cargando ranking A/B..." : isPt ? "Carregando ranking A/B..." : "Loading A/B ranking...",
-    loadAbRankingError: isEs ? "Error al cargar ranking A/B." : isPt ? "Falha ao carregar ranking A/B." : "Failed to load A/B ranking.",
-    loadingGeneric: isEs ? "Cargando..." : isPt ? "Carregando..." : "Loading...",
-    loadGenericError: isEs ? "Error al cargar." : isPt ? "Falha ao carregar." : "Failed to load.",
-    prompts: isEs ? "Prompts" : "Prompts",
-    activePrompts: isEs ? "Total de prompts activos" : isPt ? "Total de prompts ativos" : "Total active prompts",
-    executions: isEs ? "Ejecuciones" : isPt ? "Execuções" : "Executions",
-    executionsInPeriod: isEs ? "Ejecuciones en los últimos" : isPt ? "Execuções nos últimos" : "Executions in the last",
-    tokens: "Tokens",
-    tokenUsage: isEs ? "Consumo total en" : isPt ? "Consumo total em" : "Total usage in",
-    estimatedCost: isEs ? "Costo estimado" : isPt ? "Custo estimado" : "Estimated cost",
-    aggregatedCost: isEs ? "Costo agregado en" : isPt ? "Custo agregado em" : "Aggregated cost in",
-    workspaces: isEs ? "Espacios de trabajo" : "Workspaces",
-    workspaceDesc: isEs ? "Espacios de organización" : isPt ? "Espaços de organização" : "Organization spaces",
-    tags: "Tags",
-    tagsDesc: isEs ? "Etiquetas registradas" : isPt ? "Etiquetas cadastradas" : "Registered tags",
-    executionsPerDay: isEs ? "Ejecuciones por día" : isPt ? "Execuções por dia" : "Executions per day",
-    usageTrend: isEs ? "Tendencia de uso en el período seleccionado" : isPt ? "Tendência de uso no período selecionado" : "Usage trend in selected period",
-    noExecutionsPeriod: isEs ? "Sin ejecuciones en el período" : isPt ? "Sem execuções no período" : "No executions in period",
-    runPromptHint: isEs ? "Ejecuta un prompt para ver la curva de uso." : isPt ? "Rode um prompt para visualizar a curva de uso." : "Run a prompt to view usage curve.",
-    topPrompts: isEs ? "Top prompts" : "Top prompts",
-    mostExecuted: isEs ? "Más ejecutados en el período" : isPt ? "Mais executados no período" : "Most executed in period",
-    shortExec: isEs ? "ejec." : isPt ? "exec." : "exec.",
-    noRankingYet: isEs ? "Sin ranking todavía" : isPt ? "Sem ranking ainda" : "No ranking yet",
-    rankingHint: isEs ? "Cuando haya ejecuciones, el ranking aparecerá aquí." : isPt ? "Quando houver execuções, o ranking aparece aqui." : "When there are executions, ranking appears here.",
-    costByModel: isEs ? "Costo por modelo" : isPt ? "Custo por modelo" : "Cost by model",
-    costDistribution: isEs ? "Distribución de costo entre modelos usados" : isPt ? "Distribuição de custo entre modelos usados" : "Cost distribution across used models",
-    noCostPeriod: isEs ? "Sin costo en el período" : isPt ? "Sem custo no período" : "No cost in period",
-    noCostHint: isEs ? "Aún no se registró consumo de modelos." : isPt ? "Nenhum consumo de modelo foi registrado ainda." : "No model usage registered yet.",
-    abHistory: isEs ? "Historial A/B por día" : isPt ? "Histórico A/B por dia" : "A/B history by day",
-    abVolume: isEs ? "Volumen de votos de experimentos A/B en el período" : isPt ? "Volume de votos de experimentos A/B no período" : "A/B experiment votes volume in period",
-    noAbHistory: isEs ? "Sin histórico A/B en el período" : isPt ? "Sem histórico A/B no período" : "No A/B history in period",
-    noAbHistoryHint: isEs ? "Crea experimentos y registra votos para poblar este gráfico." : isPt ? "Crie experimentos e registre votos para popular este gráfico." : "Create experiments and register votes to populate this chart.",
-    abRanking: isEs ? "Ranking de experimentos A/B" : isPt ? "Ranking de experimentos A/B" : "A/B experiment ranking",
-    mostVotes: isEs ? "Experimentos con más votos en el período" : isPt ? "Experimentos com mais votos no período" : "Experiments with most votes in period",
-    votes: isEs ? "votos" : "votos",
-    winner: isEs ? "Ganador" : isPt ? "Vencedor" : "Winner",
-    noAbRankingYet: isEs ? "Sin ranking A/B todavía" : isPt ? "Sem ranking A/B ainda" : "No A/B ranking yet",
-    noAbRankingHint: isEs ? "Aún no hay votos de experimento en el período seleccionado." : isPt ? "Ainda não há votos de experimento no período selecionado." : "No experiment votes in selected period yet.",
-  }
+  const t = dict.dashboard
+  const executionsChartConfig = useMemo(
+    () =>
+      ({
+        total: {
+          label: t.charts.executions,
+          color: "var(--primary)",
+        },
+      }) satisfies ChartConfig,
+    [t.charts.executions],
+  )
+  const costChartConfig = useMemo(
+    () =>
+      ({
+        estimatedCost: {
+          label: t.charts.estimatedCost,
+          color: "var(--chart-2)",
+        },
+      }) satisfies ChartConfig,
+    [t.charts.estimatedCost],
+  )
+  const abHistoryChartConfig = useMemo(
+    () =>
+      ({
+        votes: {
+          label: t.charts.abVotes,
+          color: "var(--chart-4)",
+        },
+      }) satisfies ChartConfig,
+    [t.charts.abVotes],
+  )
   const selectedPeriod = period === "7d" || period === "30d" || period === "90d" ? period : "30d"
 
   const overviewQuery = useQuery({
@@ -357,7 +313,7 @@ export function DashboardPageClient({
                           <span className="font-mono font-medium">
                             {formatCurrency(Number(value ?? 0), lang)}
                             {" | "}
-                            {item.payload.totalTokens.toLocaleString(lang)} tokens
+                            {item.payload.totalTokens.toLocaleString(lang)} {t.tokens}
                           </span>
                         </div>
                       )}
@@ -423,8 +379,12 @@ export function DashboardPageClient({
                         }
                         formatter={(_value, _name, item) => (
                           <div className="grid gap-1 text-xs">
-                            <span>Votos: {item.payload.votes}</span>
-                            <span>Experimentos: {item.payload.experiments}</span>
+                            <span>
+                              {t.tooltipVotes}: {item.payload.votes}
+                            </span>
+                            <span>
+                              {t.tooltipExperiments}: {item.payload.experiments}
+                            </span>
                           </div>
                         )}
                       />
@@ -471,8 +431,8 @@ export function DashboardPageClient({
                         className="shrink-0"
                       >
                         {item.status === "running"
-                          ? experimentsI18n.status.running
-                          : experimentsI18n.status.stopped}
+                          ? dict.experiments.status.running
+                          : dict.experiments.status.stopped}
                       </Badge>
                     </div>
                     <span className="text-muted-foreground">{item.totalVotes} {t.votes}</span>

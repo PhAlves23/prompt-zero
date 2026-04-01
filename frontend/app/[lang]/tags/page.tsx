@@ -20,7 +20,7 @@ export default async function TagsPage({ params }: TagsPageProps) {
   const dict = await getDictionary(lang as Locale)
 
   return (
-    <AppShell title={dict.tags.title} lang={lang} user={{ name: user.name, email: user.email }}>
+    <AppShell title={dict.tags.title} lang={lang} user={{ name: user.name, email: user.email }} dict={dict}>
       <TagsPageClient dict={dict} />
     </AppShell>
   )

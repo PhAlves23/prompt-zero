@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { Dictionary } from "@/app/[lang]/dictionaries"
+import { buildBackendLocaleHeadersFromLocale, normalizeAppLocale } from "@/lib/locale-i18n"
 
 const schema = z.object({
   name: z.string().min(2),
@@ -39,9 +40,13 @@ export function RegisterForm({ lang, dict }: { lang: string; dict: Dictionary })
       return
     }
 
+    const localeHeaders = buildBackendLocaleHeadersFromLocale(normalizeAppLocale(lang))
     const response = await fetch("/api/session/register", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        ...localeHeaders,
+      },
       body: JSON.stringify(parsed.data),
     })
 

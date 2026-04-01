@@ -21,7 +21,7 @@ export default async function PromptsPage({ params }: PromptsPageProps) {
   const dict = await getDictionary(lang as Locale)
 
   return (
-    <AppShell title={dict.nav.prompts} lang={lang} user={{ name: user.name, email: user.email }}>
+    <AppShell title={dict.nav.prompts} lang={lang} user={{ name: user.name, email: user.email }} dict={dict}>
       <PromptsPageClient lang={lang} dict={dict} />
     </AppShell>
   )

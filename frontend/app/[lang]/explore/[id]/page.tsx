@@ -21,6 +21,7 @@ export default async function ExploreDetailPage({ params }: ExploreDetailPagePro
       title={dict.explore.detail.pageTitle}
       lang={lang}
       user={user ? { name: user.name, email: user.email } : null}
+      dict={dict}
     >
       <ExploreDetailPageClient lang={lang} promptId={id} dict={dict} />
     </AppShell>

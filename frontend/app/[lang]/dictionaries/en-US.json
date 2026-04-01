@@ -9,7 +9,52 @@
     "search": "Search",
     "loading": "Loading",
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "toggleTheme": "Toggle theme",
+    "guestUserFallback": "Guest",
+    "userDefaultName": "User"
+  },
+  "ui": {
+    "accessibility": {
+      "toggleSidebar": "Toggle sidebar",
+      "loading": "Loading",
+      "close": "Close",
+      "previous": "Previous",
+      "next": "Next",
+      "morePages": "More pages",
+      "previousSlide": "Previous slide",
+      "nextSlide": "Next slide",
+      "more": "More"
+    }
+  },
+  "sidebar": {
+    "guestName": "Guest",
+    "quickCreate": "Quick create",
+    "promptMarketplace": "Prompt marketplace",
+    "nav": {
+      "dashboard": "Dashboard",
+      "prompts": "Prompts",
+      "workspaces": "Workspaces",
+      "tags": "Tags",
+      "explore": "Explore",
+      "experiments": "A/B experiments",
+      "settings": "Settings",
+      "apiKeys": "API keys",
+      "getHelp": "Get help",
+      "search": "Search"
+    },
+    "docs": {
+      "recent": "Recent",
+      "noRecentPrompt": "No recent prompt",
+      "newPrompt": "New prompt"
+    },
+    "userMenu": {
+      "settings": "Settings",
+      "billing": "Billing",
+      "notifications": "Notifications",
+      "comingSoon": "Coming soon",
+      "logout": "Log out"
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -98,19 +143,27 @@
         "waitingOutput": "Waiting for execution",
         "advancedSettingsTitle": "Advanced settings",
         "settingsHelp": {
-          "temperature": "Controls randomness (0-2)",
+          "temperature": "0 = more deterministic; 2 = more creative.",
           "topP": "Nucleus sampling (0-1)",
-          "topK": "Limits the number of tokens considered",
-          "maxTokens": "Maximum number of tokens in the response"
+          "topK": "Only the K most likely tokens are considered per step.",
+          "maxTokens": "Combined cap for input and output tokens."
         },
         "templateVariablesTitle": "Template variables",
         "loadingVariables": "Loading variables…",
         "variableValuePlaceholder": "Enter a value",
         "noVariablesHint": "No variables configured. Sync template variables to avoid execution errors.",
-        "runCta": "Run"
+        "runCta": "Run",
+        "labels": {
+          "temperature": "Controls randomness (0-2)",
+          "topP": "Top P",
+          "topK": "Limits the number of tokens considered",
+          "maxTokens": "Maximum tokens in the response"
+        },
+        "cancelExecution": "Cancel execution",
+        "retryExecution": "Try again",
+        "realtimeOutput": "Real-time output ({status})"
       },
       "ab": {
-        "cardTitle": "A/B experiment",
         "promptBLabel": "Prompt B",
         "selectPrompt": "Select a prompt",
         "emptyPrompts": "No prompts found.",
@@ -127,7 +180,14 @@
           "creatingExperiment": "Creating…",
           "runRound": "Run A/B round",
           "runningRound": "Running round…"
-        }
+        },
+        "currentExperiment": "Current experiment: {id}",
+        "statusLabel": "Status:",
+        "statusLoading": "Loading…",
+        "distributionLabel": "Distribution:",
+        "votesLine": "Votes A: {votesA} | Votes B: {votesB}",
+        "percentLine": "Percent A: {percentA}% | Percent B: {percentB}%",
+        "lastRoundSummary": "Last round: variant {variant} (exposure {exposureId})"
       },
       "versions": {
         "viewDetails": "View details",
@@ -136,7 +196,13 @@
         "deleteVersion": "Delete version",
         "loadError": "Failed to load versions.",
         "deleteDialogTitle": "Remove version?",
-        "deleteDialogDescription": "This action cannot be undone. The selected version will be permanently removed."
+        "deleteDialogDescription": "This action cannot be undone. The selected version will be permanently removed.",
+        "listTitle": "Versions",
+        "versionNumber": "Version {number}",
+        "dateTimePrefix": "Date/time:",
+        "restoreButton": "Restore",
+        "cancelDialog": "Cancel",
+        "confirmDeleteButton": "Confirm deletion"
       },
       "variables": {
         "title": "Variables",
@@ -156,7 +222,10 @@
         "loading": "Loading executions…",
         "loadError": "Failed to load executions.",
         "emptyTitle": "No executions found",
-        "emptyDescription": "Run the prompt to see execution history."
+        "emptyDescription": "Run the prompt to see execution history.",
+        "listTitle": "Executions",
+        "copyOutput": "Copy output",
+        "noOutput": "No output"
       }
     },
     "version": "Version",
@@ -164,7 +233,6 @@
       "notFoundTitle": "Version not found",
       "notFoundDescription": "Check whether this version still exists for this prompt.",
       "versionLabel": "Version",
-      "createdAtLabel": "Created at",
       "restoreCta": "Restore this version"
     },
     "list": {
@@ -211,7 +279,23 @@
       "addVariable": "Add variable",
       "templateHint": "Tip: use placeholders in content like {{product}} to auto-detect variables.",
       "noVariables": "No variables detected/added.",
-      "removeVariable": "Remove variable"
+      "removeVariable": "Remove variable",
+      "languages": {
+        "portuguese": "Portuguese",
+        "english": "English",
+        "spanish": "Spanish"
+      },
+      "errors": {
+        "loadCategories": "Could not load categories.",
+        "loadWorkspaces": "Could not load workspaces."
+      },
+      "variableTypes": {
+        "text": "Text",
+        "textarea": "Textarea",
+        "select": "Select"
+      },
+      "variableOptionsLabel": "Options (comma-separated)",
+      "variableOptionsPlaceholder": "casual, formal, technical"
     },
     "executions": "executions",
     "lastEdit": "Last edited",
@@ -278,7 +362,22 @@
       "nameLabel": "Name",
       "save": "Save profile",
       "saving": "Saving…",
-      "toastUpdated": "Profile updated"
+      "toastUpdated": "Profile updated",
+      "avatarSectionTitle": "Avatar",
+      "profileInfoSectionTitle": "Profile information",
+      "avatar": {
+        "change": "Change avatar",
+        "upload": "Upload avatar",
+        "remove": "Remove avatar",
+        "recommended": "Recommended: Square image, at least 128x128px. Max {maxSize}MB. JPG, PNG or WebP.",
+        "invalidFormat": "Invalid file format. Please use JPG, PNG or WebP.",
+        "tooLarge": "File too large. Maximum size is {maxSize}MB.",
+        "uploadFailed": "Failed to upload avatar",
+        "removeFailed": "Failed to remove avatar",
+        "updated": "Avatar updated successfully",
+        "removed": "Avatar removed successfully",
+        "notAuthenticated": "Not authenticated. Please log in again."
+      }
     },
     "apiKeysCard": {
       "loadError": "Failed to load key status.",
@@ -315,7 +414,147 @@
     "status": {
       "running": "Running",
       "stopped": "Stopped"
-    }
+    },
+    "newCardTitle": "New A/B experiment",
+    "promptALabel": "Prompt A",
+    "promptBLabel": "Prompt B",
+    "emptyTitle": "No experiment found",
+    "emptyDescription": "Create your first A/B experiment above.",
+    "summarySplitLabel": "Split",
+    "summaryVotesLabel": "Votes",
+    "runFailed": "Failed to run A/B round",
+    "configureApiKeys": "Configure an API key for the selected provider/model in Settings > API keys.",
+    "stopFailed": "Failed to stop experiment",
+    "selectAB": "Select Prompt A and Prompt B",
+    "promptsLoadError": "Failed to load prompts. Make sure you have created prompts.",
+    "selectPrompt": "Select a prompt",
+    "noPromptFound": "No prompt found.",
+    "creating": "Creating…",
+    "createExperiment": "Create experiment",
+    "selectTemplateHint": "Select at least one template prompt to load fields automatically.",
+    "loadingVariables": "Loading variables from selected prompts…",
+    "noVariables": "No variables configured for selected prompts.",
+    "loadingExperiments": "Loading experiments…",
+    "experimentsLoadError": "Failed to load experiments.",
+    "runRound": "Run round",
+    "stop": "Stop",
+    "voteA": "Vote A",
+    "voteB": "Vote B",
+    "roundExecuted": "A/B round executed",
+    "voteRegistered": "Vote recorded",
+    "alreadyVoted": "This result has already been voted. Run a new round to vote again.",
+    "voteFailed": "Could not register vote",
+    "experimentStopped": "Experiment stopped",
+    "experimentCreated": "Experiment created",
+    "createFailed": "Could not create experiment",
+    "invalidSplit": "Invalid split: use a value from 1 to 99 for Prompt A",
+    "searchPromptByName": "Search prompt by name…",
+    "trafficSplitLabel": "Percentage A (1-99)",
+    "sampleTargetLabel": "Target sample (optional)",
+    "promptBReceives": "Prompt B automatically receives",
+    "runVariablesTitle": "Round variables (templates)",
+    "generatedFieldsHint": "Fields generated dynamically from A/B prompt placeholders. Values are used in the A/B round.",
+    "valuePlaceholder": "Enter a value",
+    "createdExperiments": "Created experiments",
+    "createdAt": "Created at",
+    "lastRound": "Last round: variant",
+    "exposure": "exposure"
+  },
+  "dashboard": {
+    "charts": {
+      "executions": "Executions",
+      "estimatedCost": "Estimated cost",
+      "abVotes": "A/B votes"
+    },
+    "loadingSeries": "Loading time series…",
+    "loadExecPerDayError": "Failed to load executions per day.",
+    "loadingRanking": "Loading ranking…",
+    "loadRankingError": "Failed to load prompts ranking.",
+    "loadingCost": "Loading cost distribution…",
+    "loadCostError": "Failed to load model costs.",
+    "noModelUsage": "No model usage registered yet.",
+    "loadingAbHistory": "Loading A/B history…",
+    "loadAbHistoryError": "Failed to load A/B history.",
+    "loadingAbRanking": "Loading A/B ranking…",
+    "loadAbRankingError": "Failed to load A/B ranking.",
+    "loadingGeneric": "Loading…",
+    "loadGenericError": "Failed to load.",
+    "prompts": "Prompts",
+    "activePrompts": "Total active prompts",
+    "executions": "Executions",
+    "executionsInPeriod": "Executions in the last",
+    "tokens": "Tokens",
+    "tokenUsage": "Total usage in",
+    "estimatedCost": "Estimated cost",
+    "aggregatedCost": "Aggregated cost in",
+    "workspaces": "Workspaces",
+    "workspaceDesc": "Organization spaces",
+    "tags": "Tags",
+    "tagsDesc": "Registered tags",
+    "executionsPerDay": "Executions per day",
+    "usageTrend": "Usage trend in selected period",
+    "noExecutionsPeriod": "No executions in period",
+    "runPromptHint": "Run a prompt to view usage curve.",
+    "topPrompts": "Top prompts",
+    "mostExecuted": "Most executed in period",
+    "shortExec": "exec.",
+    "noRankingYet": "No ranking yet",
+    "rankingHint": "When there are executions, ranking appears here.",
+    "costByModel": "Cost by model",
+    "costDistribution": "Cost distribution across used models",
+    "noCostPeriod": "No cost in period",
+    "noCostHint": "No model usage registered yet.",
+    "abHistory": "A/B history by day",
+    "abVolume": "A/B experiment votes volume in period",
+    "noAbHistory": "No A/B history in period",
+    "noAbHistoryHint": "Create experiments and register votes to populate this chart.",
+    "abRanking": "A/B experiment ranking",
+    "mostVotes": "Experiments with most votes in period",
+    "votes": "votes",
+    "winner": "Winner",
+    "noAbRankingYet": "No A/B ranking yet",
+    "noAbRankingHint": "No experiment votes in selected period yet.",
+    "tooltipVotes": "Votes",
+    "tooltipExperiments": "Experiments"
+  },
+  "analytics": {
+    "charts": {
+      "executions": "Executions",
+      "estimatedCost": "Cost",
+      "avgLatencyMs": "Latency"
+    },
+    "loadingSeries": "Loading executions series…",
+    "loadExecError": "Failed to load executions per day.",
+    "loadingRanking": "Loading ranking…",
+    "loadTopError": "Failed to load top prompts.",
+    "loadingCost": "Loading model costs…",
+    "loadCostError": "Failed to load model costs.",
+    "loadingData": "Loading data…",
+    "loading": "Loading…",
+    "loadError": "Failed to load.",
+    "executions": "Executions",
+    "totalConsumption": "Total consumption",
+    "avgTokens": "Average tokens",
+    "perExecution": "Per execution",
+    "avgCost": "Average cost",
+    "executionsPerDay": "Executions per day",
+    "dayComparison": "Daily comparison to identify seasonality",
+    "noExecutionsPeriod": "No executions in period",
+    "runToGenerateData": "Run prompts to generate data.",
+    "topPrompts": "Top prompts",
+    "mostExecuted": "Most executed",
+    "shortExec": "exec.",
+    "noRankedPrompts": "No ranked prompts",
+    "runToRank": "Run prompts to appear in ranking.",
+    "costLatency": "Cost and latency by model",
+    "costLatencyDesc": "Which model costs more and which responds faster",
+    "costLabel": "Cost",
+    "avgLatency": "Average latency",
+    "noCostRecorded": "No recorded cost",
+    "noModelUsagePeriod": "No model usage in selected period.",
+    "tokens": "Tokens",
+    "executionsMetricDescription": "Total in period {period}",
+    "tooltipTokens": "Tokens"
   },
   "explore": {
     "common": {

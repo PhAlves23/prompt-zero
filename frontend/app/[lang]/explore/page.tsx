@@ -21,6 +21,7 @@ export default async function ExplorePage({ params }: ExplorePageProps) {
       title={dict.nav.explore}
       lang={lang}
       user={user ? { name: user.name, email: user.email } : null}
+      dict={dict}
     >
       <ExplorePageClient lang={lang} dict={dict} />
     </AppShell>

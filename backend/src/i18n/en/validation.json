@@ -1,0 +1,21 @@
+{
+  "isString": "{property} must be a string",
+  "minLength": "{property} must be at least {constraints.0} characters long",
+  "maxLength": "{property} must be at most {constraints.0} characters long",
+  "isEmail": "{property} must be a valid email",
+  "isNotEmpty": "{property} must not be empty",
+  "min": "{property} must not be less than {constraints.0}",
+  "max": "{property} must not be greater than {constraints.0}",
+  "isInt": "{property} must be an integer",
+  "isNumber": "{property} must be a number",
+  "isEnum": "{property} must be one of the allowed values",
+  "isHexColor": "{property} must be a valid hex color",
+  "isArray": "{property} must be an array",
+  "isBoolean": "{property} must be a boolean",
+  "isBooleanString": "{property} must be the string \"true\" or \"false\"",
+  "isObject": "{property} must be an object",
+  "arrayNotEmpty": "{property} must not be empty",
+  "isStringEach": "each value in {property} must be a string",
+  "validateNested": "{property} has invalid nested values",
+  "isDefined": "{property} is required"
+}

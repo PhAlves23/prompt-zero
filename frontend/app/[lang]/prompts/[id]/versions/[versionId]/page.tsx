@@ -22,8 +22,8 @@ export default async function PromptVersionDetailPage({ params }: PromptVersionD
   const dict = await getDictionary(lang as Locale)
 
   return (
-    <AppShell title={dict.prompts.versionDetailPageTitle} lang={lang} user={{ name: user.name, email: user.email }}>
-      <PromptVersionDetailClient promptId={id} versionId={versionId} dict={dict} />
+    <AppShell title={dict.prompts.versionDetailPageTitle} lang={lang} user={{ name: user.name, email: user.email }} dict={dict}>
+      <PromptVersionDetailClient lang={lang} promptId={id} versionId={versionId} dict={dict} />
     </AppShell>
   )
 }

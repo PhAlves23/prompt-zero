@@ -114,14 +114,6 @@ export function TagsPageClient({ dict }: { dict: Dictionary }) {
                   onChange={(event) => form.setValue("color", event.currentTarget.value.toUpperCase())}
                   className="max-w-[140px] uppercase"
                 />
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-5 w-5 rounded border"
-                    style={{ backgroundColor: createColor }}
-                    aria-hidden="true"
-                  />
-                  <span className="text-xs text-muted-foreground">{createColor}</span>
-                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 {presetColors.map((preset) => (
@@ -195,11 +187,6 @@ export function TagsPageClient({ dict }: { dict: Dictionary }) {
                               value={editColor}
                               onChange={(event) => editForm.setValue("color", event.currentTarget.value.toUpperCase())}
                               className="max-w-[140px] uppercase"
-                            />
-                            <span
-                              className="h-5 w-5 rounded border"
-                              style={{ backgroundColor: editColor }}
-                              aria-hidden="true"
                             />
                           </div>
                           <div className="flex flex-wrap gap-2">

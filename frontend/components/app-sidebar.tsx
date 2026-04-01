@@ -19,110 +19,21 @@ import {
 } from "@/components/ui/sidebar"
 import { BrandMark } from "@/components/brand-mark"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { DashboardSquare01Icon, Menu01Icon, Folder01Icon, UserGroupIcon, Settings05Icon, HelpCircleIcon, SearchIcon, Database01Icon, Compass01Icon, File01Icon } from "@hugeicons/core-free-icons"
+import { DashboardSquare01Icon, Menu01Icon, Folder01Icon, UserGroupIcon, Settings05Icon, SearchIcon, Database01Icon, Compass01Icon, File01Icon } from "@hugeicons/core-free-icons"
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { PaginatedResult, Prompt, SessionUser, UserProfile } from "@/lib/api/types"
+import type { Dictionary } from "@/app/[lang]/dictionaries"
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   lang: string
   user: SessionUser | null
+  dict: Dictionary
 }
 
-function getSidebarI18n(lang: string) {
-  if (lang === "en-US") {
-    return {
-      guestName: "Guest",
-      nav: {
-        dashboard: "Dashboard",
-        prompts: "Prompts",
-        workspaces: "Workspaces",
-        tags: "Tags",
-        explore: "Explore",
-        experiments: "A/B experiments",
-        settings: "Settings",
-        apiKeys: "API keys",
-        getHelp: "Get help",
-        search: "Search",
-      },
-      docs: {
-        recent: "Recent",
-        noRecentPrompt: "No recent prompt",
-        newPrompt: "New prompt",
-      },
-      quickCreate: "Quick create",
-      promptMarketplace: "Prompt marketplace",
-      userMenu: {
-        account: "Account",
-        billing: "Billing",
-        notifications: "Notifications",
-        logout: "Log out",
-      },
-    }
-  }
-  if (lang === "es-ES") {
-    return {
-      guestName: "Invitado",
-      nav: {
-        dashboard: "Panel",
-        prompts: "Prompts",
-        workspaces: "Espacios de trabajo",
-        tags: "Tags",
-        explore: "Explorar",
-        experiments: "Experimentos A/B",
-        settings: "Configuración",
-        apiKeys: "Claves de API",
-        getHelp: "Obtener ayuda",
-        search: "Buscar",
-      },
-      docs: {
-        recent: "Recientes",
-        noRecentPrompt: "Ningún prompt reciente",
-        newPrompt: "Nuevo prompt",
-      },
-      quickCreate: "Creación rápida",
-      promptMarketplace: "Marketplace de prompts",
-      userMenu: {
-        account: "Cuenta",
-        billing: "Facturación",
-        notifications: "Notificaciones",
-        logout: "Cerrar sesión",
-      },
-    }
-  }
-  return {
-    guestName: "Convidado",
-    nav: {
-      dashboard: "Dashboard",
-      prompts: "Prompts",
-      workspaces: "Workspaces",
-      tags: "Tags",
-      explore: "Explorar",
-      experiments: "Experimentos A/B",
-      settings: "Configurações",
-      apiKeys: "Chaves de API",
-      getHelp: "Ajuda",
-      search: "Buscar",
-    },
-    docs: {
-      recent: "Recentes",
-      noRecentPrompt: "Nenhum prompt recente",
-      newPrompt: "Novo prompt",
-    },
-    quickCreate: "Criação rápida",
-    promptMarketplace: "Marketplace de prompts",
-    userMenu: {
-      account: "Conta",
-      billing: "Faturamento",
-      notifications: "Notificações",
-      logout: "Sair",
-    },
-  }
-}
-
-const buildSidebarData = (lang: string, user: SessionUser | null) => ({
+const buildSidebarData = (lang: string, user: SessionUser | null, guestFallback: string) => ({
   user: {
-    name: user?.name ?? "Guest",
+    name: user?.name ?? guestFallback,
     email: user?.email ?? "guest@promptzero.app",
     avatar: "",
   },
@@ -186,13 +97,6 @@ const buildSidebarData = (lang: string, user: SessionUser | null) => ({
       ),
     },
     {
-      title: "Get Help",
-      url: `/${lang}`,
-      icon: (
-        <HugeiconsIcon icon={HelpCircleIcon} strokeWidth={2} />
-      ),
-    },
-    {
       title: "Search",
       url: `/${lang}/explore`,
       icon: (
@@ -202,8 +106,8 @@ const buildSidebarData = (lang: string, user: SessionUser | null) => ({
   ],
 })
 
-export function AppSidebar({ lang, user, ...props }: AppSidebarProps) {
-  const t = getSidebarI18n(lang)
+export function AppSidebar({ lang, user, dict, ...props }: AppSidebarProps) {
+  const t = dict.sidebar
   const profileQuery = useQuery({
     queryKey: queryKeys.auth.me,
     queryFn: () => bffFetch<UserProfile>("/auth/me"),
@@ -215,8 +119,9 @@ export function AppSidebar({ lang, user, ...props }: AppSidebarProps) {
     queryKey: queryKeys.prompts.list("sidebar-recent"),
     queryFn: () => bffFetch<PaginatedResult<Prompt>>("/prompts?page=1&limit=5"),
   })
-  const data = buildSidebarData(lang, sidebarUser)
-  data.user.name = data.user.name === "Guest" ? t.guestName : data.user.name
+  const guestFallback = dict.common.guestUserFallback
+  const data = buildSidebarData(lang, sidebarUser, guestFallback)
+  data.user.name = data.user.name === guestFallback ? t.guestName : data.user.name
   data.user.avatar = profileQuery.data?.avatarUrl || ""
   data.navMain = [
     { ...data.navMain[0], title: t.nav.dashboard },
@@ -229,8 +134,7 @@ export function AppSidebar({ lang, user, ...props }: AppSidebarProps) {
   data.navSecondary = [
     { ...data.navSecondary[0], title: t.nav.settings },
     { ...data.navSecondary[1], title: t.nav.apiKeys },
-    { ...data.navSecondary[2], title: t.nav.getHelp },
-    { ...data.navSecondary[3], title: t.nav.search },
+    { ...data.navSecondary[2], title: t.nav.search },
   ]
   const recentPrompts = recentPromptsQuery.data?.data ?? []
   const documentItems =

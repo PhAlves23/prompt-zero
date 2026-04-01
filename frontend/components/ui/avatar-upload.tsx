@@ -5,9 +5,22 @@ import { Upload, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar"
 import { Button } from "./button"
 
+export type AvatarUploadLabels = {
+  invalidFormat: string
+  tooLarge: string
+  uploadFailed: string
+  removeFailed: string
+  change: string
+  upload: string
+  remove: string
+  recommended: string
+}
+
 export interface AvatarUploadProps {
   currentAvatarUrl?: string | null
   userName?: string
+  defaultUserName: string
+  labels: AvatarUploadLabels
   onUpload: (file: File) => Promise<void>
   onRemove: () => Promise<void>
   isUploading?: boolean
@@ -18,7 +31,9 @@ export interface AvatarUploadProps {
 
 export function AvatarUpload({
   currentAvatarUrl,
-  userName = "User",
+  userName,
+  defaultUserName,
+  labels,
   onUpload,
   onRemove,
   isUploading = false,
@@ -30,6 +45,8 @@ export function AvatarUpload({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const displayName = userName ?? defaultUserName
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -37,13 +54,13 @@ export function AvatarUpload({
     setError(null)
 
     if (!acceptedFormats.includes(file.type)) {
-      setError("Invalid file format. Please use JPG, PNG or WebP.")
+      setError(labels.invalidFormat)
       return
     }
 
     const maxSizeBytes = maxSizeMB * 1024 * 1024
     if (file.size > maxSizeBytes) {
-      setError(`File too large. Maximum size is ${maxSizeMB}MB.`)
+      setError(labels.tooLarge.replace("{maxSize}", String(maxSizeMB)))
       return
     }
 
@@ -54,7 +71,7 @@ export function AvatarUpload({
     reader.readAsDataURL(file)
 
     void onUpload(file).catch((err) => {
-      setError(err instanceof Error ? err.message : "Failed to upload avatar")
+      setError(err instanceof Error ? err.message : labels.uploadFailed)
       setPreviewUrl(null)
     })
   }
@@ -65,7 +82,7 @@ export function AvatarUpload({
     try {
       await onRemove()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to remove avatar")
+      setError(err instanceof Error ? err.message : labels.removeFailed)
     }
   }
 
@@ -77,7 +94,7 @@ export function AvatarUpload({
   const isLoading = isUploading || isRemoving
   const hasAvatar = Boolean(displayUrl)
 
-  const initials = userName
+  const initials = displayName
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -89,7 +106,7 @@ export function AvatarUpload({
       <div className="flex items-center gap-4">
         <div className="relative">
           <Avatar size="lg" className="size-20">
-            <AvatarImage src={displayUrl || undefined} alt={userName} />
+            <AvatarImage src={displayUrl || undefined} alt={displayName} />
             <AvatarFallback className="text-lg">{initials}</AvatarFallback>
           </Avatar>
 
@@ -119,7 +136,7 @@ export function AvatarUpload({
             className="w-fit"
           >
             <Upload className="h-4 w-4" />
-            {hasAvatar ? "Change Avatar" : "Upload Avatar"}
+            {hasAvatar ? labels.change : labels.upload}
           </Button>
 
           {hasAvatar && (
@@ -132,14 +149,14 @@ export function AvatarUpload({
               className="w-fit text-destructive hover:text-destructive"
             >
               <X className="h-4 w-4" />
-              Remove Avatar
+              {labels.remove}
             </Button>
           )}
         </div>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Recommended: Square image, at least 128x128px. Max {maxSizeMB}MB. JPG, PNG or WebP.
+        {labels.recommended.replace("{maxSize}", String(maxSizeMB))}
       </p>
 
       {error && (

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { parseAsString, useQueryState } from "nuqs"
 import { useEffect, useMemo } from "react"
+import type { Dictionary } from "@/app/[lang]/dictionaries"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
@@ -20,25 +21,11 @@ import { useUiStore } from "@/stores/ui-store"
 
 const periods = ["7d", "30d", "90d"] as const
 
-const executionsChartConfig = {
-  total: {
-    label: "Execucoes",
-    color: "var(--primary)",
-  },
-} satisfies ChartConfig
+function interpolate(template: string, params: Record<string, string>) {
+  return Object.entries(params).reduce((current, [key, value]) => current.replaceAll(`{${key}}`, value), template)
+}
 
-const costChartConfig = {
-  estimatedCost: {
-    label: "Custo",
-    color: "var(--chart-2)",
-  },
-  avgLatencyMs: {
-    label: "Latencia",
-    color: "var(--chart-3)",
-  },
-} satisfies ChartConfig
-
-export function AnalyticsPageClient() {
+export function AnalyticsPageClient({ dict, lang }: { dict: Dictionary; lang: string }) {
   const [period, setPeriod] = useQueryState("period", parseAsString.withDefault("30d"))
   const selectedPeriod = useUiStore((state) => state.selectedPeriod)
   const setSelectedPeriod = useUiStore((state) => state.setSelectedPeriod)
@@ -50,40 +37,32 @@ export function AnalyticsPageClient() {
   }, [period, setSelectedPeriod])
 
   const periodValue = selectedPeriod
-  const locale = useMemo(() => (typeof navigator !== "undefined" ? navigator.language : "pt-BR"), [])
-  const isPt = locale.startsWith("pt")
-  const isEs = locale.startsWith("es")
-  const t = {
-    loadingSeries: isEs ? "Cargando serie de ejecuciones..." : isPt ? "Carregando série de execuções..." : "Loading executions series...",
-    loadExecError: isEs ? "Error al cargar ejecuciones por día." : isPt ? "Falha ao carregar execuções por dia." : "Failed to load executions per day.",
-    loadingRanking: isEs ? "Cargando ranking..." : isPt ? "Carregando ranking..." : "Loading ranking...",
-    loadTopError: isEs ? "Error al cargar top prompts." : isPt ? "Falha ao carregar top prompts." : "Failed to load top prompts.",
-    loadingCost: isEs ? "Cargando costo por modelo..." : isPt ? "Carregando custo por modelo..." : "Loading model costs...",
-    loadCostError: isEs ? "Error al cargar costo por modelo." : isPt ? "Falha ao carregar custo por modelo." : "Failed to load model costs.",
-    loadingData: isEs ? "Cargando datos..." : isPt ? "Carregando dados..." : "Loading data...",
-    loading: isEs ? "Cargando..." : isPt ? "Carregando..." : "Loading...",
-    loadError: isEs ? "Error al cargar." : isPt ? "Falha ao carregar." : "Failed to load.",
-    executions: isEs ? "Ejecuciones" : isPt ? "Execuções" : "Executions",
-    totalConsumption: isEs ? "Consumo total" : isPt ? "Consumo total" : "Total consumption",
-    avgTokens: isEs ? "Media de tokens" : isPt ? "Média de tokens" : "Average tokens",
-    perExecution: isEs ? "Por ejecución" : isPt ? "Por execução" : "Per execution",
-    avgCost: isEs ? "Costo medio" : isPt ? "Custo médio" : "Average cost",
-    executionsPerDay: isEs ? "Ejecuciones por día" : isPt ? "Execuções por dia" : "Executions per day",
-    dayComparison: isEs ? "Comparativo diario para identificar estacionalidad" : isPt ? "Comparativo diário para identificar sazonalidade" : "Daily comparison to identify seasonality",
-    noExecutionsPeriod: isEs ? "Sin ejecuciones en el período" : isPt ? "Sem execuções no período" : "No executions in period",
-    runToGenerateData: isEs ? "Ejecuta prompts para generar datos." : isPt ? "Execute alguns prompts para gerar dados." : "Run prompts to generate data.",
-    topPrompts: isEs ? "Top prompts" : "Top prompts",
-    mostExecuted: isEs ? "Más ejecutados" : isPt ? "Mais executados" : "Most executed",
-    shortExec: isEs ? "ejec." : isPt ? "exec." : "exec.",
-    noRankedPrompts: isEs ? "Sin prompts en ranking" : isPt ? "Sem prompts ranqueados" : "No ranked prompts",
-    runToRank: isEs ? "Ejecuta prompts para aparecer en el ranking." : isPt ? "Execute prompts para aparecer no ranking." : "Run prompts to appear in ranking.",
-    costLatency: isEs ? "Costo y latencia por modelo" : isPt ? "Custo e latência por modelo" : "Cost and latency by model",
-    costLatencyDesc: isEs ? "Qué modelo cuesta más y cuál responde más rápido" : isPt ? "Qual modelo custa mais e qual responde mais rápido" : "Which model costs more and which responds faster",
-    costLabel: isEs ? "Costo" : isPt ? "Custo" : "Cost",
-    avgLatency: isEs ? "Latencia media" : isPt ? "Latência média" : "Average latency",
-    noCostRecorded: isEs ? "Sin costo registrado" : isPt ? "Sem custo registrado" : "No recorded cost",
-    noModelUsagePeriod: isEs ? "Sin consumo de modelos en el período seleccionado." : isPt ? "Sem consumo de modelos no período selecionado." : "No model usage in selected period.",
-  }
+  const t = dict.analytics
+  const executionsChartConfig = useMemo(
+    () =>
+      ({
+        total: {
+          label: t.charts.executions,
+          color: "var(--primary)",
+        },
+      }) satisfies ChartConfig,
+    [t.charts.executions],
+  )
+  const costChartConfig = useMemo(
+    () =>
+      ({
+        estimatedCost: {
+          label: t.charts.estimatedCost,
+          color: "var(--chart-2)",
+        },
+        avgLatencyMs: {
+          label: t.charts.avgLatencyMs,
+          color: "var(--chart-3)",
+        },
+      }) satisfies ChartConfig,
+    [t.charts.estimatedCost, t.charts.avgLatencyMs],
+  )
+
   const overviewQuery = useQuery({
     queryKey: queryKeys.analytics.overview(periodValue),
     queryFn: () => bffFetch<AnalyticsOverview>(`/analytics/overview?period=${periodValue}`),
@@ -129,7 +108,7 @@ export function AnalyticsPageClient() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label={t.executions}
-          description={`Total no periodo ${periodValue}`}
+          description={interpolate(t.executionsMetricDescription, { period: periodValue })}
           value={overviewQuery.data?.executionsTotal ?? 0}
           isPending={overviewQuery.isPending}
           isError={overviewQuery.isError}
@@ -137,7 +116,7 @@ export function AnalyticsPageClient() {
           errorLabel={t.loadError}
         />
         <MetricCard
-          label="Tokens"
+          label={t.tokens}
           description={t.totalConsumption}
           value={overviewQuery.data?.totalTokens ?? 0}
           isPending={overviewQuery.isPending}
@@ -157,7 +136,7 @@ export function AnalyticsPageClient() {
         <MetricCard
           label={t.avgCost}
           description={t.perExecution}
-          value={formatCurrency(avgCostPerExecution)}
+          value={formatCurrency(avgCostPerExecution, lang)}
           isPending={overviewQuery.isPending}
           isError={overviewQuery.isError}
           loadingLabel={t.loading}
@@ -193,7 +172,7 @@ export function AnalyticsPageClient() {
                     tickMargin={8}
                     minTickGap={24}
                     tickFormatter={(value) =>
-                      new Date(value).toLocaleDateString(locale, { day: "2-digit", month: "2-digit" })
+                      new Date(value).toLocaleDateString(lang, { day: "2-digit", month: "2-digit" })
                     }
                   />
                   <ChartTooltip
@@ -201,7 +180,7 @@ export function AnalyticsPageClient() {
                     content={
                       <ChartTooltipContent
                         labelFormatter={(value) =>
-                          new Date(value).toLocaleDateString(locale, { day: "2-digit", month: "long" })
+                          new Date(value).toLocaleDateString(lang, { day: "2-digit", month: "long" })
                         }
                       />
                     }
@@ -243,7 +222,9 @@ export function AnalyticsPageClient() {
                     <span className="font-medium">
                       {index + 1}. {item.promptTitle}
                     </span>
-                    <span className="text-muted-foreground">{item.executions} {t.shortExec}</span>
+                    <span className="text-muted-foreground">
+                      {item.executions} {t.shortExec}
+                    </span>
                   </div>
                 </div>
               ))
@@ -288,9 +269,15 @@ export function AnalyticsPageClient() {
                       formatter={(_value, _name, item) => (
                         <div className="grid gap-1 text-xs">
                           <span className="font-medium">{item.payload.model}</span>
-                          <span>{t.costLabel}: {formatCurrency(item.payload.estimatedCost, locale)}</span>
-                          <span>{t.avgLatency}: {item.payload.avgLatencyMs} ms</span>
-                          <span>Tokens: {item.payload.totalTokens.toLocaleString(locale)}</span>
+                          <span>
+                            {t.costLabel}: {formatCurrency(item.payload.estimatedCost, lang)}
+                          </span>
+                          <span>
+                            {t.avgLatency}: {item.payload.avgLatencyMs} ms
+                          </span>
+                          <span>
+                            {t.tooltipTokens}: {item.payload.totalTokens.toLocaleString(lang)}
+                          </span>
                         </div>
                       )}
                     />
@@ -303,8 +290,8 @@ export function AnalyticsPageClient() {
           ) : overviewQuery.data ? (
             <Empty className="border">
               <EmptyHeader>
-                  <EmptyTitle>{t.noCostRecorded}</EmptyTitle>
-                  <EmptyDescription>{t.noModelUsagePeriod}</EmptyDescription>
+                <EmptyTitle>{t.noCostRecorded}</EmptyTitle>
+                <EmptyDescription>{t.noModelUsagePeriod}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           ) : (

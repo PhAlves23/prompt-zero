@@ -8,37 +8,44 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { i18nValidationMessage } from 'nestjs-i18n';
 
 export class TemplateVariableInputDto {
   @ApiProperty()
-  @IsString()
+  @IsString({ message: i18nValidationMessage('validation.isString') })
   name!: string;
 
   @ApiProperty({ enum: VariableType, default: VariableType.text })
-  @IsEnum(VariableType)
+  @IsEnum(VariableType, { message: i18nValidationMessage('validation.isEnum') })
   type: VariableType = VariableType.text;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
+  @IsString({ message: i18nValidationMessage('validation.isString') })
   defaultValue?: string;
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
+  @IsArray({ message: i18nValidationMessage('validation.isArray') })
+  @IsString({
+    each: true,
+    message: i18nValidationMessage('validation.isStringEach'),
+  })
   options?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
+  @IsString({ message: i18nValidationMessage('validation.isString') })
   description?: string;
 }
 
 export class SyncTemplateVariablesDto {
   @ApiProperty({ type: [TemplateVariableInputDto] })
-  @IsArray()
-  @ValidateNested({ each: true })
+  @IsArray({ message: i18nValidationMessage('validation.isArray') })
+  @ValidateNested({
+    each: true,
+    message: i18nValidationMessage('validation.validateNested'),
+  })
   @Type(() => TemplateVariableInputDto)
   variables!: TemplateVariableInputDto[];
 }

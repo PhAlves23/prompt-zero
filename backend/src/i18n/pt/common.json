@@ -42,6 +42,7 @@
   "errors.experimentPromptsMustDiffer": "Os prompts A e B devem ser diferentes",
   "errors.experimentExposureNotFound": "Exposição do experimento não encontrada",
   "errors.experimentVoteAlreadyRegistered": "Voto já registrado para esta exposição",
+  "errors.avatarFileRequired": "Arquivo de avatar é obrigatório",
   "responses.healthOk": "API saudável",
   "responses.promptRemoved": "Prompt removido",
   "responses.executionFailed": "Falha na execução"

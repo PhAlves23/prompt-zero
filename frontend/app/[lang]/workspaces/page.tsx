@@ -20,7 +20,7 @@ export default async function WorkspacesPage({ params }: WorkspacesPageProps) {
   const dict = await getDictionary(lang as Locale)
 
   return (
-    <AppShell title={dict.workspaces.title} lang={lang} user={{ name: user.name, email: user.email }}>
+    <AppShell title={dict.workspaces.title} lang={lang} user={{ name: user.name, email: user.email }} dict={dict}>
       <WorkspacesPageClient dict={dict} />
     </AppShell>
   )

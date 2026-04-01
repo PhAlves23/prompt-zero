@@ -1,4 +1,5 @@
 import type { ApiErrorPayload } from "@/lib/api/types"
+import { buildBackendLocaleHeadersFromLocale, getLocaleFromAppPathname } from "@/lib/locale-i18n"
 
 export class ClientHttpError extends Error {
   readonly payload: ApiErrorPayload
@@ -19,11 +20,14 @@ type ClientFetchOptions = {
 
 export async function bffFetch<T>(path: string, options?: ClientFetchOptions): Promise<T> {
   const method = options?.method ?? "GET"
+  const pathname = typeof window !== "undefined" ? window.location.pathname : ""
+  const localeHeaders = buildBackendLocaleHeadersFromLocale(getLocaleFromAppPathname(pathname))
   const response = await fetch(`/api/bff${path}`, {
     method,
     credentials: "include",
     headers: {
       "content-type": "application/json",
+      ...localeHeaders,
     },
     body: options?.body ? JSON.stringify(options.body) : undefined,
   })

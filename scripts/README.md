@@ -2,7 +2,56 @@
 
 Este diretório contém scripts auxiliares para desenvolvimento e deploy.
 
-## Disponíveis
+## 📋 Índice
+
+- [Railway](#railway)
+  - [railway-run-seed.sh](#railway-run-seedsh) - **Executar seed no banco de produção** ⭐
+  - [check-railway-config.sh](#check-railway-configsh) - Verificar configuração
+  - [get-railway-ids.sh](#get-railway-idssh) - Obter IDs dos serviços
+- [Grafana](#grafana)
+  - [generate-grafana-secrets.sh](#generate-grafana-secretssh) - Gerar credenciais
+  - [upload-dashboard-to-grafana-cloud.sh](#upload-dashboard-to-grafana-cloudsh) - Upload de dashboards
+
+---
+
+## Railway
+
+### railway-run-seed.sh ⭐
+
+**🌱 Executar seed no banco de dados de produção**
+
+Este script conecta ao serviço backend no Railway e executa o seed do Prisma para popular o banco de dados de produção com o usuário admin e dados de exemplo.
+
+**Uso:**
+```bash
+./scripts/railway-run-seed.sh
+```
+
+**O que faz:**
+- ✅ Verifica autenticação no Railway
+- ✅ Conecta ao serviço backend
+- ✅ Executa `npm run seed` com variáveis de ambiente de produção
+- ✅ Cria usuário admin: `admin@promptvault.com` / `Password@123`
+- ✅ Cria workspaces, tags e prompts de exemplo
+
+**Quando usar:**
+- 🆕 Após primeiro deploy no Railway (banco vazio)
+- 🔐 Quando login retorna `401 Unauthorized` (usuário não existe)
+- 🔄 Para resetar dados de exemplo
+- ✅ Para garantir que usuário admin existe com senha conhecida
+
+**Pré-requisitos:**
+```bash
+# Instalar Railway CLI
+npm i -g @railway/cli
+# ou
+brew install railway
+
+# Fazer login
+railway login
+```
+
+---
 
 ### `check-railway-config.sh`
 

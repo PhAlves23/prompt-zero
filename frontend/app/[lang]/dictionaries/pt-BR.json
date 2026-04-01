@@ -9,7 +9,52 @@
     "search": "Buscar",
     "loading": "Carregando",
     "error": "Erro",
-    "success": "Sucesso"
+    "success": "Sucesso",
+    "toggleTheme": "Alternar tema",
+    "guestUserFallback": "Guest",
+    "userDefaultName": "Usuário"
+  },
+  "ui": {
+    "accessibility": {
+      "toggleSidebar": "Alternar barra lateral",
+      "loading": "Carregando",
+      "close": "Fechar",
+      "previous": "Anterior",
+      "next": "Seguinte",
+      "morePages": "Mais páginas",
+      "previousSlide": "Slide anterior",
+      "nextSlide": "Próximo slide",
+      "more": "Mais"
+    }
+  },
+  "sidebar": {
+    "guestName": "Convidado",
+    "quickCreate": "Criação rápida",
+    "promptMarketplace": "Marketplace de prompts",
+    "nav": {
+      "dashboard": "Dashboard",
+      "prompts": "Prompts",
+      "workspaces": "Workspaces",
+      "tags": "Categorias",
+      "explore": "Explorar",
+      "experiments": "Experimentos A/B",
+      "settings": "Configurações",
+      "apiKeys": "Chaves de API",
+      "getHelp": "Ajuda",
+      "search": "Buscar"
+    },
+    "docs": {
+      "recent": "Recentes",
+      "noRecentPrompt": "Nenhum prompt recente",
+      "newPrompt": "Novo prompt"
+    },
+    "userMenu": {
+      "settings": "Configurações",
+      "billing": "Faturamento",
+      "notifications": "Notificações",
+      "comingSoon": "Em breve",
+      "logout": "Sair"
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -87,7 +132,7 @@
         "selectCategories": "Selecione categoria(s)",
         "emptyCategories": "Nenhuma categoria encontrada.",
         "loadingCategories": "Carregando categorias…",
-        "noCategoriesHint": "Nenhuma categoria cadastrada. Crie categorias na página de Tags.",
+        "noCategoriesHint": "Nenhuma categoria cadastrada. Crie categorias na página de Categorias.",
         "publicLabel": "Prompt público",
         "actions": {
           "duplicate": "Duplicar"
@@ -98,19 +143,27 @@
         "waitingOutput": "Aguardando execução",
         "advancedSettingsTitle": "Configurações avançadas",
         "settingsHelp": {
-          "temperature": "Controla a aleatoriedade (0-2)",
+          "temperature": "0 = mais determinístico; 2 = mais criativo.",
           "topP": "Nucleus sampling (0-1)",
-          "topK": "Limita o número de tokens considerados",
-          "maxTokens": "Número máximo de tokens na resposta"
+          "topK": "Considera apenas os K tokens mais prováveis por passo.",
+          "maxTokens": "Limite combinado de tokens de entrada e saída."
         },
         "templateVariablesTitle": "Variáveis do template",
         "loadingVariables": "Carregando variáveis…",
         "variableValuePlaceholder": "Informe um valor",
         "noVariablesHint": "Nenhuma variável configurada. Sincronize as variáveis do template para evitar erro na execução.",
-        "runCta": "Executar"
+        "runCta": "Executar",
+        "labels": {
+          "temperature": "Controla a aleatoriedade (0-2)",
+          "topP": "Top P",
+          "topK": "Limita o número de tokens considerados",
+          "maxTokens": "Número máximo de tokens na resposta"
+        },
+        "cancelExecution": "Cancelar execução",
+        "retryExecution": "Tentar novamente",
+        "realtimeOutput": "Output em tempo real ({status})"
       },
       "ab": {
-        "cardTitle": "Experimento A/B",
         "promptBLabel": "Prompt B",
         "selectPrompt": "Selecione um prompt",
         "emptyPrompts": "Nenhum prompt encontrado.",
@@ -127,7 +180,14 @@
           "creatingExperiment": "Criando…",
           "runRound": "Executar rodada A/B",
           "runningRound": "Executando rodada…"
-        }
+        },
+        "currentExperiment": "Experimento atual: {id}",
+        "statusLabel": "Status:",
+        "statusLoading": "Carregando…",
+        "distributionLabel": "Distribuição:",
+        "votesLine": "Votos A: {votesA} | Votos B: {votesB}",
+        "percentLine": "Percentual A: {percentA}% | Percentual B: {percentB}%",
+        "lastRoundSummary": "Última rodada: variante {variant} (exposição {exposureId})"
       },
       "versions": {
         "viewDetails": "Ver detalhes",
@@ -136,7 +196,13 @@
         "deleteVersion": "Excluir versão",
         "loadError": "Falha ao carregar versões.",
         "deleteDialogTitle": "Remover versão?",
-        "deleteDialogDescription": "Essa ação não pode ser desfeita. A versão selecionada será removida permanentemente."
+        "deleteDialogDescription": "Essa ação não pode ser desfeita. A versão selecionada será removida permanentemente.",
+        "listTitle": "Versões",
+        "versionNumber": "Versão {number}",
+        "dateTimePrefix": "Data/hora:",
+        "restoreButton": "Restaurar",
+        "cancelDialog": "Cancelar",
+        "confirmDeleteButton": "Confirmar exclusão"
       },
       "variables": {
         "title": "Variáveis",
@@ -156,7 +222,10 @@
         "loading": "Carregando execuções…",
         "loadError": "Falha ao carregar execuções.",
         "emptyTitle": "Nenhuma execução encontrada",
-        "emptyDescription": "Rode o prompt para ver o histórico de execuções."
+        "emptyDescription": "Rode o prompt para ver o histórico de execuções.",
+        "listTitle": "Execuções",
+        "copyOutput": "Copiar output",
+        "noOutput": "Sem output"
       }
     },
     "version": "Versão",
@@ -164,7 +233,6 @@
       "notFoundTitle": "Versão não encontrada",
       "notFoundDescription": "Verifique se a versão ainda existe para esse prompt.",
       "versionLabel": "Versão",
-      "createdAtLabel": "Criada em",
       "restoreCta": "Restaurar esta versão"
     },
     "list": {
@@ -211,7 +279,23 @@
       "addVariable": "Adicionar variável",
       "templateHint": "Dica: use placeholders no conteúdo como {{produto}} para auto-detectar variáveis.",
       "noVariables": "Nenhuma variável detectada/adicionada.",
-      "removeVariable": "Remover variável"
+      "removeVariable": "Remover variável",
+      "languages": {
+        "portuguese": "Português",
+        "english": "English",
+        "spanish": "Español"
+      },
+      "errors": {
+        "loadCategories": "Não foi possível carregar as categorias.",
+        "loadWorkspaces": "Não foi possível carregar os workspaces."
+      },
+      "variableTypes": {
+        "text": "Texto",
+        "textarea": "Área de texto",
+        "select": "Seleção"
+      },
+      "variableOptionsLabel": "Opções (separadas por vírgula)",
+      "variableOptionsPlaceholder": "casual, formal, técnico"
     },
     "executions": "execuções",
     "lastEdit": "Última edição",
@@ -278,7 +362,22 @@
       "nameLabel": "Nome",
       "save": "Salvar perfil",
       "saving": "Salvando…",
-      "toastUpdated": "Perfil atualizado"
+      "toastUpdated": "Perfil atualizado",
+      "avatarSectionTitle": "Avatar",
+      "profileInfoSectionTitle": "Informações do perfil",
+      "avatar": {
+        "change": "Alterar avatar",
+        "upload": "Enviar avatar",
+        "remove": "Remover avatar",
+        "recommended": "Recomendado: imagem quadrada, pelo menos 128x128px. Máx. {maxSize}MB. JPG, PNG ou WebP.",
+        "invalidFormat": "Formato de arquivo inválido. Use JPG, PNG ou WebP.",
+        "tooLarge": "Arquivo muito grande. O tamanho máximo é {maxSize}MB.",
+        "uploadFailed": "Falha ao enviar avatar",
+        "removeFailed": "Falha ao remover avatar",
+        "updated": "Avatar atualizado com sucesso",
+        "removed": "Avatar removido com sucesso",
+        "notAuthenticated": "Não autenticado. Faça login novamente."
+      }
     },
     "apiKeysCard": {
       "loadError": "Falha ao carregar status das chaves.",
@@ -315,7 +414,147 @@
     "status": {
       "running": "Em andamento",
       "stopped": "Encerrado"
-    }
+    },
+    "newCardTitle": "Novo experimento A/B",
+    "promptALabel": "Prompt A",
+    "promptBLabel": "Prompt B",
+    "emptyTitle": "Nenhum experimento encontrado",
+    "emptyDescription": "Crie seu primeiro experimento A/B acima.",
+    "summarySplitLabel": "Split",
+    "summaryVotesLabel": "Votos",
+    "runFailed": "Falha ao executar rodada A/B",
+    "configureApiKeys": "Configure uma chave de API para o provedor/modelo selecionado em Configurações > Chaves de API.",
+    "stopFailed": "Falha ao encerrar experimento",
+    "selectAB": "Selecione Prompt A e Prompt B",
+    "promptsLoadError": "Falha ao carregar prompts. Verifique se você possui prompts cadastrados.",
+    "selectPrompt": "Selecione um prompt",
+    "noPromptFound": "Nenhum prompt encontrado.",
+    "creating": "Criando…",
+    "createExperiment": "Criar experimento",
+    "selectTemplateHint": "Selecione ao menos um prompt em template para carregar os campos automaticamente.",
+    "loadingVariables": "Carregando variáveis dos prompts selecionados…",
+    "noVariables": "Nenhuma variável configurada para os prompts selecionados.",
+    "loadingExperiments": "Carregando experimentos…",
+    "experimentsLoadError": "Falha ao carregar experimentos.",
+    "runRound": "Executar rodada",
+    "stop": "Encerrar",
+    "voteA": "Votar A",
+    "voteB": "Votar B",
+    "roundExecuted": "Rodada A/B executada",
+    "voteRegistered": "Voto registrado",
+    "alreadyVoted": "Esse resultado já foi votado. Execute uma nova rodada para votar novamente.",
+    "voteFailed": "Não foi possível registrar o voto",
+    "experimentStopped": "Experimento encerrado",
+    "experimentCreated": "Experimento criado",
+    "createFailed": "Não foi possível criar o experimento",
+    "invalidSplit": "Divisão inválida: use um valor de 1 a 99 para Prompt A",
+    "searchPromptByName": "Buscar prompt por nome…",
+    "trafficSplitLabel": "Percentual A (1-99)",
+    "sampleTargetLabel": "Amostra alvo (opcional)",
+    "promptBReceives": "Prompt B recebe automaticamente",
+    "runVariablesTitle": "Variáveis para rodadas (templates)",
+    "generatedFieldsHint": "Campos gerados dinamicamente pelos placeholders dos prompts A/B. Os valores enviados serão usados na rodada A/B.",
+    "valuePlaceholder": "Informe um valor",
+    "createdExperiments": "Experimentos criados",
+    "createdAt": "Criado em",
+    "lastRound": "Última rodada: variante",
+    "exposure": "exposição"
+  },
+  "dashboard": {
+    "charts": {
+      "executions": "Execuções",
+      "estimatedCost": "Custo estimado",
+      "abVotes": "Votos A/B"
+    },
+    "loadingSeries": "Carregando série temporal…",
+    "loadExecPerDayError": "Falha ao carregar execuções por dia.",
+    "loadingRanking": "Carregando ranking…",
+    "loadRankingError": "Falha ao carregar ranking de prompts.",
+    "loadingCost": "Carregando distribuição de custos…",
+    "loadCostError": "Falha ao carregar custo por modelo.",
+    "noModelUsage": "Nenhum consumo de modelo foi registrado ainda.",
+    "loadingAbHistory": "Carregando histórico A/B…",
+    "loadAbHistoryError": "Falha ao carregar histórico A/B.",
+    "loadingAbRanking": "Carregando ranking A/B…",
+    "loadAbRankingError": "Falha ao carregar ranking A/B.",
+    "loadingGeneric": "Carregando…",
+    "loadGenericError": "Falha ao carregar.",
+    "prompts": "Prompts",
+    "activePrompts": "Total de prompts ativos",
+    "executions": "Execuções",
+    "executionsInPeriod": "Execuções nos últimos",
+    "tokens": "Tokens",
+    "tokenUsage": "Consumo total em",
+    "estimatedCost": "Custo estimado",
+    "aggregatedCost": "Custo agregado em",
+    "workspaces": "Workspaces",
+    "workspaceDesc": "Espaços de organização",
+    "tags": "Categorias",
+    "tagsDesc": "Categorias cadastradas",
+    "executionsPerDay": "Execuções por dia",
+    "usageTrend": "Tendência de uso no período selecionado",
+    "noExecutionsPeriod": "Sem execuções no período",
+    "runPromptHint": "Rode um prompt para visualizar a curva de uso.",
+    "topPrompts": "Top prompts",
+    "mostExecuted": "Mais executados no período",
+    "shortExec": "exec.",
+    "noRankingYet": "Sem ranking ainda",
+    "rankingHint": "Quando houver execuções, o ranking aparece aqui.",
+    "costByModel": "Custo por modelo",
+    "costDistribution": "Distribuição de custo entre modelos usados",
+    "noCostPeriod": "Sem custo no período",
+    "noCostHint": "Nenhum consumo de modelo foi registrado ainda.",
+    "abHistory": "Histórico A/B por dia",
+    "abVolume": "Volume de votos de experimentos A/B no período",
+    "noAbHistory": "Sem histórico A/B no período",
+    "noAbHistoryHint": "Crie experimentos e registre votos para popular este gráfico.",
+    "abRanking": "Ranking de experimentos A/B",
+    "mostVotes": "Experimentos com mais votos no período",
+    "votes": "votos",
+    "winner": "Vencedor",
+    "noAbRankingYet": "Sem ranking A/B ainda",
+    "noAbRankingHint": "Ainda não há votos de experimento no período selecionado.",
+    "tooltipVotes": "Votos",
+    "tooltipExperiments": "Experimentos"
+  },
+  "analytics": {
+    "charts": {
+      "executions": "Execuções",
+      "estimatedCost": "Custo",
+      "avgLatencyMs": "Latência"
+    },
+    "loadingSeries": "Carregando série de execuções…",
+    "loadExecError": "Falha ao carregar execuções por dia.",
+    "loadingRanking": "Carregando ranking…",
+    "loadTopError": "Falha ao carregar top prompts.",
+    "loadingCost": "Carregando custo por modelo…",
+    "loadCostError": "Falha ao carregar custo por modelo.",
+    "loadingData": "Carregando dados…",
+    "loading": "Carregando…",
+    "loadError": "Falha ao carregar.",
+    "executions": "Execuções",
+    "totalConsumption": "Consumo total",
+    "avgTokens": "Média de tokens",
+    "perExecution": "Por execução",
+    "avgCost": "Custo médio",
+    "executionsPerDay": "Execuções por dia",
+    "dayComparison": "Comparativo diário para identificar sazonalidade",
+    "noExecutionsPeriod": "Sem execuções no período",
+    "runToGenerateData": "Execute alguns prompts para gerar dados.",
+    "topPrompts": "Top prompts",
+    "mostExecuted": "Mais executados",
+    "shortExec": "exec.",
+    "noRankedPrompts": "Sem prompts ranqueados",
+    "runToRank": "Execute prompts para aparecer no ranking.",
+    "costLatency": "Custo e latência por modelo",
+    "costLatencyDesc": "Qual modelo custa mais e qual responde mais rápido",
+    "costLabel": "Custo",
+    "avgLatency": "Latência média",
+    "noCostRecorded": "Sem custo registrado",
+    "noModelUsagePeriod": "Sem consumo de modelos no período selecionado.",
+    "tokens": "Tokens",
+    "executionsMetricDescription": "Total no período {period}",
+    "tooltipTokens": "Tokens"
   },
   "explore": {
     "common": {
@@ -362,21 +601,21 @@
     "toastRemoved": "Workspace removido"
   },
   "tags": {
-    "title": "Tags",
-    "newTitle": "Nova tag",
+    "title": "Categorias",
+    "newTitle": "Nova categoria",
     "fields": {
       "name": "Nome",
-      "color": "Cor da tag",
+      "color": "Cor da categoria",
       "colorShort": "Cor"
     },
     "selectColorAria": "Selecionar cor",
-    "createCta": "Criar tag",
-    "editTitle": "Editar tag",
-    "loading": "Carregando tags…",
-    "emptyTitle": "Nenhuma tag cadastrada",
-    "emptyDescription": "Crie tags para classificar os prompts.",
-    "toastCreated": "Tag criada",
-    "toastUpdated": "Tag atualizada",
-    "toastRemoved": "Tag removida"
+    "createCta": "Criar categoria",
+    "editTitle": "Editar categoria",
+    "loading": "Carregando categorias…",
+    "emptyTitle": "Nenhuma categoria cadastrada",
+    "emptyDescription": "Crie categorias para classificar os prompts.",
+    "toastCreated": "Categoria criada",
+    "toastUpdated": "Categoria atualizada",
+    "toastRemoved": "Categoria removida"
   }
 }

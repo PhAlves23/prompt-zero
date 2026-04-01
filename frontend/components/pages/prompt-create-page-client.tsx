@@ -323,9 +323,15 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                       <SelectValue placeholder={dict.prompts.createForm.selectLanguage} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pt" className="cursor-pointer">Portugues</SelectItem>
-                      <SelectItem value="en" className="cursor-pointer">English</SelectItem>
-                      <SelectItem value="es" className="cursor-pointer">Espanol</SelectItem>
+                      <SelectItem value="pt" className="cursor-pointer">
+                        {dict.prompts.createForm.languages.portuguese}
+                      </SelectItem>
+                      <SelectItem value="en" className="cursor-pointer">
+                        {dict.prompts.createForm.languages.english}
+                      </SelectItem>
+                      <SelectItem value="es" className="cursor-pointer">
+                        {dict.prompts.createForm.languages.spanish}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -382,7 +388,7 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                     <p className="text-xs text-muted-foreground">{dict.prompts.createForm.loadingCategories}</p>
                   ) : null}
                   {tagsQuery.isError ? (
-                    <p className="text-xs text-destructive">Nao foi possivel carregar as categorias.</p>
+                    <p className="text-xs text-destructive">{dict.prompts.createForm.errors.loadCategories}</p>
                   ) : null}
                   {!tagsQuery.isPending && !tagsQuery.isError && (tagsQuery.data?.length ?? 0) === 0 ? (
                     <p className="text-xs text-muted-foreground">
@@ -432,7 +438,7 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                     <p className="text-xs text-muted-foreground">{dict.prompts.createForm.loadingWorkspaces}</p>
                   ) : null}
                   {workspacesQuery.isError ? (
-                    <p className="text-xs text-destructive">Nao foi possivel carregar os workspaces.</p>
+                    <p className="text-xs text-destructive">{dict.prompts.createForm.errors.loadWorkspaces}</p>
                   ) : null}
                 </div>
               </div>
@@ -440,7 +446,7 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
             <div className="grid gap-3 rounded-lg border p-4 md:grid-cols-2">
               <p className="md:col-span-2 text-sm font-medium">{dict.prompts.createForm.advancedSettings}</p>
               <div className="grid gap-1.5">
-                <Label htmlFor="temperature">Temperature</Label>
+                <Label htmlFor="temperature">{dict.prompts.detail.execute.labels.temperature}</Label>
                 <Input
                   id="temperature"
                   type="number"
@@ -449,10 +455,10 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                   max={2}
                   {...form.register("temperature", { valueAsNumber: true })}
                 />
-                <p className="text-xs text-muted-foreground">Controla a aleatoriedade (0-2)</p>
+                <p className="text-xs text-muted-foreground">{dict.prompts.detail.execute.settingsHelp.temperature}</p>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="top-p">Top P</Label>
+                <Label htmlFor="top-p">{dict.prompts.detail.execute.labels.topP}</Label>
                 <Input
                   id="top-p"
                   type="number"
@@ -461,10 +467,10 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                   max={1}
                   {...form.register("topP", { valueAsNumber: true })}
                 />
-                <p className="text-xs text-muted-foreground">Nucleus sampling (0-1)</p>
+                <p className="text-xs text-muted-foreground">{dict.prompts.detail.execute.settingsHelp.topP}</p>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="top-k">Top K</Label>
+                <Label htmlFor="top-k">{dict.prompts.detail.execute.labels.topK}</Label>
                 <Input
                   id="top-k"
                   type="number"
@@ -472,10 +478,10 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                   max={200}
                   {...form.register("topK", { valueAsNumber: true })}
                 />
-                <p className="text-xs text-muted-foreground">Limita o numero de tokens considerados</p>
+                <p className="text-xs text-muted-foreground">{dict.prompts.detail.execute.settingsHelp.topK}</p>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="max-tokens">Max Tokens</Label>
+                <Label htmlFor="max-tokens">{dict.prompts.detail.execute.labels.maxTokens}</Label>
                 <Input
                   id="max-tokens"
                   type="number"
@@ -483,7 +489,7 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                   max={4000}
                   {...form.register("maxTokens", { valueAsNumber: true })}
                 />
-                <p className="text-xs text-muted-foreground">Numero maximo de tokens na resposta</p>
+                <p className="text-xs text-muted-foreground">{dict.prompts.detail.execute.settingsHelp.maxTokens}</p>
               </div>
             </div>
             <div className="grid gap-3 rounded-lg border p-4">
@@ -536,9 +542,15 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                               <SelectValue placeholder={dict.prompts.createForm.selectType} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="text" className="cursor-pointer">Text</SelectItem>
-                              <SelectItem value="textarea" className="cursor-pointer">Textarea</SelectItem>
-                              <SelectItem value="select" className="cursor-pointer">Select</SelectItem>
+                              <SelectItem value="text" className="cursor-pointer">
+                                {dict.prompts.createForm.variableTypes.text}
+                              </SelectItem>
+                              <SelectItem value="textarea" className="cursor-pointer">
+                                {dict.prompts.createForm.variableTypes.textarea}
+                              </SelectItem>
+                              <SelectItem value="select" className="cursor-pointer">
+                                {dict.prompts.createForm.variableTypes.select}
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -555,10 +567,12 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                         </div>
                         {variableType === "select" ? (
                           <div className="grid gap-1.5 md:col-span-2">
-                            <Label htmlFor={`variable-options-${field.id}`}>Opcoes (separadas por virgula)</Label>
+                            <Label htmlFor={`variable-options-${field.id}`}>
+                              {dict.prompts.createForm.variableOptionsLabel}
+                            </Label>
                             <Input
                               id={`variable-options-${field.id}`}
-                              placeholder="casual, formal, tecnico"
+                              placeholder={dict.prompts.createForm.variableOptionsPlaceholder}
                               {...form.register(`variables.${index}.optionsText`)}
                             />
                           </div>

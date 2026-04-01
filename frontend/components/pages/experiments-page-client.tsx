@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo, useState } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { toast } from "sonner"
+import type { Dictionary } from "@/app/[lang]/dictionaries"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,8 +13,10 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/u
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { isProviderApiKeyNotConfiguredError } from "@/lib/api/backend-errors"
 import { bffFetch, ClientHttpError } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
+import { formatDateTimeLocale } from "@/lib/format-datetime"
 import { cn } from "@/lib/utils"
 import type {
   ExperimentListItem,
@@ -24,109 +27,15 @@ import type {
   PromptVariable,
 } from "@/lib/api/types"
 
-export type ExperimentsPageDictionary = {
-  title: string
-  status: {
-    running: string
-    stopped: string
-  }
-}
-
-function formatDateTime(value: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: "short",
-    timeStyle: "medium",
-    timeZone: "UTC",
-  }).format(new Date(value))
-}
-
 export function ExperimentsPageClient({
   lang,
-  experiments: experimentsI18n,
+  dict,
 }: {
   lang: string
-  experiments: ExperimentsPageDictionary
+  dict: Dictionary
 }) {
   const queryClient = useQueryClient()
-  const isPt = lang.startsWith("pt")
-  const isEs = lang.startsWith("es")
-  const t = {
-    runFailed: isEs ? "Error al ejecutar la ronda A/B" : isPt ? "Falha ao executar rodada A/B" : "Failed to run A/B round",
-    stopFailed: isEs ? "Error al finalizar el experimento" : isPt ? "Falha ao encerrar experimento" : "Failed to stop experiment",
-    selectAB: isEs ? "Selecciona Prompt A y Prompt B" : isPt ? "Selecione Prompt A e Prompt B" : "Select Prompt A and Prompt B",
-    promptsLoadError:
-      isEs
-        ? "Error al cargar prompts. Verifica si tienes prompts creados."
-        : isPt
-          ? "Falha ao carregar prompts. Verifique se você possui prompts cadastrados."
-          : "Failed to load prompts. Make sure you have created prompts.",
-    selectPrompt: isEs ? "Selecciona un prompt" : isPt ? "Selecione um prompt" : "Select a prompt",
-    noPromptFound: isEs ? "No se encontró ningún prompt." : isPt ? "Nenhum prompt encontrado." : "No prompt found.",
-    creating: isEs ? "Creando..." : isPt ? "Criando..." : "Creating...",
-    createExperiment: isEs ? "Crear experimento" : isPt ? "Criar experimento" : "Create experiment",
-    selectTemplateHint:
-      isEs
-        ? "Selecciona al menos un prompt con template para cargar los campos automáticamente."
-        : isPt
-          ? "Selecione ao menos um prompt em template para carregar os campos automaticamente."
-          : "Select at least one template prompt to load fields automatically.",
-    loadingVariables:
-      isEs
-        ? "Cargando variables de los prompts seleccionados..."
-        : isPt
-          ? "Carregando variáveis dos prompts selecionados..."
-          : "Loading variables from selected prompts...",
-    noVariables:
-      isEs
-        ? "No hay variables configuradas para los prompts seleccionados."
-        : isPt
-          ? "Nenhuma variável configurada para os prompts selecionados."
-          : "No variables configured for selected prompts.",
-    loadingExperiments: isEs ? "Cargando experimentos..." : isPt ? "Carregando experimentos..." : "Loading experiments...",
-    experimentsLoadError: isEs ? "Error al cargar experimentos." : isPt ? "Falha ao carregar experimentos." : "Failed to load experiments.",
-    runRound: isEs ? "Ejecutar ronda" : isPt ? "Executar rodada" : "Run round",
-    stop: isEs ? "Finalizar" : isPt ? "Encerrar" : "Stop",
-    voteA: isEs ? "Votar A" : "Votar A",
-    voteB: isEs ? "Votar B" : "Votar B",
-    noExperimentTitle: isEs ? "No se encontró ningún experimento" : isPt ? "Nenhum experimento encontrado" : "No experiment found",
-    roundExecuted: isEs ? "Ronda A/B ejecutada" : isPt ? "Rodada A/B executada" : "A/B round executed",
-    voteRegistered: isEs ? "Voto registrado" : "Voto registrado",
-    alreadyVoted:
-      isEs
-        ? "Este resultado ya fue votado. Ejecuta una nueva ronda para votar de nuevo."
-        : isPt
-          ? "Esse resultado já foi votado. Execute uma nova rodada para votar novamente."
-          : "This result has already been voted. Run a new round to vote again.",
-    voteFailed: isEs ? "No se pudo registrar el voto" : isPt ? "Não foi possível registrar o voto" : "Could not register vote",
-    experimentStopped: isEs ? "Experimento finalizado" : isPt ? "Experimento encerrado" : "Experiment stopped",
-    experimentCreated: isEs ? "Experimento creado" : isPt ? "Experimento criado" : "Experiment created",
-    createFailed: isEs ? "No se pudo crear el experimento" : isPt ? "Não foi possível criar o experimento" : "Could not create experiment",
-    invalidSplit:
-      isEs
-        ? "División inválida: usa un valor de 1 a 99 para Prompt A"
-        : isPt
-          ? "Divisão inválida: use um valor de 1 a 99 para Prompt A"
-          : "Invalid split: use a value from 1 to 99 for Prompt A",
-    searchPromptByName: isEs ? "Buscar prompt por nombre..." : isPt ? "Buscar prompt por nome..." : "Search prompt by name...",
-    trafficSplitLabel: isEs ? "Porcentaje A (1-99)" : isPt ? "Percentual A (1-99)" : "Percentage A (1-99)",
-    sampleTargetLabel: isEs ? "Muestra objetivo (opcional)" : isPt ? "Amostra alvo (opcional)" : "Target sample (optional)",
-    promptBReceives:
-      isEs ? "Prompt B recibe automáticamente" : isPt ? "Prompt B recebe automaticamente" : "Prompt B automatically receives",
-    runVariablesTitle:
-      isEs ? "Variables para rondas (templates)" : isPt ? "Variáveis para rodadas (templates)" : "Round variables (templates)",
-    generatedFieldsHint:
-      isEs
-        ? "Campos generados dinámicamente por los placeholders de los prompts A/B. Los valores se usarán en la ronda A/B."
-        : isPt
-          ? "Campos gerados dinamicamente pelos placeholders dos prompts A/B. Os valores enviados serao usados na rodada A/B."
-          : "Fields generated dynamically from A/B prompt placeholders. Values are used in the A/B round.",
-    valuePlaceholder: isEs ? "Introduce un valor" : isPt ? "Informe um valor" : "Enter a value",
-    createdExperiments: isEs ? "Experimentos creados" : isPt ? "Experimentos criados" : "Created experiments",
-    createdAt: isEs ? "Creado en" : isPt ? "Criado em" : "Created at",
-    lastRound:
-      isEs ? "Última ronda: variante" : isPt ? "Última rodada: variante" : "Last round: variant",
-    exposure: isEs ? "exposición" : isPt ? "exposição" : "exposure",
-  }
+  const t = dict.experiments
   const [promptAId, setPromptAId] = useState("")
   const [promptBId, setPromptBId] = useState("")
   const [openPromptA, setOpenPromptA] = useState(false)
@@ -235,6 +144,10 @@ export function ExperimentsPageClient({
     },
     onError: (error) => {
       if (error instanceof ClientHttpError) {
+        if (isProviderApiKeyNotConfiguredError(error.payload.message)) {
+          toast.error(t.configureApiKeys)
+          return
+        }
         toast.error(error.payload.message)
       } else if (error instanceof Error) {
         toast.error(error.message)
@@ -264,10 +177,7 @@ export function ExperimentsPageClient({
     },
     onError: (error, payload) => {
       if (error instanceof ClientHttpError) {
-        if (
-          error.payload.code === "errors.experimentVoteAlreadyRegistered" ||
-          error.payload.message === "errors.experimentVoteAlreadyRegistered"
-        ) {
+        if (error.payload.message === "errors.experimentVoteAlreadyRegistered") {
           setLastRunsByExperiment((current) => {
             const next = { ...current }
             delete next[payload.experimentId]
@@ -345,7 +255,7 @@ export function ExperimentsPageClient({
     <div className="grid gap-4 px-4 lg:px-6">
       <Card>
         <CardHeader>
-          <CardTitle>Novo experimento A/B</CardTitle>
+          <CardTitle>{t.newCardTitle}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2 md:items-start">
           {promptsQuery.isError ? (
@@ -354,7 +264,7 @@ export function ExperimentsPageClient({
             </p>
           ) : null}
           <div className="grid w-full gap-1.5 self-start">
-            <Label>Prompt A</Label>
+            <Label>{t.promptALabel}</Label>
             <Popover open={openPromptA} onOpenChange={setOpenPromptA}>
               <PopoverTrigger asChild>
                 <Button
@@ -402,7 +312,7 @@ export function ExperimentsPageClient({
             </Popover>
           </div>
           <div className="grid w-full gap-1.5 self-start">
-            <Label>Prompt B</Label>
+            <Label>{t.promptBLabel}</Label>
             <Popover open={openPromptB} onOpenChange={setOpenPromptB}>
               <PopoverTrigger asChild>
                 <Button
@@ -550,18 +460,18 @@ export function ExperimentsPageClient({
                     className="shrink-0"
                   >
                     {item.status === "running"
-                      ? experimentsI18n.status.running
-                      : experimentsI18n.status.stopped}
+                      ? t.status.running
+                      : t.status.stopped}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground">A: {item.promptATitle}</p>
                 <p className="text-muted-foreground">B: {item.promptBTitle}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Split: {item.trafficSplitA}%/{item.trafficSplitB}% | Votos: {item.totalVotes} | A{" "}
-                  {item.percentA}% / B {item.percentB}%
+                  {t.summarySplitLabel}: {item.trafficSplitA}%/{item.trafficSplitB}% | {t.summaryVotesLabel}:{" "}
+                  {item.totalVotes} | A {item.percentA}% / B {item.percentB}%
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {t.createdAt}: {formatDateTime(item.createdAt, lang)}
+                  {t.createdAt}: {formatDateTimeLocale(item.createdAt, lang)}
                 </p>
                 <div className="mt-3 flex gap-2">
                   <Button
@@ -631,8 +541,8 @@ export function ExperimentsPageClient({
           ) : (
             <Empty className="border">
               <EmptyHeader>
-                <EmptyTitle>{t.noExperimentTitle}</EmptyTitle>
-                <EmptyDescription>Crie seu primeiro experimento A/B acima.</EmptyDescription>
+                <EmptyTitle>{t.emptyTitle}</EmptyTitle>
+                <EmptyDescription>{t.emptyDescription}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}

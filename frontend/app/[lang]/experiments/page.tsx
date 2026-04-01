@@ -21,8 +21,8 @@ export default async function ExperimentsPage({ params }: ExperimentsPageProps) 
   const dict = await getDictionary(lang as Locale)
 
   return (
-    <AppShell title={dict.experiments.title} lang={lang} user={{ name: user.name, email: user.email }}>
-      <ExperimentsPageClient lang={lang} experiments={dict.experiments} />
+    <AppShell title={dict.experiments.title} lang={lang} user={{ name: user.name, email: user.email }} dict={dict}>
+      <ExperimentsPageClient lang={lang} dict={dict} />
     </AppShell>
   )
 }

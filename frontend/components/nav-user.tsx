@@ -21,7 +21,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { MoreVerticalCircle01Icon, UserCircle02Icon, CreditCardIcon, Notification03Icon, Logout01Icon } from "@hugeicons/core-free-icons"
+import { MoreVerticalCircle01Icon, Settings05Icon, CreditCardIcon, Notification03Icon, Logout01Icon } from "@hugeicons/core-free-icons"
 import { useRouter } from "next/navigation"
 
 export function NavUser({
@@ -36,9 +36,10 @@ export function NavUser({
   }
   lang: string
   labels: {
-    account: string
+    settings: string
     billing: string
     notifications: string
+    comingSoon: string
     logout: string
   }
 }) {
@@ -58,7 +59,7 @@ export function NavUser({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
@@ -109,17 +110,30 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <HugeiconsIcon icon={UserCircle02Icon} strokeWidth={2} />
-                {labels.account}
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.push(`/${lang}/settings`)}
+              >
+                <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />
+                {labels.settings}
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem disabled className="data-disabled:opacity-100">
                 <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} />
-                {labels.billing}
+                <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                  <span>{labels.billing}</span>
+                  <span className="shrink-0 text-xs font-normal text-muted-foreground">
+                    {labels.comingSoon}
+                  </span>
+                </span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem disabled className="data-disabled:opacity-100">
                 <HugeiconsIcon icon={Notification03Icon} strokeWidth={2} />
-                {labels.notifications}
+                <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                  <span>{labels.notifications}</span>
+                  <span className="shrink-0 text-xs font-normal text-muted-foreground">
+                    {labels.comingSoon}
+                  </span>
+                </span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

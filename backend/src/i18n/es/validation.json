@@ -1,0 +1,21 @@
+{
+  "isString": "{property} debe ser una cadena",
+  "minLength": "{property} debe tener al menos {constraints.0} caracteres",
+  "maxLength": "{property} debe tener como máximo {constraints.0} caracteres",
+  "isEmail": "{property} debe ser un email válido",
+  "isNotEmpty": "{property} no puede estar vacío",
+  "min": "{property} no debe ser menor que {constraints.0}",
+  "max": "{property} no debe ser mayor que {constraints.0}",
+  "isInt": "{property} debe ser un número entero",
+  "isNumber": "{property} debe ser un número",
+  "isEnum": "{property} debe ser uno de los valores permitidos",
+  "isHexColor": "{property} debe ser un color hexadecimal válido",
+  "isArray": "{property} debe ser un array",
+  "isBoolean": "{property} debe ser verdadero o falso",
+  "isBooleanString": "{property} debe ser la cadena \"true\" o \"false\"",
+  "isObject": "{property} debe ser un objeto",
+  "arrayNotEmpty": "{property} no puede estar vacío",
+  "isStringEach": "cada elemento de {property} debe ser una cadena",
+  "validateNested": "{property} contiene valores anidados inválidos",
+  "isDefined": "{property} es obligatorio"
+}

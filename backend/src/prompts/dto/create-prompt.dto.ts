@@ -9,50 +9,54 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { i18nValidationMessage } from 'nestjs-i18n';
 
 export class CreatePromptDto {
   @ApiProperty()
-  @IsString()
-  @MinLength(3)
-  @MaxLength(120)
+  @IsString({ message: i18nValidationMessage('validation.isString') })
+  @MinLength(3, { message: i18nValidationMessage('validation.minLength') })
+  @MaxLength(120, { message: i18nValidationMessage('validation.maxLength') })
   title!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
+  @IsString({ message: i18nValidationMessage('validation.isString') })
   description?: string;
 
   @ApiProperty()
-  @IsString()
-  @MinLength(10)
+  @IsString({ message: i18nValidationMessage('validation.isString') })
+  @MinLength(10, { message: i18nValidationMessage('validation.minLength') })
   content!: string;
 
   @ApiProperty({ enum: Language, default: Language.pt })
-  @IsEnum(Language)
+  @IsEnum(Language, { message: i18nValidationMessage('validation.isEnum') })
   language: Language = Language.pt;
 
   @ApiProperty({ example: 'gpt-4o-mini' })
-  @IsString()
+  @IsString({ message: i18nValidationMessage('validation.isString') })
   model!: string;
 
   @ApiPropertyOptional({ default: false })
   @IsOptional()
-  @IsBoolean()
+  @IsBoolean({ message: i18nValidationMessage('validation.isBoolean') })
   isPublic?: boolean;
 
   @ApiPropertyOptional({ default: false })
   @IsOptional()
-  @IsBoolean()
+  @IsBoolean({ message: i18nValidationMessage('validation.isBoolean') })
   isTemplate?: boolean;
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
+  @IsArray({ message: i18nValidationMessage('validation.isArray') })
+  @IsString({
+    each: true,
+    message: i18nValidationMessage('validation.isStringEach'),
+  })
   tagIds?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
+  @IsString({ message: i18nValidationMessage('validation.isString') })
   workspaceId?: string;
 }

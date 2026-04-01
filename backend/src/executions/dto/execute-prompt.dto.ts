@@ -9,56 +9,57 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { i18nValidationMessage } from 'nestjs-i18n';
 
 export class ExecutePromptDto {
   @ApiPropertyOptional({ enum: ProviderType })
   @IsOptional()
-  @IsEnum(ProviderType)
+  @IsEnum(ProviderType, { message: i18nValidationMessage('validation.isEnum') })
   provider?: ProviderType;
 
   @ApiPropertyOptional({
     description: 'Specific provider credential ID',
   })
   @IsOptional()
-  @IsString()
+  @IsString({ message: i18nValidationMessage('validation.isString') })
   credentialId?: string;
 
   @ApiProperty({ example: 'gpt-4o-mini' })
-  @IsString()
+  @IsString({ message: i18nValidationMessage('validation.isString') })
   model!: string;
 
   @ApiPropertyOptional({ default: 0.7 })
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(2)
+  @IsNumber({}, { message: i18nValidationMessage('validation.isNumber') })
+  @Min(0, { message: i18nValidationMessage('validation.min') })
+  @Max(2, { message: i18nValidationMessage('validation.max') })
   temperature?: number;
 
   @ApiPropertyOptional({ default: 512 })
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(4000)
+  @IsNumber({}, { message: i18nValidationMessage('validation.isNumber') })
+  @Min(1, { message: i18nValidationMessage('validation.min') })
+  @Max(4000, { message: i18nValidationMessage('validation.max') })
   maxTokens?: number;
 
   @ApiPropertyOptional({ default: 0.95 })
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(1)
+  @IsNumber({}, { message: i18nValidationMessage('validation.isNumber') })
+  @Min(0, { message: i18nValidationMessage('validation.min') })
+  @Max(1, { message: i18nValidationMessage('validation.max') })
   topP?: number;
 
   @ApiPropertyOptional({ default: 40 })
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(200)
+  @IsNumber({}, { message: i18nValidationMessage('validation.isNumber') })
+  @Min(1, { message: i18nValidationMessage('validation.min') })
+  @Max(200, { message: i18nValidationMessage('validation.max') })
   topK?: number;
 
   @ApiPropertyOptional({
     description: 'Template placeholder values, e.g. {"product":"PromptZero"}',
   })
   @IsOptional()
-  @IsObject()
+  @IsObject({ message: i18nValidationMessage('validation.isObject') })
   variables?: Record<string, string>;
 }

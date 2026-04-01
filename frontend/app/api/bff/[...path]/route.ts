@@ -2,8 +2,30 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/constants"
 import { getBackendBaseUrl } from "@/lib/api/http"
+import {
+  buildBackendLocaleHeadersFromLocale,
+  getLocaleFromAppPathname,
+  normalizeAppLocale,
+} from "@/lib/locale-i18n"
+import { defaultLocale, type Locale } from "@/lib/locales"
 
 const allowedMethods = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"])
+
+function resolveLocaleForProxy(request: Request): Locale {
+  const xLang = request.headers.get("x-lang")
+  if (xLang) {
+    return normalizeAppLocale(xLang)
+  }
+  const referer = request.headers.get("referer")
+  if (referer) {
+    try {
+      return getLocaleFromAppPathname(new URL(referer).pathname)
+    } catch {
+      /* ignore invalid referer */
+    }
+  }
+  return defaultLocale
+}
 
 async function proxy(request: Request, params: Promise<{ path: string[] }>) {
   const { path } = await params
@@ -21,10 +43,14 @@ async function proxy(request: Request, params: Promise<{ path: string[] }>) {
   const canHaveBody = request.method !== "GET"
   const body = canHaveBody ? await request.text() : undefined
 
+  const locale = resolveLocaleForProxy(request)
+  const localeHeaders = buildBackendLocaleHeadersFromLocale(locale)
+
   const response = await fetch(target, {
     method: request.method,
     headers: {
       "content-type": "application/json",
+      ...localeHeaders,
       ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
     },
     body,

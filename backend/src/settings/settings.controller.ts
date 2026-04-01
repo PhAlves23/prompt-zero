@@ -111,7 +111,7 @@ export class SettingsController {
     file: Express.Multer.File,
   ) {
     if (!file) {
-      throw new BadRequestException('Avatar file is required');
+      throw new BadRequestException('errors.avatarFileRequired');
     }
     return this.settingsService.uploadAvatar(user.sub, file);
   }

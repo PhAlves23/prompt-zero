@@ -1,8 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { I18nValidationPipe } from 'nestjs-i18n';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { requestIdMiddleware } from './common/middleware/request-id.middleware';
 import { structuredLoggerMiddleware } from './common/middleware/structured-logger.middleware';
@@ -90,11 +91,11 @@ async function bootstrap() {
 
     console.log('🛡️  Setting up global pipes and filters...');
     app.useGlobalPipes(
-      new ValidationPipe({
+      new I18nValidationPipe({
         transform: true,
         whitelist: true,
         forbidNonWhitelisted: true,
-        disableErrorMessages: configService.get('NODE_ENV') === 'production',
+        disableErrorMessages: false,
       }),
     );
     app.useGlobalFilters(new HttpExceptionFilter());

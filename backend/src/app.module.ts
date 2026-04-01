@@ -45,6 +45,14 @@ import { ObservabilityModule } from './observability/observability.module';
     ExperimentsModule,
     I18nModule.forRoot({
       fallbackLanguage: 'pt',
+      fallbacks: {
+        'pt-BR': 'pt',
+        'pt-*': 'pt',
+        'en-US': 'en',
+        'en-*': 'en',
+        'es-ES': 'es',
+        'es-*': 'es',
+      },
       loader: I18nJsonLoader,
       loaderOptions: {
         path: join(__dirname, 'i18n'),

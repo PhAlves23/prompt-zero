@@ -3,6 +3,7 @@ import "server-only"
 import { cookies } from "next/headers"
 import { ACCESS_TOKEN_COOKIE } from "@/lib/auth/constants"
 import type { ApiErrorPayload } from "@/lib/api/types"
+import { getLocaleHeadersForBackend } from "@/lib/locale-headers.server"
 
 const DEFAULT_BACKEND_URL = "http://localhost:3001/api/v1"
 
@@ -60,11 +61,13 @@ export async function serverFetch<T>(path: string, options?: ServerFetchOptions)
   const url = `${baseUrl}${path}${search}`
   const cookieStore = await cookies()
   const token = options?.accessToken ?? cookieStore.get(ACCESS_TOKEN_COOKIE)?.value
+  const localeHeaders = await getLocaleHeadersForBackend()
 
   const response = await fetch(url, {
     method,
     headers: {
       "content-type": "application/json",
+      ...localeHeaders,
       ...(token ? { authorization: `Bearer ${token}` } : {}),
     },
     body: options?.body ? JSON.stringify(options.body) : undefined,
@@ -96,11 +99,13 @@ export async function serverFetchRaw(path: string, options?: ServerFetchOptions)
   const url = `${baseUrl}${path}${search}`
   const cookieStore = await cookies()
   const token = options?.accessToken ?? cookieStore.get(ACCESS_TOKEN_COOKIE)?.value
+  const localeHeaders = await getLocaleHeadersForBackend()
 
   return fetch(url, {
     method,
     headers: {
       "content-type": "application/json",
+      ...localeHeaders,
       ...(token ? { authorization: `Bearer ${token}` } : {}),
     },
     body: options?.body ? JSON.stringify(options.body) : undefined,

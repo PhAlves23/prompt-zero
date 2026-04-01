@@ -22,7 +22,7 @@ export default async function PromptDetailsPage({ params }: PromptDetailsPagePro
   const dict = await getDictionary(lang as Locale)
 
   return (
-    <AppShell title={dict.prompts.detailPageTitle} lang={lang} user={{ name: user.name, email: user.email }}>
+    <AppShell title={dict.prompts.detailPageTitle} lang={lang} user={{ name: user.name, email: user.email }} dict={dict}>
       <PromptDetailClient lang={lang} promptId={id} dict={dict} />
     </AppShell>
   )
