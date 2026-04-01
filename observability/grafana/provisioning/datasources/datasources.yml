@@ -6,9 +6,9 @@ datasources:
     access: proxy
     orgId: 1
     uid: grafana_loki
-    url: http://loki.railway.internal:3100
+    url: ${LOKI_INTERNAL_URL}
     isDefault: true
-    editable: false
+    editable: true
     jsonData:
       timeout: 60
       maxLines: 1000
@@ -18,9 +18,9 @@ datasources:
     access: proxy
     orgId: 1
     uid: grafana_prometheus
-    url: http://prometheus.railway.internal:9090
+    url: ${PROMETHEUS_INTERNAL_URL}
     isDefault: false
-    editable: false
+    editable: true
     jsonData:
       timeInterval: 30s
       queryTimeout: 60s
@@ -30,8 +30,8 @@ datasources:
     access: proxy
     orgId: 1
     uid: grafana_tempo
-    url: http://tempo.railway.internal:3200
+    url: ${TEMPO_INTERNAL_URL}
     isDefault: false
-    editable: false
+    editable: true
     jsonData:
       timeout: 60

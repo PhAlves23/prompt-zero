@@ -2,9 +2,10 @@ ARG VERSION=11.5.2
 
 FROM grafana/grafana-oss:${VERSION}
 
-# Instalar netcat para verificação de serviços
 USER root
-RUN apk add --no-cache netcat-openbsd
+
+# Instalar gettext para envsubst (substituição de variáveis de ambiente)
+RUN apk add --no-cache gettext
 
 # Copiar entrypoint customizado
 COPY entrypoint.sh /entrypoint.sh
