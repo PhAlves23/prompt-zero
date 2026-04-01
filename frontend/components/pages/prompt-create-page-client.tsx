@@ -22,6 +22,7 @@ import { queryKeys } from "@/lib/api/query-keys"
 import type { Prompt, Tag, Workspace } from "@/lib/api/types"
 import { cn } from "@/lib/utils"
 import type { Dictionary } from "@/app/[lang]/dictionaries"
+import { validationMessages } from "@/lib/zod-i18n"
 
 const languageByLocalePrefix = {
   pt: "pt",
@@ -31,31 +32,42 @@ const languageByLocalePrefix = {
 
 type PromptLanguage = (typeof languageByLocalePrefix)[keyof typeof languageByLocalePrefix]
 
-const createPromptSchema = z.object({
-  title: z.string().min(3),
-  description: z.string().optional(),
-  content: z.string().min(10),
-  workspaceId: z.string().optional(),
-  isPublic: z.boolean(),
-  language: z.enum(["pt", "en", "es"]),
-  model: z.string().min(1),
-  temperature: z.number().min(0).max(2),
-  topP: z.number().min(0).max(1),
-  topK: z.number().int().min(1).max(200),
-  maxTokens: z.number().int().min(1).max(4000),
-  tagIds: z.array(z.string()).optional(),
-  variables: z.array(
-    z.object({
-      name: z.string().min(1),
-      type: z.enum(["text", "textarea", "select"]),
-      defaultValue: z.string().optional(),
-      description: z.string().optional(),
-      optionsText: z.string().optional(),
-    }),
-  ),
-})
+function createPromptSchema(dict: Dictionary) {
+  const m = validationMessages(dict)
+  return z.object({
+    title: z.string().min(3, { message: m.stringMin(3) }).max(120, { message: m.stringMax(120) }),
+    description: z.string().optional(),
+    content: z.string().min(10, { message: m.contentMin(10) }),
+    workspaceId: z.string().optional(),
+    isPublic: z.boolean(),
+    language: z.enum(["pt", "en", "es"]),
+    model: z.string().min(1, { message: m.stringMin(1) }),
+    temperature: z.number().min(0, { message: m.numberMin(0) }).max(2, { message: m.numberMax(2) }),
+    topP: z.number().min(0, { message: m.numberMin(0) }).max(1, { message: m.numberMax(1) }),
+    topK: z
+      .number()
+      .int({ message: m.numberInt() })
+      .min(1, { message: m.numberMin(1) })
+      .max(200, { message: m.numberMax(200) }),
+    maxTokens: z
+      .number()
+      .int({ message: m.numberInt() })
+      .min(1, { message: m.numberMin(1) })
+      .max(4000, { message: m.numberMax(4000) }),
+    tagIds: z.array(z.string()).optional(),
+    variables: z.array(
+      z.object({
+        name: z.string().min(1, { message: m.stringMin(1) }).max(100, { message: m.stringMax(100) }),
+        type: z.enum(["text", "textarea", "select"]),
+        defaultValue: z.string().optional(),
+        description: z.string().max(255, { message: m.stringMax(255) }).optional(),
+        optionsText: z.string().optional(),
+      }),
+    ),
+  })
+}
 
-type CreatePromptValues = z.infer<typeof createPromptSchema>
+type CreatePromptValues = z.infer<ReturnType<typeof createPromptSchema>>
 type CreatePromptPayload = Pick<
   CreatePromptValues,
   "title" | "description" | "content" | "workspaceId" | "isPublic" | "language" | "model" | "tagIds"
@@ -197,6 +209,7 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
     () => (tagsQuery.data ?? []).filter((tag) => (selectedTagIds ?? []).includes(tag.id)),
     [tagsQuery.data, selectedTagIds],
   )
+  const createPromptSchemaMemo = useMemo(() => createPromptSchema(dict), [dict])
 
   return (
     <div className="grid gap-4 px-4 lg:px-6">
@@ -240,21 +253,16 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                       ? data.maxTokens
                       : baseline.maxTokens,
                   }
-                  const parsed = createPromptSchema.safeParse(values)
+                  const parsed = createPromptSchemaMemo.safeParse(values)
                   if (!parsed.success) {
                     const [first] = parsed.error.issues
                     if (first?.message) {
                       toast.error(first.message)
                     }
                     parsed.error.issues.forEach((issue) => {
-                      const field = issue.path[0]
-                      if (
-                        field === "title" ||
-                        field === "description" ||
-                        field === "content" ||
-                        field === "isPublic"
-                      ) {
-                        form.setError(field, { message: issue.message })
+                      const pathKey = issue.path.length > 0 ? issue.path.map(String).join(".") : ""
+                      if (pathKey) {
+                        form.setError(pathKey as never, { message: issue.message })
                       }
                     })
                     return
@@ -298,15 +306,28 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
           >
             <div className="grid gap-2">
               <Label htmlFor="title">{dict.prompts.createForm.fields.title}</Label>
-              <Input id="title" {...form.register("title")} />
+              <Input id="title" {...form.register("title")} aria-invalid={Boolean(form.formState.errors.title)} />
+              {form.formState.errors.title ? (
+                <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
+              ) : null}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description">{dict.prompts.createForm.fields.description}</Label>
-              <Input id="description" {...form.register("description")} />
+              <Input
+                id="description"
+                {...form.register("description")}
+                aria-invalid={Boolean(form.formState.errors.description)}
+              />
+              {form.formState.errors.description ? (
+                <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
+              ) : null}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="content">{dict.prompts.createForm.fields.content}</Label>
-              <Textarea id="content" rows={8} {...form.register("content")} />
+              <Textarea id="content" rows={8} {...form.register("content")} aria-invalid={Boolean(form.formState.errors.content)} />
+              {form.formState.errors.content ? (
+                <p className="text-sm text-destructive">{form.formState.errors.content.message}</p>
+              ) : null}
             </div>
             <div className="grid gap-4 rounded-lg border p-4">
               <p className="text-sm font-medium">{dict.prompts.createForm.promptSettings}</p>
@@ -347,12 +368,14 @@ export function PromptCreatePageClient({ lang, dict }: { lang: string; dict: Dic
                         variant="outline"
                         role="combobox"
                         aria-expanded={openTags}
-                        className="justify-between"
+                        className="min-w-0 w-full justify-between"
                         disabled={tagsQuery.isPending || tagsQuery.isError}
                       >
-                        {selectedTags.length > 0
-                          ? selectedTags.map((tag) => tag.name).join(", ")
-                          : dict.prompts.createForm.selectCategories}
+                        <span className="truncate text-left">
+                          {selectedTags.length > 0
+                            ? selectedTags.map((tag) => tag.name).join(", ")
+                            : dict.prompts.createForm.selectCategories}
+                        </span>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>

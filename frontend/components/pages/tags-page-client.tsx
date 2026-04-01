@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import { z } from "zod/v4"
@@ -15,17 +15,22 @@ import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { Tag } from "@/lib/api/types"
 import type { Dictionary } from "@/app/[lang]/dictionaries"
+import { validationMessages } from "@/lib/zod-i18n"
 
-const schema = z.object({
-  name: z.string().min(2),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-})
+function createTagSchema(dict: Dictionary) {
+  const m = validationMessages(dict)
+  return z.object({
+    name: z.string().min(2, { message: m.stringMin(2) }).max(50, { message: m.stringMax(50) }),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/, { message: m.invalidHexColor() }),
+  })
+}
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof createTagSchema>>
 const presetColors = ["#9EFF00", "#22C55E", "#06B6D4", "#8B5CF6", "#EF4444", "#F97316"]
 
 export function TagsPageClient({ dict }: { dict: Dictionary }) {
   const queryClient = useQueryClient()
+  const schema = useMemo(() => createTagSchema(dict), [dict])
   const [editingTagId, setEditingTagId] = useState<string | null>(null)
   const form = useForm<FormValues>({
     defaultValues: { name: "", color: "#9EFF00" },
@@ -95,7 +100,10 @@ export function TagsPageClient({ dict }: { dict: Dictionary }) {
           >
             <div className="grid gap-2">
               <Label htmlFor="name">{dict.tags.fields.name}</Label>
-              <Input id="name" {...form.register("name")} />
+              <Input id="name" {...form.register("name")} aria-invalid={Boolean(form.formState.errors.name)} />
+              {form.formState.errors.name ? (
+                <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+              ) : null}
             </div>
             <div className="grid gap-3 rounded-lg border border-border/60 p-3">
               <Label htmlFor="color" className="text-sm">{dict.tags.fields.color}</Label>
@@ -170,7 +178,14 @@ export function TagsPageClient({ dict }: { dict: Dictionary }) {
                         <p className="text-sm font-medium">{dict.tags.editTitle}</p>
                         <div className="grid gap-2">
                           <Label htmlFor={`edit-tag-name-${tag.id}`}>{dict.tags.fields.name}</Label>
-                          <Input id={`edit-tag-name-${tag.id}`} {...editForm.register("name")} />
+                          <Input
+                            id={`edit-tag-name-${tag.id}`}
+                            {...editForm.register("name")}
+                            aria-invalid={Boolean(editForm.formState.errors.name)}
+                          />
+                          {editForm.formState.errors.name ? (
+                            <p className="text-sm text-destructive">{editForm.formState.errors.name.message}</p>
+                          ) : null}
                         </div>
                         <div className="grid gap-3 rounded-lg border border-border/60 p-3">
                           <Label htmlFor={`edit-tag-color-${tag.id}`}>{dict.tags.fields.colorShort}</Label>
@@ -221,15 +236,17 @@ export function TagsPageClient({ dict }: { dict: Dictionary }) {
                         </div>
                       </form>
                     ) : (
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 items-center gap-2">
                             <span
-                              className="h-3 w-3 rounded-full border"
+                              className="h-3 w-3 shrink-0 rounded-full border"
                               style={{ backgroundColor: tagColor }}
                               aria-hidden="true"
                             />
-                            <p className="font-medium">{tag.name}</p>
+                            <p className="truncate font-medium" title={tag.name}>
+                              {tag.name}
+                            </p>
                           </div>
                           <p className="mt-1 text-xs text-muted-foreground">{tagColor}</p>
                         </div>

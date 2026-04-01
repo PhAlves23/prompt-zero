@@ -118,8 +118,10 @@ export function PromptsPageClient({
                     key={prompt.id}
                     className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent cursor-pointer"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-medium">{prompt.title}</h3>
+                    <div className="flex min-w-0 items-center justify-between gap-2">
+                      <h3 className="min-w-0 flex-1 truncate font-medium" title={prompt.title}>
+                        {prompt.title}
+                      </h3>
                       <Badge
                         variant={prompt.isPublic ? "outline" : "secondary"}
                         className="shrink-0"
@@ -136,7 +138,8 @@ export function PromptsPageClient({
                           <Badge
                             key={`${prompt.id}-${tag.name}`}
                             variant="outline"
-                            className="text-xs"
+                            className="max-w-[150px] truncate text-xs"
+                            title={tag.name}
                             style={
                               tag.color
                                 ? {

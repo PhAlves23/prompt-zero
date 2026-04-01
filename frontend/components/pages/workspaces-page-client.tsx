@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { Pencil, Trash2 } from "lucide-react"
 import { z } from "zod/v4"
@@ -16,16 +16,21 @@ import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { Workspace } from "@/lib/api/types"
 import type { Dictionary } from "@/app/[lang]/dictionaries"
+import { validationMessages } from "@/lib/zod-i18n"
 
-const schema = z.object({
-  name: z.string().min(2),
-  description: z.string().optional(),
-})
+function createWorkspaceSchema(dict: Dictionary) {
+  const m = validationMessages(dict)
+  return z.object({
+    name: z.string().min(2, { message: m.stringMin(2) }).max(100, { message: m.stringMax(100) }),
+    description: z.string().max(500, { message: m.stringMax(500) }).optional(),
+  })
+}
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof createWorkspaceSchema>>
 
 export function WorkspacesPageClient({ dict }: { dict: Dictionary }) {
   const queryClient = useQueryClient()
+  const schema = useMemo(() => createWorkspaceSchema(dict), [dict])
   const [editingWorkspaceId, setEditingWorkspaceId] = useState<string | null>(null)
   const form = useForm<FormValues>({
     defaultValues: {
@@ -99,11 +104,22 @@ export function WorkspacesPageClient({ dict }: { dict: Dictionary }) {
           >
             <div className="grid gap-2">
               <Label htmlFor="name">{dict.workspaces.fields.name}</Label>
-              <Input id="name" {...form.register("name")} />
+              <Input id="name" {...form.register("name")} aria-invalid={Boolean(form.formState.errors.name)} />
+              {form.formState.errors.name ? (
+                <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+              ) : null}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description">{dict.workspaces.fields.description}</Label>
-              <Textarea id="description" rows={4} {...form.register("description")} />
+              <Textarea
+                id="description"
+                rows={4}
+                {...form.register("description")}
+                aria-invalid={Boolean(form.formState.errors.description)}
+              />
+              {form.formState.errors.description ? (
+                <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
+              ) : null}
             </div>
             <Button type="submit" className="w-fit cursor-pointer">
               {dict.workspaces.createCta}
@@ -143,7 +159,14 @@ export function WorkspacesPageClient({ dict }: { dict: Dictionary }) {
                       <p className="text-sm font-medium">{dict.workspaces.editTitle}</p>
                       <div className="grid gap-2">
                         <Label htmlFor={`edit-workspace-name-${workspace.id}`}>{dict.workspaces.fields.name}</Label>
-                        <Input id={`edit-workspace-name-${workspace.id}`} {...editForm.register("name")} />
+                        <Input
+                          id={`edit-workspace-name-${workspace.id}`}
+                          {...editForm.register("name")}
+                          aria-invalid={Boolean(editForm.formState.errors.name)}
+                        />
+                        {editForm.formState.errors.name ? (
+                          <p className="text-sm text-destructive">{editForm.formState.errors.name.message}</p>
+                        ) : null}
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor={`edit-workspace-description-${workspace.id}`}>{dict.workspaces.fields.description}</Label>
@@ -151,7 +174,11 @@ export function WorkspacesPageClient({ dict }: { dict: Dictionary }) {
                           id={`edit-workspace-description-${workspace.id}`}
                           rows={3}
                           {...editForm.register("description")}
+                          aria-invalid={Boolean(editForm.formState.errors.description)}
                         />
+                        {editForm.formState.errors.description ? (
+                          <p className="text-sm text-destructive">{editForm.formState.errors.description.message}</p>
+                        ) : null}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button className="cursor-pointer" type="submit" disabled={updateWorkspace.isPending}>
@@ -172,10 +199,12 @@ export function WorkspacesPageClient({ dict }: { dict: Dictionary }) {
                       </div>
                     </form>
                   ) : (
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-medium">{workspace.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                    <div className="flex min-w-0 items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium" title={workspace.name}>
+                          {workspace.name}
+                        </p>
+                        <p className="line-clamp-2 text-xs text-muted-foreground">
                           {workspace.description ?? dict.workspaces.noDescription}
                         </p>
                       </div>

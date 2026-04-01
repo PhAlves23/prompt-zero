@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { toast } from "sonner"
@@ -9,16 +10,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { Dictionary } from "@/app/[lang]/dictionaries"
 import { buildBackendLocaleHeadersFromLocale, normalizeAppLocale } from "@/lib/locale-i18n"
+import { validationMessages } from "@/lib/zod-i18n"
 
-const schema = z.object({
-  email: z.email(),
-  password: z.string().min(6),
-})
+function createLoginSchema(dict: Dictionary) {
+  const m = validationMessages(dict)
+  return z.object({
+    email: z.string().email({ message: m.invalidEmail() }),
+    password: z.string().min(6, { message: m.passwordMin(6) }),
+  })
+}
 
-type LoginFormValues = z.infer<typeof schema>
+type LoginFormValues = z.infer<ReturnType<typeof createLoginSchema>>
 
 export function LoginForm({ lang, dict }: { lang: string; dict: Dictionary }) {
   const router = useRouter()
+  const schema = useMemo(() => createLoginSchema(dict), [dict])
   const form = useForm<LoginFormValues>({
     defaultValues: {
       email: "",

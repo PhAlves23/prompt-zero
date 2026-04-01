@@ -14,6 +14,17 @@
     "guestUserFallback": "Guest",
     "userDefaultName": "User"
   },
+  "validation": {
+    "stringMin": "Must be at least {min} characters.",
+    "stringMax": "Must be at most {max} characters.",
+    "invalidEmail": "Enter a valid email address.",
+    "passwordMin": "Password must be at least {min} characters.",
+    "invalidHexColor": "Invalid color (use #RRGGBB).",
+    "numberMin": "Minimum value is {min}.",
+    "numberMax": "Maximum value is {max}.",
+    "numberInt": "Must be an integer.",
+    "contentMin": "Content must be at least {min} characters."
+  },
   "ui": {
     "accessibility": {
       "toggleSidebar": "Toggle sidebar",

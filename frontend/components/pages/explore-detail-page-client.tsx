@@ -7,6 +7,8 @@ import { toast } from "sonner"
 import { Copy, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
@@ -77,9 +79,19 @@ export function ExploreDetailPageClient({
         </CardHeader>
         <CardContent className="grid gap-4">
           <p className="text-sm text-muted-foreground">{promptQuery.data.description ?? dict.explore.common.noDescription}</p>
-          <pre className="max-h-[420px] overflow-auto rounded border bg-card p-3 text-sm whitespace-pre-wrap">
-            {promptQuery.data.content}
-          </pre>
+          <div className="grid gap-2">
+            <Label htmlFor="explore-prompt-content" className="text-foreground">
+              {dict.prompts.createForm.fields.content}
+            </Label>
+            <Textarea
+              id="explore-prompt-content"
+              readOnly
+              value={promptQuery.data.content}
+              rows={16}
+              spellCheck={false}
+              className="field-sizing-fixed max-h-[min(480px,70vh)] min-h-[240px] resize-y font-mono text-sm leading-relaxed wrap-break-word"
+            />
+          </div>
           <div>
             {authMeQuery.isLoading ? (
               <p className="text-sm text-muted-foreground">{dict.explore.detail.checkingSession}</p>

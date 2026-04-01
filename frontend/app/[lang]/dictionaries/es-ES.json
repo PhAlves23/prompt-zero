@@ -14,6 +14,17 @@
     "guestUserFallback": "Guest",
     "userDefaultName": "Usuario"
   },
+  "validation": {
+    "stringMin": "Debe tener al menos {min} caracteres.",
+    "stringMax": "Debe tener como máximo {max} caracteres.",
+    "invalidEmail": "Introduce un correo electrónico válido.",
+    "passwordMin": "La contraseña debe tener al menos {min} caracteres.",
+    "invalidHexColor": "Color no válido (usa #RRGGBB).",
+    "numberMin": "El valor mínimo es {min}.",
+    "numberMax": "El valor máximo es {max}.",
+    "numberInt": "Debe ser un número entero.",
+    "contentMin": "El contenido debe tener al menos {min} caracteres."
+  },
   "ui": {
     "accessibility": {
       "toggleSidebar": "Alternar barra lateral",

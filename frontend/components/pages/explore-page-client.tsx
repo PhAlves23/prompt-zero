@@ -54,15 +54,20 @@ export function ExplorePageClient({ lang, dict }: { lang: string; dict: Dictiona
                   href={`/${lang}/explore/${prompt.id}`}
                   className="group rounded-2xl border bg-card/95 p-4 transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:bg-card hover:shadow-lg cursor-pointer"
                 >
-                  <div className="mb-3 flex items-center justify-between gap-2">
-                    <span className="rounded-full border bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground">
+                  <div className="mb-3 flex min-w-0 items-center justify-between gap-2">
+                    <span className="shrink-0 rounded-full border bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground">
                       {prompt.language.toUpperCase()}
                     </span>
-                    <span className="rounded-full border bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground">
+                    <span
+                      className="min-w-0 max-w-[55%] truncate rounded-full border bg-muted/60 px-2 py-0.5 text-[11px] text-muted-foreground"
+                      title={prompt.model}
+                    >
                       {prompt.model}
                     </span>
                   </div>
-                  <h3 className="font-medium text-foreground">{prompt.title}</h3>
+                  <h3 className="line-clamp-2 min-h-[2.5rem] font-medium text-foreground" title={prompt.title}>
+                    {prompt.title}
+                  </h3>
                   <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
                     {prompt.description ?? dict.explore.common.noDescription}
                   </p>

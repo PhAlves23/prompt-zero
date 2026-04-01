@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod/v4"
 import { toast } from "sonner"
@@ -9,17 +10,22 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { Dictionary } from "@/app/[lang]/dictionaries"
 import { buildBackendLocaleHeadersFromLocale, normalizeAppLocale } from "@/lib/locale-i18n"
+import { validationMessages } from "@/lib/zod-i18n"
 
-const schema = z.object({
-  name: z.string().min(2),
-  email: z.email(),
-  password: z.string().min(8),
-})
+function createRegisterSchema(dict: Dictionary) {
+  const m = validationMessages(dict)
+  return z.object({
+    name: z.string().min(2, { message: m.stringMin(2) }).max(100, { message: m.stringMax(100) }),
+    email: z.string().email({ message: m.invalidEmail() }),
+    password: z.string().min(8, { message: m.passwordMin(8) }),
+  })
+}
 
-type RegisterFormValues = z.infer<typeof schema>
+type RegisterFormValues = z.infer<ReturnType<typeof createRegisterSchema>>
 
 export function RegisterForm({ lang, dict }: { lang: string; dict: Dictionary }) {
   const router = useRouter()
+  const schema = useMemo(() => createRegisterSchema(dict), [dict])
   const form = useForm<RegisterFormValues>({
     defaultValues: {
       name: "",

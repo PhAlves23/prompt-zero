@@ -272,12 +272,14 @@ export function ExperimentsPageClient({
                   variant="outline"
                   role="combobox"
                   aria-expanded={openPromptA}
-                  className="w-full justify-between"
+                  className="min-w-0 w-full justify-between"
                   disabled={promptsQuery.isPending || promptsQuery.isError}
                 >
-                  {promptAId
-                    ? availablePrompts.find((prompt) => prompt.id === promptAId)?.title
-                    : t.selectPrompt}
+                  <span className="truncate text-left">
+                    {promptAId
+                      ? availablePrompts.find((prompt) => prompt.id === promptAId)?.title
+                      : t.selectPrompt}
+                  </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
@@ -320,12 +322,14 @@ export function ExperimentsPageClient({
                   variant="outline"
                   role="combobox"
                   aria-expanded={openPromptB}
-                  className="w-full justify-between"
+                  className="min-w-0 w-full justify-between"
                   disabled={promptsQuery.isPending || promptsQuery.isError}
                 >
-                  {promptBId
-                    ? promptBOptions.find((prompt) => prompt.id === promptBId)?.title
-                    : t.selectPrompt}
+                  <span className="truncate text-left">
+                    {promptBId
+                      ? promptBOptions.find((prompt) => prompt.id === promptBId)?.title
+                      : t.selectPrompt}
+                  </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>

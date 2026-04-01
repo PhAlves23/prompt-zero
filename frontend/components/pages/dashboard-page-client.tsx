@@ -258,8 +258,8 @@ export function DashboardPageClient({
                   href={`/${lang}/prompts/${item.promptId}`}
                   className="grid gap-1 rounded-lg border p-3 transition-colors hover:bg-accent cursor-pointer"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium">
+                  <div className="flex min-w-0 items-center justify-between gap-2">
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium" title={item.promptTitle}>
                       {index + 1}. {item.promptTitle}
                     </span>
                     <span className="text-xs text-muted-foreground">{item.executions} {t.shortExec}</span>
@@ -437,8 +437,12 @@ export function DashboardPageClient({
                     </div>
                     <span className="text-muted-foreground">{item.totalVotes} {t.votes}</span>
                   </div>
-                  <p className="text-muted-foreground">A: {item.promptATitle}</p>
-                  <p className="text-muted-foreground">B: {item.promptBTitle}</p>
+                  <p className="line-clamp-2 wrap-break-word text-muted-foreground" title={`A: ${item.promptATitle}`}>
+                    A: {item.promptATitle}
+                  </p>
+                  <p className="line-clamp-2 wrap-break-word text-muted-foreground" title={`B: ${item.promptBTitle}`}>
+                    B: {item.promptBTitle}
+                  </p>
                   <p className="text-xs">
                     {t.winner}: <span className="font-medium">{item.winnerVariant}</span> ({item.winnerPercent}%)
                   </p>

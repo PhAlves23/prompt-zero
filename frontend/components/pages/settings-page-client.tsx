@@ -19,12 +19,16 @@ import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { ApiKeyStatus, ProviderCredential, UserProfile } from "@/lib/api/types"
 import type { Dictionary } from "@/app/[lang]/dictionaries"
+import { validationMessages } from "@/lib/zod-i18n"
 
-const profileSchema = z.object({
-  name: z.string().min(2),
-})
+function createProfileSchema(dict: Dictionary) {
+  const m = validationMessages(dict)
+  return z.object({
+    name: z.string().min(2, { message: m.stringMin(2) }).max(100, { message: m.stringMax(100) }),
+  })
+}
 
-type ProfileValues = z.infer<typeof profileSchema>
+type ProfileValues = z.infer<ReturnType<typeof createProfileSchema>>
 type ApiKeyValues = {
   openaiApiKey?: string
   anthropicApiKey?: string
@@ -35,6 +39,7 @@ type ProviderKeyName = "openai" | "anthropic" | "google" | "openrouter"
 
 export function SettingsPageClient({ dict }: { dict: Dictionary }) {
   const queryClient = useQueryClient()
+  const profileSchema = useMemo(() => createProfileSchema(dict), [dict])
   const [tab, setTab] = useQueryState("tab", parseAsString.withDefault("user"))
   const [disconnectingProvider, setDisconnectingProvider] = useState<ProviderKeyName | null>(null)
   const [apiKeyInputs, setApiKeyInputs] = useState<Record<ProviderKeyName, string>>({
@@ -334,7 +339,14 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
                   >
                     <div className="grid gap-2">
                       <Label htmlFor="profile-name">{dict.settings.profileCard.nameLabel}</Label>
-                      <Input id="profile-name" {...profileForm.register("name")} />
+                      <Input
+                        id="profile-name"
+                        {...profileForm.register("name")}
+                        aria-invalid={Boolean(profileForm.formState.errors.name)}
+                      />
+                      {profileForm.formState.errors.name ? (
+                        <p className="text-sm text-destructive">{profileForm.formState.errors.name.message}</p>
+                      ) : null}
                     </div>
                     <Button className="w-fit cursor-pointer" type="submit">
                       {updateProfile.isPending ? dict.settings.profileCard.saving : dict.settings.profileCard.save}

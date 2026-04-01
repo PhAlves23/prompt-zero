@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -13,6 +14,7 @@ import { i18nValidationMessage } from 'nestjs-i18n';
 export class TemplateVariableInputDto {
   @ApiProperty()
   @IsString({ message: i18nValidationMessage('validation.isString') })
+  @MaxLength(100, { message: i18nValidationMessage('validation.maxLength') })
   name!: string;
 
   @ApiProperty({ enum: VariableType, default: VariableType.text })
@@ -36,6 +38,7 @@ export class TemplateVariableInputDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString({ message: i18nValidationMessage('validation.isString') })
+  @MaxLength(255, { message: i18nValidationMessage('validation.maxLength') })
   description?: string;
 }
 

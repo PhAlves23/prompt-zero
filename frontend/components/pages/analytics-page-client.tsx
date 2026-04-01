@@ -218,8 +218,8 @@ export function AnalyticsPageClient({ dict, lang }: { dict: Dictionary; lang: st
             ) : topPromptsQuery.data && topPromptsQuery.data.length > 0 ? (
               topPromptsQuery.data.map((item, index) => (
                 <div key={item.promptId} className="rounded-lg border p-3">
-                  <div className="flex items-center justify-between gap-2 text-sm">
-                    <span className="font-medium">
+                  <div className="flex min-w-0 items-center justify-between gap-2 text-sm">
+                    <span className="min-w-0 flex-1 truncate font-medium" title={item.promptTitle}>
                       {index + 1}. {item.promptTitle}
                     </span>
                     <span className="text-muted-foreground">

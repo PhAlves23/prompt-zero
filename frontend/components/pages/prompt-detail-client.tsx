@@ -45,28 +45,43 @@ import type {
   PromptVersion,
 } from "@/lib/api/types"
 import type { Dictionary } from "@/app/[lang]/dictionaries"
+import { validationMessages } from "@/lib/zod-i18n"
 
 function interpolate(template: string, params: Record<string, string>) {
   return Object.entries(params).reduce((current, [key, value]) => current.replaceAll(`{${key}}`, value), template)
 }
 
-const updateSchema = z.object({
-  title: z.string().min(3),
-  description: z.string().optional(),
-  content: z.string().min(10),
-  isPublic: z.boolean(),
-  tagIds: z.array(z.string()).optional(),
-})
+function createUpdateSchema(dict: Dictionary) {
+  const m = validationMessages(dict)
+  return z.object({
+    title: z.string().min(3, { message: m.stringMin(3) }).max(120, { message: m.stringMax(120) }),
+    description: z.string().optional(),
+    content: z.string().min(10, { message: m.contentMin(10) }),
+    isPublic: z.boolean(),
+    tagIds: z.array(z.string()).optional(),
+  })
+}
 
-const executeSettingsSchema = z.object({
-  temperature: z.number().min(0).max(2),
-  topP: z.number().min(0).max(1),
-  topK: z.number().int().min(1).max(200),
-  maxTokens: z.number().int().min(1).max(4000),
-})
+function createExecuteSettingsSchema(dict: Dictionary) {
+  const m = validationMessages(dict)
+  return z.object({
+    temperature: z.number().min(0, { message: m.numberMin(0) }).max(2, { message: m.numberMax(2) }),
+    topP: z.number().min(0, { message: m.numberMin(0) }).max(1, { message: m.numberMax(1) }),
+    topK: z
+      .number()
+      .int({ message: m.numberInt() })
+      .min(1, { message: m.numberMin(1) })
+      .max(200, { message: m.numberMax(200) }),
+    maxTokens: z
+      .number()
+      .int({ message: m.numberInt() })
+      .min(1, { message: m.numberMin(1) })
+      .max(4000, { message: m.numberMax(4000) }),
+  })
+}
 
-type UpdatePromptValues = z.infer<typeof updateSchema>
-type ExecuteSettingsValues = z.infer<typeof executeSettingsSchema>
+type UpdatePromptValues = z.infer<ReturnType<typeof createUpdateSchema>>
+type ExecuteSettingsValues = z.infer<ReturnType<typeof createExecuteSettingsSchema>>
 
 function extractPromptTagIds(prompt: Prompt | undefined): string[] {
   if (!prompt?.tags || prompt.tags.length === 0) {
@@ -110,6 +125,9 @@ export function PromptDetailClient({
   const [openPromptTags, setOpenPromptTags] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
   const lastExecuteProviderApiKeyRef = useRef(false)
+
+  const updateSchemaMemo = useMemo(() => createUpdateSchema(dict), [dict])
+  const executeSettingsSchemaMemo = useMemo(() => createExecuteSettingsSchema(dict), [dict])
 
   const promptQuery = useQuery({
     queryKey: queryKeys.prompts.detail(promptId),
@@ -503,7 +521,7 @@ export function PromptDetailClient({
   }
 
   function runWithSettings(input: string) {
-    const parsed = executeSettingsSchema.safeParse(executeSettingsForm.getValues())
+    const parsed = executeSettingsSchemaMemo.safeParse(executeSettingsForm.getValues())
     if (!parsed.success) {
       toast.error(dict.prompts.detail.toasts.invalidAdvancedSettings)
       return
@@ -583,17 +601,12 @@ export function PromptDetailClient({
           <form
             className="grid gap-4"
             onSubmit={form.handleSubmit((values) => {
-              const parsed = updateSchema.safeParse(values)
+              const parsed = updateSchemaMemo.safeParse(values)
               if (!parsed.success) {
                 parsed.error.issues.forEach((issue) => {
-                  const field = issue.path[0]
-                  if (
-                    field === "title" ||
-                    field === "description" ||
-                    field === "content" ||
-                    field === "isPublic"
-                  ) {
-                    form.setError(field, { message: issue.message })
+                  const pathKey = issue.path.length > 0 ? issue.path.map(String).join(".") : ""
+                  if (pathKey) {
+                    form.setError(pathKey as never, { message: issue.message })
                   }
                 })
                 return
@@ -603,15 +616,28 @@ export function PromptDetailClient({
           >
             <div className="grid gap-2">
               <Label htmlFor="title">{dict.prompts.detail.edit.fields.title}</Label>
-              <Input id="title" {...form.register("title")} />
+              <Input id="title" {...form.register("title")} aria-invalid={Boolean(form.formState.errors.title)} />
+              {form.formState.errors.title ? (
+                <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
+              ) : null}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description">{dict.prompts.detail.edit.fields.description}</Label>
-              <Input id="description" {...form.register("description")} />
+              <Input
+                id="description"
+                {...form.register("description")}
+                aria-invalid={Boolean(form.formState.errors.description)}
+              />
+              {form.formState.errors.description ? (
+                <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
+              ) : null}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="content">{dict.prompts.detail.edit.fields.content}</Label>
-              <Textarea id="content" rows={10} {...form.register("content")} />
+              <Textarea id="content" rows={10} {...form.register("content")} aria-invalid={Boolean(form.formState.errors.content)} />
+              {form.formState.errors.content ? (
+                <p className="text-sm text-destructive">{form.formState.errors.content.message}</p>
+              ) : null}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="prompt-categories">{dict.prompts.detail.edit.fields.categories}</Label>
@@ -623,12 +649,14 @@ export function PromptDetailClient({
                     variant="outline"
                     role="combobox"
                     aria-expanded={openPromptTags}
-                    className="justify-between"
+                    className="min-w-0 w-full justify-between"
                     disabled={tagsQuery.isPending || tagsQuery.isError}
                   >
-                    {selectedPromptTags.length > 0
-                      ? selectedPromptTags.map((tag) => tag.name).join(", ")
-                      : dict.prompts.detail.edit.selectCategories}
+                    <span className="truncate text-left">
+                      {selectedPromptTags.length > 0
+                        ? selectedPromptTags.map((tag) => tag.name).join(", ")
+                        : dict.prompts.detail.edit.selectCategories}
+                    </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -1184,7 +1212,9 @@ export function PromptDetailClient({
             executionsQuery.data.data.map((execution) => (
               <div key={execution.id} className="rounded border p-3 text-sm">
                 <div className="mb-2 flex items-start justify-between gap-2">
-                  <div className="font-medium">{execution.model}</div>
+                  <div className="min-w-0 max-w-[70%] truncate font-medium" title={execution.model}>
+                    {execution.model}
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
@@ -1197,7 +1227,7 @@ export function PromptDetailClient({
                     {dict.prompts.detail.executions.copyOutput}
                   </Button>
                 </div>
-                <div className="text-muted-foreground">
+                <div className="max-h-32 overflow-y-auto whitespace-pre-wrap wrap-break-word text-muted-foreground">
                   {execution.output ?? dict.prompts.detail.executions.noOutput}
                 </div>
               </div>
