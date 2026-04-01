@@ -52,6 +52,7 @@ Este projeto vai muito além do básico, implementando **10+ funcionalidades ava
 - ✅ **Logs estruturados** correlacionados com traces
 
 <img width="1896" height="917" alt="image" src="https://github.com/user-attachments/assets/11ff213e-e515-4742-9abd-33be9b04bb1e" />
+Link: https://railway.com/project/b1adbfa3-a055-426a-9ff5-334b71da2fe9?environmentId=2a2a8cbe-9c1b-4f3d-ab2f-d44700a480c7
 
 #### Testes e Qualidade
 - ✅ **Testes unitários** (Jest no backend, Vitest no frontend)
