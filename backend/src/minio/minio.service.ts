@@ -6,28 +6,47 @@ import { randomBytes } from 'crypto';
 @Injectable()
 export class MinioService implements OnModuleInit {
   private readonly logger = new Logger(MinioService.name);
-  private readonly minioClient: Minio.Client;
+  private readonly minioClient: Minio.Client | null;
   private readonly bucketName: string;
   private readonly publicUrl: string;
+  private readonly isEnabled: boolean;
 
   constructor(private readonly configService: ConfigService) {
-    const endpoint = this.configService.getOrThrow<string>('MINIO_ENDPOINT');
+    const endpoint = this.configService.get<string>('MINIO_ENDPOINT');
+    const accessKey = this.configService.get<string>('MINIO_ROOT_USER');
+    const secretKey = this.configService.get<string>('MINIO_ROOT_PASSWORD');
+    const bucketName = this.configService.get<string>('MINIO_BUCKET_NAME');
+    const publicUrl = this.configService.get<string>('MINIO_PUBLIC_URL');
+
+    this.isEnabled = !!(
+      endpoint &&
+      accessKey &&
+      secretKey &&
+      bucketName &&
+      publicUrl
+    );
+
+    if (!this.isEnabled) {
+      this.logger.warn(
+        'MinIO configuration is incomplete. Avatar upload functionality will be disabled.',
+      );
+      this.minioClient = null;
+      this.bucketName = '';
+      this.publicUrl = '';
+      return;
+    }
+
     const port = parseInt(
       this.configService.get<string>('MINIO_PORT', '9000'),
       10,
     );
     const useSSL =
       this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
-    const accessKey = this.configService.getOrThrow<string>('MINIO_ROOT_USER');
-    const secretKey = this.configService.getOrThrow<string>(
-      'MINIO_ROOT_PASSWORD',
-    );
 
-    this.bucketName =
-      this.configService.getOrThrow<string>('MINIO_BUCKET_NAME');
-    this.publicUrl = this.configService.getOrThrow<string>('MINIO_PUBLIC_URL');
+    this.bucketName = bucketName as string;
+    this.publicUrl = publicUrl as string;
 
-    const cleanEndpoint = endpoint
+    const cleanEndpoint = (endpoint as string)
       .replace(/^https?:\/\//, '')
       .replace(/:\d+$/, '');
 
@@ -39,8 +58,8 @@ export class MinioService implements OnModuleInit {
       endPoint: cleanEndpoint,
       port,
       useSSL,
-      accessKey,
-      secretKey,
+      accessKey: accessKey as string,
+      secretKey: secretKey as string,
       region: 'us-east-1',
       pathStyle: true,
     });
@@ -49,6 +68,11 @@ export class MinioService implements OnModuleInit {
   }
 
   async onModuleInit() {
+    if (!this.isEnabled) {
+      this.logger.warn('MinIO is disabled. Skipping initialization.');
+      return;
+    }
+
     try {
       await this.ensureBucketExists();
     } catch (error) {
@@ -58,11 +82,14 @@ export class MinioService implements OnModuleInit {
       this.logger.warn(
         'MinIO is not available. Avatar upload functionality will not work.',
       );
-      // Don't throw - allow the app to start even if MinIO is unavailable
     }
   }
 
   private async ensureBucketExists(): Promise<void> {
+    if (!this.minioClient) {
+      throw new Error('MinIO client is not initialized');
+    }
+
     const maxRetries = 3;
     let lastError: Error | null = null;
 
@@ -81,7 +108,6 @@ export class MinioService implements OnModuleInit {
           this.logger.log(`Bucket ${this.bucketName} already exists`);
         }
 
-        // Tentar configurar política pública para avatars (não crítico)
         try {
           const readOnlyPolicy = {
             Version: '2012-10-17',
@@ -108,7 +134,6 @@ export class MinioService implements OnModuleInit {
           );
         }
 
-        // Connection successful
         this.logger.log('MinIO connection successful');
         return;
       } catch (error) {
@@ -125,7 +150,6 @@ export class MinioService implements OnModuleInit {
       }
     }
 
-    // All retries failed
     this.logger.error(
       `Failed to connect to MinIO after ${maxRetries} attempts: ${lastError?.message}`,
     );
@@ -137,6 +161,10 @@ export class MinioService implements OnModuleInit {
     userId: string,
     originalName: string,
   ): Promise<{ fileName: string; url: string }> {
+    if (!this.isEnabled || !this.minioClient) {
+      throw new Error('MinIO is not available. Avatar upload is disabled.');
+    }
+
     const timestamp = Date.now();
     const randomString = randomBytes(8).toString('hex');
     const extension = originalName.split('.').pop()?.toLowerCase() || 'jpg';
@@ -169,6 +197,11 @@ export class MinioService implements OnModuleInit {
   }
 
   async deleteAvatar(fileName: string): Promise<void> {
+    if (!this.isEnabled || !this.minioClient) {
+      this.logger.warn('MinIO is not available. Cannot delete avatar.');
+      return;
+    }
+
     if (!fileName || !fileName.startsWith('avatars/')) {
       this.logger.warn(`Invalid file name for deletion: ${fileName}`);
       return;
@@ -204,6 +237,11 @@ export class MinioService implements OnModuleInit {
   }
 
   async listUserAvatars(userId: string): Promise<string[]> {
+    if (!this.isEnabled || !this.minioClient) {
+      this.logger.warn('MinIO is not available. Cannot list avatars.');
+      return [];
+    }
+
     const prefix = `avatars/${userId}/`;
     const objectsList: string[] = [];
 
@@ -232,6 +270,11 @@ export class MinioService implements OnModuleInit {
   }
 
   async deleteOldAvatars(userId: string, keepFileName?: string): Promise<void> {
+    if (!this.isEnabled || !this.minioClient) {
+      this.logger.warn('MinIO is not available. Cannot delete old avatars.');
+      return;
+    }
+
     const avatars = await this.listUserAvatars(userId);
 
     const filesToDelete = avatars.filter((file) => file !== keepFileName);
@@ -243,7 +286,7 @@ export class MinioService implements OnModuleInit {
 
       await Promise.all(
         filesToDelete.map((file) =>
-          this.minioClient.removeObject(this.bucketName, file),
+          this.minioClient!.removeObject(this.bucketName, file),
         ),
       );
     }
