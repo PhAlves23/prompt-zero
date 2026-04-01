@@ -7,4 +7,5 @@ COPY prometheus-railway.yml /etc/prometheus/prometheus.yml
 
 # Comando
 CMD ["--config.file=/etc/prometheus/prometheus.yml", \
-     "--storage.tsdb.path=/prometheus"]
+     "--storage.tsdb.path=/prometheus", \
+     "--web.enable-remote-write-receiver"]

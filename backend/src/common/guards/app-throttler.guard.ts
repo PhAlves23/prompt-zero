@@ -16,7 +16,11 @@ export class AppThrottlerGuard extends ThrottlerGuard {
       ? metricsPath
       : `/${metricsPath}`;
     const requestPath = String(req.path ?? req.url ?? '').split('?')[0];
+    const versionedMetricsPath = `/api/v1${normalizedMetricsPath}`;
 
-    return requestPath === normalizedMetricsPath;
+    return (
+      requestPath === normalizedMetricsPath ||
+      requestPath === versionedMetricsPath
+    );
   }
 }
