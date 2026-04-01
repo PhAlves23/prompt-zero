@@ -158,7 +158,7 @@ jobs:
     name: Backend Migrate + Deploy Railway
     runs-on: ubuntu-latest
     needs: [backend-validate]
-    environment: production
+    environment: PromptZero / production
     env:
       # O CLI resolve projeto/ambiente via env (get_linked_project); `railway status` não aceita --project.
       RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
@@ -218,7 +218,7 @@ jobs:
     name: Frontend Deploy Railway
     runs-on: ubuntu-latest
     needs: [frontend-validate]
-    environment: production
+    environment: PromptZero / production
     env:
       RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
       RAILWAY_ENVIRONMENT_ID: ${{ secrets.RAILWAY_ENVIRONMENT_ID }}

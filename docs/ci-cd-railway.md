@@ -14,9 +14,19 @@ Este projeto está configurado com dois workflows no GitHub Actions:
   - Executa `prisma migrate deploy` no backend
   - Faz deploy no Railway de backend e frontend
 
+## ⚠️ Troubleshooting: Erro 401 no Deploy
+
+Se o deploy falhar com erro `401 Unauthorized`, consulte o guia completo de solução:
+📖 **[docs/RAILWAY_TOKEN_FIX.md](./RAILWAY_TOKEN_FIX.md)**
+
+Resumo rápido:
+1. Gere um novo token no Railway: https://railway.app/account/tokens
+2. Atualize o secret `RAILWAY_API_TOKEN` no GitHub
+3. Execute o script de verificação: `./scripts/check-railway-config.sh`
+
 ## Secrets obrigatórios no GitHub
 
-Os jobs de deploy usam o environment **`fantastic-bravery / production`**. Configure os secrets nesse environment (ou no repositório, se não usar environment).
+Configure os secrets no repositório em **Settings** > **Secrets and variables** > **Actions**.
 
 - **`RAILWAY_API_TOKEN`** (ou fallback **`RAILWAY_TOKEN`** no GitHub): use um token **Account** (“No workspace”) ou **Workspace** (ex.: “PH’s Projects”), criado em [Account → Tokens](https://railway.com/account/tokens). O workflow **não** define a variável de ambiente `RAILWAY_TOKEN`, para o CLI usar `Authorization: Bearer` (veja [CLI / tokens](https://docs.railway.com/reference/cli-api)).
 - **Não use `railway whoami` no CI** com token de workspace: a query GraphQL `me` só aceita token de **conta** global; com workspace token a API responde “Not authorized” ([API / tipos de token](https://docs.railway.com/integrations/api)). O deploy valida com `railway status` e `RAILWAY_PROJECT_ID` + `RAILWAY_ENVIRONMENT_ID` no ambiente.
