@@ -213,7 +213,18 @@ jobs:
         working-directory: backend
 
       - name: Deploy backend service
-        run: railway up --ci --service "${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}" --environment "${{ secrets.RAILWAY_ENVIRONMENT_ID }}" --project "${{ secrets.RAILWAY_PROJECT_ID }}"
+        run: |
+          echo "Deploying backend service..."
+          echo "Project ID: ${{ secrets.RAILWAY_PROJECT_ID }}"
+          echo "Environment ID: ${{ secrets.RAILWAY_ENVIRONMENT_ID }}"
+          echo "Service ID: ${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}"
+          railway up --detach --service "${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}" --environment "${{ secrets.RAILWAY_ENVIRONMENT_ID }}" --project "${{ secrets.RAILWAY_PROJECT_ID }}" || {
+            echo "Deploy failed, checking Railway CLI version..."
+            railway --version
+            echo "Checking Railway status..."
+            railway status || echo "Status check failed"
+            exit 1
+          }
         working-directory: backend
         env:
           RAILWAY_TOKEN: ${{ env.RAILWAY_API_TOKEN }}
@@ -263,7 +274,18 @@ jobs:
           [ -n "${RAILWAY_API_TOKEN}" ] || (echo "Token Railway não propagado." && exit 1)
 
       - name: Deploy frontend service
-        run: railway up --ci --service "${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}" --environment "${{ secrets.RAILWAY_ENVIRONMENT_ID }}" --project "${{ secrets.RAILWAY_PROJECT_ID }}"
+        run: |
+          echo "Deploying frontend service..."
+          echo "Project ID: ${{ secrets.RAILWAY_PROJECT_ID }}"
+          echo "Environment ID: ${{ secrets.RAILWAY_ENVIRONMENT_ID }}"
+          echo "Service ID: ${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}"
+          railway up --detach --service "${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}" --environment "${{ secrets.RAILWAY_ENVIRONMENT_ID }}" --project "${{ secrets.RAILWAY_PROJECT_ID }}" || {
+            echo "Deploy failed, checking Railway CLI version..."
+            railway --version
+            echo "Checking Railway status..."
+            railway status || echo "Status check failed"
+            exit 1
+          }
         working-directory: frontend
         env:
           RAILWAY_TOKEN: ${{ env.RAILWAY_API_TOKEN }}
