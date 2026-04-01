@@ -61,9 +61,20 @@ Link: https://railway.com/project/b1adbfa3-a055-426a-9ff5-334b71da2fe9?environme
 <img width="1909" height="922" alt="image" src="https://github.com/user-attachments/assets/75de8ca3-ad3b-49d7-b25f-0ef136c124d5" />
 
 
-URL: http://grafana.promptzero.dev/
-User: PhAlves23
+URL: http://grafana.promptzero.dev/<br/>
+User: PhAlves23<br/>
 Password: mjbzr0zoclh00ibojl5nrpbi
+
+---
+
+## Minio Bucket de Arquivos
+<img width="1909" height="918" alt="image" src="https://github.com/user-attachments/assets/34bffd28-f23f-4bd1-b8a2-dabe7256317d" />
+<img width="1904" height="926" alt="image" src="https://github.com/user-attachments/assets/7d651bee-89bd-47dc-932e-b2ebecf55034" />
+
+
+URL: http://minio.promptzero.dev/<br/>
+User: ung9qSSm6sMC37YWCyYPtd4Lb3Guv3a2<br/>
+Password: EOderOIO7IInxaP9w1fmlYA79HODGdL6XJYE6t6XRrE7nJXY
 
 ---
 
@@ -1317,8 +1328,8 @@ Este projeto é privado e proprietário.
 
 ## 👥 Equipe
 
-Desenvolvido por Paulo Alves
-ph23.alves@gmail.com
+Desenvolvido por Paulo Alves<br/>
+ph23.alves@gmail.com<br/>
 https://www.linkedin.com/in/ph-alves/?locale=en
 
 ---
