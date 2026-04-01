@@ -1,41 +1,45 @@
+# Alinhado ao railway-grafana-stack (MykalMachon): formato mínimo + Loki access: direct.
+# https://github.com/MykalMachon/railway-grafana-stack/blob/main/grafana/datasources/datasources.yml
 apiVersion: 1
 
-# Mark provisioned data sources for deletion if they are no longer in a provisioning file.
 prune: false
 
-# List of data sources to insert/update depending on what's available.
 datasources:
   - name: Loki
     type: loki
-    access: proxy
+    access: direct
     orgId: 1
     uid: grafana_loki
     url: $LOKI_INTERNAL_URL
+    user:
+    database:
+    basicAuth:
+    basicAuthUser:
+    withCredentials:
     isDefault: true
-    editable: true
-    jsonData:
-      timeout: 60
-      maxLines: 1000
-    
+
   - name: Prometheus
     type: prometheus
     access: proxy
     orgId: 1
     uid: grafana_prometheus
     url: $PROMETHEUS_INTERNAL_URL
+    user:
+    database:
+    basicAuth:
+    basicAuthUser:
+    withCredentials:
     isDefault: false
-    editable: true
-    jsonData:
-      timeInterval: 30s
-      queryTimeout: 60s
-    
+
   - name: Tempo
     type: tempo
     access: proxy
     orgId: 1
     uid: grafana_tempo
     url: $TEMPO_INTERNAL_URL
+    user:
+    database:
+    basicAuth:
+    basicAuthUser:
+    withCredentials:
     isDefault: false
-    editable: true
-    jsonData:
-      timeout: 60

@@ -65,7 +65,7 @@ railway up --service grafana-production
 # Ou via Railway Dashboard:
 # 1. New Service → Deploy from GitHub Repo
 # 2. Root Directory: observability/grafana
-# 3. Build Config: Usar Dockerfile
+# 3. Build Config: dockerfile (nome em minúsculas, como no template railway-grafana-stack)
 ```
 
 #### Passo 2: Configurar Variáveis de Ambiente
