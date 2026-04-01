@@ -1,6 +1,13 @@
 # Imagem fixa: no Railway, a env VERSION=latest sobrescreve ARG e puxava :latest (comportamento diferente do template Mykal).
+#
+# Dashboards em /etc/grafana/dashboards (não em /var/lib/grafana/dashboards): o volume do Railway monta
+# em /var/lib/grafana e apaga o que veio do COPY da imagem — o diretório some no runtime.
+#
+# Healthcheck do Railway fala HTTP na porta do app. Se GF_SERVER_PROTOCOL=https, o Grafana escuta TLS
+# e o probe falha ("client sent an HTTP request to an HTTPS server"). Remova GF_SERVER_PROTOCOL=https
+# do serviço; mantenha GF_SERVER_ROOT_URL=https://... para links/cookies.
 FROM grafana/grafana-oss:11.5.2
 
 COPY provisioning/datasources /etc/grafana/provisioning/datasources
 COPY provisioning/dashboards /etc/grafana/provisioning/dashboards
-COPY dashboards /var/lib/grafana/dashboards
+COPY dashboards /etc/grafana/dashboards

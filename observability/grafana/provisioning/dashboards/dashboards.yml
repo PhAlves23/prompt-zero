@@ -9,5 +9,6 @@ providers:
     updateIntervalSeconds: 30
     allowUiUpdates: true
     options:
-      path: /var/lib/grafana/dashboards
+      # Ver comentário no dockerfile: volume em /var/lib/grafana esconde paths copiados na build.
+      path: /etc/grafana/dashboards
       foldersFromFilesStructure: true
