@@ -80,7 +80,5 @@ scrape_configs:
 # Configuração de armazenamento
 storage:
   tsdb:
-    retention:
-      time: 30d
-      size: 50GB
-    wal_compression: true
+    retention_time: 30d
+    retention_size: 50GB
