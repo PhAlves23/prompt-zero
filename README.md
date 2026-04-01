@@ -51,8 +51,11 @@ Este projeto vai muito além do básico, implementando **10+ funcionalidades ava
 - ✅ **Distributed Tracing** com OpenTelemetry
 - ✅ **Logs estruturados** correlacionados com traces
 
+## Estrutura da Infra na Railway
 <img width="1896" height="917" alt="image" src="https://github.com/user-attachments/assets/11ff213e-e515-4742-9abd-33be9b04bb1e" />
 Link: https://railway.com/project/b1adbfa3-a055-426a-9ff5-334b71da2fe9?environmentId=2a2a8cbe-9c1b-4f3d-ab2f-d44700a480c7
+
+---
 
 ## Grafana
 <img width="1909" height="922" alt="image" src="https://github.com/user-attachments/assets/75de8ca3-ad3b-49d7-b25f-0ef136c124d5" />
@@ -61,6 +64,12 @@ Link: https://railway.com/project/b1adbfa3-a055-426a-9ff5-334b71da2fe9?environme
 URL: http://grafana.promptzero.dev/
 User: PhAlves23
 Password: mjbzr0zoclh00ibojl5nrpbi
+
+---
+
+## Pipeline CI/CD
+<img width="1905" height="914" alt="image" src="https://github.com/user-attachments/assets/840fbe8f-9d54-4830-a8c4-2a2ec6cc936a" />
+<img width="1900" height="820" alt="image" src="https://github.com/user-attachments/assets/523c41d0-e546-449c-ac34-cceba9572f81" />
 
 
 #### Testes e Qualidade
