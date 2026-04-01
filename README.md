@@ -42,6 +42,7 @@ Este projeto foi desenvolvido seguindo os mais altos padrões de qualidade de c�
 
 Este projeto vai muito além do básico, implementando **10+ funcionalidades avançadas**:
 
+
 #### Infraestrutura e DevOps
 - ✅ **Containerização completa** (Docker + Docker Compose)
 - ✅ **CI/CD robusto** (GitHub Actions com validação automática)
@@ -49,6 +50,8 @@ Este projeto vai muito além do básico, implementando **10+ funcionalidades ava
 - ✅ **Observabilidade completa** (Prometheus + Loki + Tempo + Grafana)
 - ✅ **Distributed Tracing** com OpenTelemetry
 - ✅ **Logs estruturados** correlacionados com traces
+
+<img width="1896" height="917" alt="image" src="https://github.com/user-attachments/assets/11ff213e-e515-4742-9abd-33be9b04bb1e" />
 
 #### Testes e Qualidade
 - ✅ **Testes unitários** (Jest no backend, Vitest no frontend)
