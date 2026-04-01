@@ -1,54 +1,63 @@
 # Configuração do Grafana no Railway
 
-## Problemas Identificados e Soluções
+## Problemas Identificados e Solução
 
-### 1. Plugins Angular Desabilitados
+### Problema Principal
+Estávamos usando `envsubst` com `${VARIAVEL}` para substituir variáveis de ambiente, mas o Grafana tem suporte nativo para variáveis de ambiente usando a sintaxe `$VARIAVEL` (sem chaves).
+
+### Solução Implementada
+Simplificamos a configuração seguindo o padrão do [railway-grafana-stack](https://github.com/MykalMachon/railway-grafana-stack):
+
+1. **Dockerfile simplificado**: Removido entrypoint customizado, gettext e complexidade desnecessária
+2. **Sintaxe de variáveis corrigida**: Mudado de `${LOKI_INTERNAL_URL}` para `$LOKI_INTERNAL_URL`
+3. **Grafana faz a substituição**: O próprio Grafana substitui as variáveis nativamente
+
+## Plugins Angular Desabilitados
 
 Os seguintes plugins não funcionam mais no Grafana 11.5+:
 - `grafana-simple-json-datasource`
 - `grafana-piechart-panel`
 - `grafana-worldmap-panel`
 
-**Solução**: Remover da variável `GF_INSTALL_PLUGINS`:
+**Solução**: Atualizar a variável `GF_INSTALL_PLUGINS` no Railway:
 
 ```
 GF_INSTALL_PLUGINS=grafana-clock-panel
 ```
 
-### 2. URLs de Datasources
+## Variáveis de Ambiente Necessárias
 
-Os datasources agora usam variáveis de ambiente para URLs dinâmicas.
+O Grafana depende destas variáveis (já configuradas no Railway):
 
-**Variáveis necessárias no Railway** (já configuradas):
 ```
 LOKI_INTERNAL_URL=http://${{691bedec-bf64-499c-9f3f-5232a8e2e3da.RAILWAY_PRIVATE_DOMAIN}}:${{691bedec-bf64-499c-9f3f-5232a8e2e3da.PORT}}
 PROMETHEUS_INTERNAL_URL=http://${{400e0859-e275-4ee9-920a-d5ae3ebefb11.RAILWAY_PRIVATE_DOMAIN}}:${{400e0859-e275-4ee9-920a-d5ae3ebefb11.PORT}}
 TEMPO_INTERNAL_URL=http://${{c6c20cc0-6f63-40a1-bde8-e77bf0133178.RAILWAY_PRIVATE_DOMAIN}}:${{c6c20cc0-6f63-40a1-bde8-e77bf0133178.PORT}}
 ```
 
-### 3. Entrypoint Simplificado
-
-O novo entrypoint:
-- Remove a verificação de disponibilidade de serviços (que causava timeouts)
-- Processa variáveis de ambiente no arquivo de datasources usando `envsubst`
-- Inicia o Grafana imediatamente
-
-## O que foi alterado
+## Alterações Realizadas
 
 1. **Dockerfile**:
-   - Removido `netcat-openbsd`
-   - Adicionado `gettext` (para `envsubst`)
+   - Removido entrypoint customizado
+   - Removido instalação de gettext
+   - Estrutura simples: apenas COPY dos arquivos de configuração
 
-2. **entrypoint.sh**:
-   - Removida lógica de `wait_for_service`
-   - Adicionado processamento de variáveis com `envsubst`
+2. **datasources.yml**:
+   - URLs agora usam `$LOKI_INTERNAL_URL` (sem `{}`)
+   - Grafana substitui automaticamente as variáveis
+   - Adicionado `prune: false` para evitar remoção de datasources
 
-3. **datasources.yml**:
-   - URLs agora usam `${LOKI_INTERNAL_URL}`, `${PROMETHEUS_INTERNAL_URL}`, `${TEMPO_INTERNAL_URL}`
-   - Datasources marcados como `editable: true` para permitir ajustes manuais
+3. **entrypoint.sh**:
+   - Removido completamente (não é mais necessário)
 
-4. **railway.json**:
-   - Mantido `healthcheckPath: /api/health`
+## Como Funciona
+
+O Grafana tem suporte nativo para substituição de variáveis de ambiente em arquivos de provisioning:
+- Usa a sintaxe `$VARIAVEL` ou `${VARIAVEL}`
+- A substituição acontece automaticamente durante o startup
+- Não requer ferramentas externas como `envsubst`
+
+Referência: [Grafana Environment Variable Interpolation](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#variable-expansion)
 
 ## Próximos Passos no Railway
 
@@ -57,12 +66,9 @@ O novo entrypoint:
    GF_INSTALL_PLUGINS=grafana-clock-panel
    ```
 
-2. **Verificar que as variáveis de URL existem**:
-   - `LOKI_INTERNAL_URL`
-   - `PROMETHEUS_INTERNAL_URL`
-   - `TEMPO_INTERNAL_URL`
+2. **Fazer redeploy** do serviço Grafana (já acontecerá automaticamente com o push)
 
-3. **Fazer redeploy do serviço Grafana**
+3. **Verificar logs** após o deploy para confirmar que os datasources foram provisionados com sucesso
 
 ## Alternativas aos Plugins Angular
 
@@ -72,16 +78,12 @@ O novo entrypoint:
 
 ## Verificação de Health
 
-O healthcheck está configurado para:
+O healthcheck está configurado no `railway.json`:
 - Path: `/api/health`
-- Intervalo: 30s
-- Timeout: 3s
-- Período de inicialização: 60s
-- Tentativas: 3
+- O Grafana tem healthcheck interno que responde nesse endpoint
 
-## Logs de Depuração
+## Referência
 
-Se o problema persistir, verifique:
-1. Se as variáveis de ambiente estão sendo expandidas corretamente no entrypoint
-2. Se os serviços Loki, Prometheus e Tempo estão rodando e acessíveis
-3. Os logs do Grafana para erros de provisionamento
+Este setup foi baseado no template bem-sucedido:
+- **Repositório**: [MykalMachon/railway-grafana-stack](https://github.com/MykalMachon/railway-grafana-stack)
+- **Template Railway**: [Deploy on Railway](https://railway.com/template/8TLSQD)
