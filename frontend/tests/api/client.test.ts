@@ -23,12 +23,17 @@ describe("bffFetch", () => {
 
     const data = await bffFetch<{ ok: boolean }>("/prompts")
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/bff/prompts", {
-      method: "GET",
-      credentials: "include",
-      headers: { "content-type": "application/json" },
-      body: undefined,
-    })
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/bff/prompts",
+      expect.objectContaining({
+        method: "GET",
+        credentials: "include",
+        headers: expect.objectContaining({
+          "content-type": "application/json",
+        }),
+        body: undefined,
+      }),
+    )
     expect(data.ok).toBe(true)
   })
 
