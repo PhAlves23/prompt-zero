@@ -1,14 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDatasetDto } from './dto/create-dataset.dto';
-import { ExecutionsService } from '../executions/executions.service';
+import { UpdateDatasetDto } from './dto/update-dataset.dto';
+import { DatasetRunExecutorService } from './dataset-run-executor.service';
 import { DatasetRunStatus } from '@prisma/client';
 
 @Injectable()
 export class DatasetsService {
+  private readonly logger = new Logger(DatasetsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly executionsService: ExecutionsService,
+    private readonly datasetRunExecutor: DatasetRunExecutorService,
   ) {}
 
   async create(userId: string, dto: CreateDatasetDto) {
@@ -28,6 +31,7 @@ export class DatasetsService {
             datasetId: dataset.id,
             rowIndex: index,
             variables: row.variables as object,
+            expectedOutput: row.expectedOutput ?? null,
           })),
         });
       }
@@ -57,84 +61,126 @@ export class DatasetsService {
     return dataset;
   }
 
-  async run(userId: string, datasetId: string, promptId: string) {
-    const dataset = await this.getOne(userId, datasetId);
-    const run = await this.prisma.datasetRun.create({
-      data: {
-        datasetId,
-        promptId,
-        status: DatasetRunStatus.running,
+  async update(userId: string, id: string, dto: UpdateDatasetDto) {
+    await this.getOne(userId, id);
+    if (
+      dto.name === undefined &&
+      dto.description === undefined &&
+      dto.rows === undefined
+    ) {
+      return this.getOne(userId, id);
+    }
+    return this.prisma.$transaction(async (tx) => {
+      const data: {
+        name?: string;
+        description?: string | null;
+        rowCount?: number;
+      } = {};
+      if (dto.name !== undefined) {
+        data.name = dto.name;
+      }
+      if (dto.description !== undefined) {
+        data.description = dto.description;
+      }
+
+      if (Object.keys(data).length > 0) {
+        await tx.dataset.update({ where: { id }, data });
+      }
+
+      if (dto.rows !== undefined) {
+        await tx.datasetRow.deleteMany({ where: { datasetId: id } });
+        if (dto.rows.length > 0) {
+          await tx.datasetRow.createMany({
+            data: dto.rows.map((row, index) => ({
+              datasetId: id,
+              rowIndex: index,
+              variables: row.variables as object,
+              expectedOutput: row.expectedOutput ?? null,
+            })),
+          });
+        }
+        await tx.dataset.update({
+          where: { id },
+          data: { rowCount: dto.rows.length },
+        });
+      }
+
+      return tx.dataset.findUniqueOrThrow({
+        where: { id },
+        include: { rows: { orderBy: { rowIndex: 'asc' } } },
+      });
+    });
+  }
+
+  async remove(userId: string, id: string) {
+    const dataset = await this.prisma.dataset.findFirst({
+      where: { id, userId },
+    });
+    if (!dataset) {
+      throw new NotFoundException('errors.datasetNotFound');
+    }
+    await this.prisma.dataset.delete({ where: { id } });
+  }
+
+  async listRuns(userId: string, datasetId: string) {
+    await this.getOne(userId, datasetId);
+    return this.prisma.datasetRun.findMany({
+      where: { datasetId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        prompt: { select: { id: true, title: true } },
       },
     });
+  }
 
+  /**
+   * Creates a pending run and processes it asynchronously (non-blocking HTTP).
+   */
+  async startRun(
+    userId: string,
+    datasetId: string,
+    promptId: string,
+    options?: { credentialId?: string; criteriaId?: string },
+  ) {
+    await this.getOne(userId, datasetId);
     const promptMeta = await this.prisma.prompt.findFirst({
-      where: { id: promptId, deletedAt: null },
+      where: { id: promptId, userId, deletedAt: null },
     });
     if (!promptMeta) {
       throw new NotFoundException('errors.promptNotFound');
     }
 
-    const results: Array<{
-      rowIndex: number;
-      executionId: string;
-      ok: boolean;
-    }> = [];
-    try {
-      for (const row of dataset.rows) {
-        const vars = row.variables as Record<string, string>;
-        try {
-          const exec = await this.executionsService.executePrompt(
-            userId,
-            promptId,
-            {
-              model: promptMeta.model,
-              variables: vars,
-            },
+    const run = await this.prisma.datasetRun.create({
+      data: {
+        datasetId,
+        promptId,
+        status: DatasetRunStatus.pending,
+      },
+    });
+
+    // In-process async (non-blocking HTTP). For multi-instance deployments, replace with a queue (e.g. BullMQ).
+    setImmediate(() => {
+      void this.datasetRunExecutor
+        .execute(run.id, userId, options)
+        .catch((err: unknown) => {
+          this.logger.error(
+            'Dataset run executor error',
+            err instanceof Error ? err.stack : err,
           );
-          await this.prisma.execution.update({
-            where: { id: exec.execution.id },
-            data: { datasetRunId: run.id },
-          });
-          results.push({
-            rowIndex: row.rowIndex,
-            executionId: exec.execution.id,
-            ok: true,
-          });
-        } catch {
-          results.push({ rowIndex: row.rowIndex, executionId: '', ok: false });
-        }
-      }
-      const summary = {
-        total: results.length,
-        success: results.filter((r) => r.ok).length,
-        results,
-      };
-      await this.prisma.datasetRun.update({
-        where: { id: run.id },
-        data: {
-          status: DatasetRunStatus.completed,
-          completedAt: new Date(),
-          results: summary as object,
-        },
-      });
-      return this.prisma.datasetRun.findUniqueOrThrow({
-        where: { id: run.id },
-        include: { executions: true },
-      });
-    } catch (e) {
-      await this.prisma.datasetRun.update({
-        where: { id: run.id },
-        data: { status: DatasetRunStatus.failed, completedAt: new Date() },
-      });
-      throw e;
-    }
+        });
+    });
+
+    return run;
   }
 
   async getRunResults(userId: string, datasetId: string, runId: string) {
     await this.getOne(userId, datasetId);
     const run = await this.prisma.datasetRun.findFirst({
       where: { id: runId, datasetId },
-      include: { executions: { orderBy: { createdAt: 'asc' } } },
+      include: {
+        executions: { orderBy: { createdAt: 'asc' } },
+        prompt: { select: { id: true, title: true } },
+      },
     });
     if (!run) {
       throw new NotFoundException('errors.datasetRunNotFound');

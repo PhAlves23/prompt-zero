@@ -8,6 +8,7 @@ import {
   normalizeAppLocale,
 } from "@/lib/locale-i18n"
 import { defaultLocale, type Locale } from "@/lib/locales"
+import { clientIpHeadersForBackendProxy } from "@/lib/api/proxy-client-ip"
 
 const allowedMethods = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"])
 
@@ -46,11 +47,14 @@ async function proxy(request: Request, params: Promise<{ path: string[] }>) {
   const locale = resolveLocaleForProxy(request)
   const localeHeaders = buildBackendLocaleHeadersFromLocale(locale)
 
+  const forwardIp = clientIpHeadersForBackendProxy(request)
+
   const response = await fetch(target, {
     method: request.method,
     headers: {
       "content-type": "application/json",
       ...localeHeaders,
+      ...forwardIp,
       ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
     },
     body,

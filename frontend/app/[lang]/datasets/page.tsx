@@ -12,7 +12,7 @@ export default async function DatasetsPage({ params }: { params: Promise<{ lang:
   const dict = await getDictionary(lang as Locale)
   return (
     <AppShell title={dict.datasetsPage.title} lang={lang} user={{ name: user.name, email: user.email }} dict={dict}>
-      <DatasetsPageClient dict={dict} />
+      <DatasetsPageClient dict={dict} lang={lang} />
     </AppShell>
   )
 }

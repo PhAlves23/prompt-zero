@@ -12,6 +12,13 @@ export class DatasetRowInputDto {
   @ApiProperty({ type: 'object', additionalProperties: true })
   @IsObject()
   variables!: Record<string, string>;
+
+  @ApiPropertyOptional({
+    description: 'Optional ground-truth output for regression checks',
+  })
+  @IsOptional()
+  @IsString()
+  expectedOutput?: string;
 }
 
 export class CreateDatasetDto {

@@ -26,6 +26,9 @@ export const queryKeys = {
   datasets: {
     list: ["datasets", "list"] as const,
     detail: (id: string) => ["datasets", "detail", id] as const,
+    runs: (datasetId: string) => ["datasets", "runs", datasetId] as const,
+    runDetail: (datasetId: string, runId: string) =>
+      ["datasets", "run", datasetId, runId] as const,
   },
   traces: {
     list: ["traces", "list"] as const,

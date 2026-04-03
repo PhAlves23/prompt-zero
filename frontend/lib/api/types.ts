@@ -81,6 +81,38 @@ export type Execution = {
   createdAt: string
 }
 
+export type PlaygroundCompareMeta = {
+  model: string
+  inputTokens: number
+  outputTokens: number
+  totalTokens: number
+  latencyMs: number
+  estimatedCost: number
+  pricingSource: string
+}
+
+export type PlaygroundCompareResultItem =
+  | {
+      model: string
+      provider?: string
+      ok: true
+      output: string
+      meta: PlaygroundCompareMeta
+      executionId: string
+    }
+  | {
+      model: string
+      provider?: string
+      ok: false
+      error: string
+    }
+
+export type PlaygroundCompareResponse = {
+  results: PlaygroundCompareResultItem[]
+}
+
+export type PlaygroundProviderOption = "openai" | "anthropic" | "google" | "openrouter"
+
 export type Tag = {
   id: string
   name: string
@@ -250,7 +282,12 @@ export type DatasetListItem = {
 }
 
 export type DatasetDetail = DatasetListItem & {
-  rows: Array<{ id: string; rowIndex: number; variables: Record<string, unknown> }>
+  rows: Array<{
+    id: string
+    rowIndex: number
+    variables: Record<string, unknown>
+    expectedOutput?: string | null
+  }>
 }
 
 export type DatasetRunSummary = {
@@ -261,6 +298,23 @@ export type DatasetRunSummary = {
   completedAt: string | null
   results: unknown
   createdAt: string
+}
+
+export type DatasetRunListItem = DatasetRunSummary & {
+  prompt: { id: string; title: string }
+}
+
+export type DatasetRunExecutionRow = {
+  id: string
+  output: string | null
+  latencyMs: number | null
+  totalTokens: number | null
+  estimatedCost: number | null
+  createdAt: string
+}
+
+export type DatasetRunDetail = DatasetRunListItem & {
+  executions: DatasetRunExecutionRow[]
 }
 
 export type TraceRunListItem = {

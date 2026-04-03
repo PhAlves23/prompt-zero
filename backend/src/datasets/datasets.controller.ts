@@ -1,10 +1,23 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../common/interfaces/auth-user.interface';
 import { DatasetsService } from './datasets.service';
 import { CreateDatasetDto } from './dto/create-dataset.dto';
+import { UpdateDatasetDto } from './dto/update-dataset.dto';
+import { RunDatasetDto } from './dto/run-dataset.dto';
 
 @ApiTags('datasets')
 @ApiBearerAuth()
@@ -25,22 +38,6 @@ export class DatasetsController {
     return this.datasetsService.list(user.sub);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get dataset with rows' })
-  getOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
-    return this.datasetsService.getOne(user.sub, id);
-  }
-
-  @Post(':id/run/:promptId')
-  @ApiOperation({ summary: 'Run all dataset rows against a prompt' })
-  run(
-    @CurrentUser() user: AuthUser,
-    @Param('id') id: string,
-    @Param('promptId') promptId: string,
-  ) {
-    return this.datasetsService.run(user.sub, id, promptId);
-  }
-
   @Get(':id/runs/:runId')
   @ApiOperation({ summary: 'Get dataset run results' })
   runResults(
@@ -49,5 +46,50 @@ export class DatasetsController {
     @Param('runId') runId: string,
   ) {
     return this.datasetsService.getRunResults(user.sub, id, runId);
+  }
+
+  @Get(':id/runs')
+  @ApiOperation({ summary: 'List runs for a dataset' })
+  listRuns(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.datasetsService.listRuns(user.sub, id);
+  }
+
+  @Post(':id/run/:promptId')
+  @ApiOperation({
+    summary: 'Queue batch run (async); returns run in pending state',
+  })
+  run(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('promptId') promptId: string,
+    @Body() body: RunDatasetDto,
+  ) {
+    return this.datasetsService.startRun(user.sub, id, promptId, {
+      credentialId: body.credentialId,
+      criteriaId: body.criteriaId,
+    });
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update dataset (name, description, replace rows)' })
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateDatasetDto,
+  ) {
+    return this.datasetsService.update(user.sub, id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete dataset and related rows/runs' })
+  async remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    await this.datasetsService.remove(user.sub, id);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get dataset with rows' })
+  getOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.datasetsService.getOne(user.sub, id);
   }
 }

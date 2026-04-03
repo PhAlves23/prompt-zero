@@ -3,9 +3,12 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { ProviderType } from '@prisma/client';
@@ -23,19 +26,48 @@ export class CompareVariantDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
+  @Min(0)
+  @Max(2)
   temperature?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
+  @Min(1)
+  @Max(4000)
   maxTokens?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  topP?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @Max(200)
+  topK?: number;
 }
 
 export class ComparePromptDto {
   @ApiProperty()
   @IsUUID()
   promptId!: string;
+
+  @ApiPropertyOptional({
+    description: 'Template variable values applied to every variant',
+  })
+  @IsOptional()
+  @IsObject()
+  variables?: Record<string, string>;
 
   @ApiProperty({ type: [CompareVariantDto] })
   @IsArray()

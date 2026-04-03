@@ -12,7 +12,7 @@ export default async function PlaygroundPage({ params }: { params: Promise<{ lan
   const dict = await getDictionary(lang as Locale)
   return (
     <AppShell title={dict.playgroundPage.title} lang={lang} user={{ name: user.name, email: user.email }} dict={dict}>
-      <PlaygroundPageClient dict={dict} />
+      <PlaygroundPageClient dict={dict} lang={lang as Locale} />
     </AppShell>
   )
 }

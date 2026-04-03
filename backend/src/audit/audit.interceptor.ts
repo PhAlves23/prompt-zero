@@ -9,6 +9,7 @@ import { AuditService } from './audit.service';
 import { AuditAction } from '@prisma/client';
 import type { Request } from 'express';
 import type { AuthUser } from '../common/interfaces/auth-user.interface';
+import { getClientIp } from '../common/utils/client-ip.util';
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
@@ -67,7 +68,7 @@ export class AuditInterceptor implements NestInterceptor {
               params: req.params,
               query: req.query,
             },
-            ipAddress: req.ip,
+            ipAddress: getClientIp(req),
             userAgent: req.headers['user-agent']?.slice(0, 500) ?? null,
           });
         },

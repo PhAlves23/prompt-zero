@@ -18,6 +18,9 @@ export class PlaygroundService {
               provider: v.provider,
               temperature: v.temperature,
               maxTokens: v.maxTokens,
+              topP: v.topP,
+              topK: v.topK,
+              variables: dto.variables,
             },
           );
           return {
