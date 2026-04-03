@@ -9,6 +9,8 @@ import { ExperimentsService } from './experiments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ExecutionsService } from '../executions/executions.service';
 import { RedisService } from '../redis/redis.service';
+import { WorkspaceAccessService } from '../workspaces/workspace-access.service';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 describe('ExperimentsService', () => {
   let service: ExperimentsService;
@@ -43,6 +45,15 @@ describe('ExperimentsService', () => {
     setVoteCounters: jest.fn(),
   };
 
+  const workspaceAccessMock = {
+    getAccessibleWorkspaceIds: jest.fn().mockResolvedValue([]),
+    canAccessPrompt: jest.fn().mockResolvedValue(true),
+  };
+
+  const webhooksServiceMock = {
+    emit: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -52,6 +63,8 @@ describe('ExperimentsService', () => {
         { provide: PrismaService, useValue: prismaServiceMock },
         { provide: ExecutionsService, useValue: executionsServiceMock },
         { provide: RedisService, useValue: redisServiceMock },
+        { provide: WorkspaceAccessService, useValue: workspaceAccessMock },
+        { provide: WebhooksService, useValue: webhooksServiceMock },
       ],
     }).compile();
 

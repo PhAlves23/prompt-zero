@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -13,6 +14,8 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../common/interfaces/auth-user.interface';
 import { WebhooksService } from './webhooks.service';
 import { CreateWebhookDto } from './dto/create-webhook.dto';
+import { UpdateWebhookDto } from './dto/update-webhook.dto';
+import { TestWebhookDto } from './dto/test-webhook.dto';
 
 @ApiTags('webhooks')
 @ApiBearerAuth()
@@ -33,6 +36,26 @@ export class WebhooksController {
   @ApiOperation({ summary: 'List webhooks' })
   list(@CurrentUser() user: AuthUser) {
     return this.webhooksService.list(user.sub);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update webhook' })
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateWebhookDto,
+  ) {
+    return this.webhooksService.update(user.sub, id, dto);
+  }
+
+  @Post(':id/test')
+  @ApiOperation({ summary: 'Send a test delivery (single attempt)' })
+  test(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: TestWebhookDto,
+  ) {
+    return this.webhooksService.testWebhook(user.sub, id, dto);
   }
 
   @Delete(':id')

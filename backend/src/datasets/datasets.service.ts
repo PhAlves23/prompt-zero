@@ -4,6 +4,7 @@ import { CreateDatasetDto } from './dto/create-dataset.dto';
 import { UpdateDatasetDto } from './dto/update-dataset.dto';
 import { DatasetRunExecutorService } from './dataset-run-executor.service';
 import { DatasetRunStatus } from '@prisma/client';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 @Injectable()
 export class DatasetsService {
@@ -12,10 +13,11 @@ export class DatasetsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly datasetRunExecutor: DatasetRunExecutorService,
+    private readonly webhooksService: WebhooksService,
   ) {}
 
   async create(userId: string, dto: CreateDatasetDto) {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const dataset = await tx.dataset.create({
         data: {
           userId,
@@ -40,6 +42,10 @@ export class DatasetsService {
         include: { rows: { orderBy: { rowIndex: 'asc' } } },
       });
     });
+    void this.webhooksService.emit(userId, 'dataset.created', {
+      datasetId: result.id,
+    });
+    return result;
   }
 
   list(userId: string) {
@@ -70,7 +76,7 @@ export class DatasetsService {
     ) {
       return this.getOne(userId, id);
     }
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       const data: {
         name?: string;
         description?: string | null;
@@ -110,6 +116,10 @@ export class DatasetsService {
         include: { rows: { orderBy: { rowIndex: 'asc' } } },
       });
     });
+    void this.webhooksService.emit(userId, 'dataset.updated', {
+      datasetId: id,
+    });
+    return updated;
   }
 
   async remove(userId: string, id: string) {
@@ -120,6 +130,9 @@ export class DatasetsService {
       throw new NotFoundException('errors.datasetNotFound');
     }
     await this.prisma.dataset.delete({ where: { id } });
+    void this.webhooksService.emit(userId, 'dataset.deleted', {
+      datasetId: id,
+    });
   }
 
   async listRuns(userId: string, datasetId: string) {
@@ -156,6 +169,12 @@ export class DatasetsService {
         promptId,
         status: DatasetRunStatus.pending,
       },
+    });
+
+    void this.webhooksService.emit(userId, 'dataset.run.created', {
+      runId: run.id,
+      datasetId,
+      promptId,
     });
 
     // In-process async (non-blocking HTTP). For multi-instance deployments, replace with a queue (e.g. BullMQ).

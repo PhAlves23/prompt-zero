@@ -5,9 +5,10 @@ import { DatasetRunExecutorService } from './dataset-run-executor.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ExecutionsModule } from '../executions/executions.module';
 import { EvaluationModule } from '../evaluation/evaluation.module';
+import { WebhooksModule } from '../webhooks/webhooks.module';
 
 @Module({
-  imports: [PrismaModule, ExecutionsModule, EvaluationModule],
+  imports: [PrismaModule, ExecutionsModule, EvaluationModule, WebhooksModule],
   controllers: [DatasetsController],
   providers: [DatasetsService, DatasetRunExecutorService],
   exports: [DatasetsService],

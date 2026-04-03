@@ -353,12 +353,17 @@ export type AuditLogEntry = {
 
 export type WebhookItem = {
   id: string
+  name: string | null
   url: string
   events: string[]
   isActive: boolean
+  filters?: Record<string, unknown> | null
+  retryCount: number
+  timeoutMs: number
   lastTriggeredAt: string | null
   failureCount: number
   createdAt: string
+  updatedAt?: string
 }
 
 export type WebhookDeliveryItem = {
@@ -368,6 +373,8 @@ export type WebhookDeliveryItem = {
   payload: unknown
   statusCode: number | null
   responseBody: string | null
+  requestHeaders?: unknown
+  errorMessage?: string | null
   attempts: number
   deliveredAt: string | null
   createdAt: string

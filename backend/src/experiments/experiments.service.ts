@@ -20,6 +20,7 @@ import { VoteExperimentDto } from './dto/vote-experiment.dto';
 import { RunExperimentDto } from './dto/run-experiment.dto';
 import { RedisService } from '../redis/redis.service';
 import { extractTemplateVariables } from '../common/utils/template.util';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 @Injectable()
 export class ExperimentsService {
@@ -28,6 +29,7 @@ export class ExperimentsService {
     private readonly executionsService: ExecutionsService,
     private readonly redisService: RedisService,
     private readonly workspaceAccess: WorkspaceAccessService,
+    private readonly webhooksService: WebhooksService,
   ) {}
 
   async createExperiment(userId: string, dto: CreateExperimentDto) {
@@ -53,7 +55,7 @@ export class ExperimentsService {
       throw new NotFoundException('errors.experimentPromptNotFound');
     }
 
-    return this.prisma.promptExperiment.create({
+    const created = await this.prisma.promptExperiment.create({
       data: {
         userId,
         promptAId: dto.promptAId,
@@ -62,6 +64,12 @@ export class ExperimentsService {
         trafficSplitA: dto.trafficSplitA ?? 50,
       },
     });
+    void this.webhooksService.emit(userId, 'experiment.created', {
+      experimentId: created.id,
+      promptAId: created.promptAId,
+      promptBId: created.promptBId,
+    });
+    return created;
   }
 
   async listExperiments(userId: string) {
@@ -228,6 +236,13 @@ export class ExperimentsService {
       },
     });
 
+    void this.webhooksService.emit(userId, 'experiment.exposure.created', {
+      experimentId: experiment.id,
+      exposureId: exposure.id,
+      variant: chosenVariant,
+      executionId: executionResult.execution.id,
+    });
+
     return {
       experimentId: experiment.id,
       promptId,
@@ -287,6 +302,12 @@ export class ExperimentsService {
       experimentId,
       dto.winnerVariant,
     );
+
+    void this.webhooksService.emit(userId, 'experiment.voted', {
+      experimentId,
+      exposureId: dto.exposureId,
+      winnerVariant: dto.winnerVariant,
+    });
 
     return this.getResults(userId, experimentId);
   }
@@ -376,6 +397,10 @@ export class ExperimentsService {
         status: ExperimentStatus.stopped,
         endedAt: new Date(),
       },
+    });
+
+    void this.webhooksService.emit(userId, 'experiment.stopped', {
+      experimentId,
     });
 
     return this.getResults(userId, experimentId);

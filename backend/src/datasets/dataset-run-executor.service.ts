@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ExecutionsService } from '../executions/executions.service';
 import { EvaluationService } from '../evaluation/evaluation.service';
 import { DatasetRunStatus } from '@prisma/client';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 type RowResult = {
   rowIndex: number;
@@ -34,6 +35,7 @@ export class DatasetRunExecutorService {
     private readonly prisma: PrismaService,
     private readonly executionsService: ExecutionsService,
     private readonly evaluationService: EvaluationService,
+    private readonly webhooksService: WebhooksService,
   ) {}
 
   /**
@@ -61,7 +63,7 @@ export class DatasetRunExecutorService {
 
     if (run.dataset.userId !== userId) {
       this.logger.warn(`DatasetRun ${runId} user mismatch`);
-      await this.markFailed(runId);
+      await this.markFailed(runId, run.dataset.userId);
       return;
     }
 
@@ -69,13 +71,19 @@ export class DatasetRunExecutorService {
       where: { id: run.promptId, userId, deletedAt: null },
     });
     if (!promptMeta) {
-      await this.markFailed(runId);
+      await this.markFailed(runId, userId);
       return;
     }
 
     await this.prisma.datasetRun.update({
       where: { id: runId },
       data: { status: DatasetRunStatus.running },
+    });
+
+    void this.webhooksService.emit(userId, 'dataset.run.started', {
+      runId,
+      datasetId: run.datasetId,
+      promptId: run.promptId,
     });
 
     const results: RowResult[] = [];
@@ -175,15 +183,29 @@ export class DatasetRunExecutorService {
           results: summary as object,
         },
       });
+
+      void this.webhooksService.emit(userId, 'dataset.run.completed', {
+        runId,
+        datasetId: run.datasetId,
+        promptId: run.promptId,
+      });
     } catch (e) {
       this.logger.error(
         `DatasetRun ${runId} failed: ${e instanceof Error ? e.message : e}`,
       );
-      await this.markFailed(runId);
+      await this.markFailed(runId, userId);
     }
   }
 
-  private async markFailed(runId: string): Promise<void> {
+  private async markFailed(runId: string, userId?: string): Promise<void> {
+    const meta = await this.prisma.datasetRun.findUnique({
+      where: { id: runId },
+      select: {
+        datasetId: true,
+        promptId: true,
+        dataset: { select: { userId: true } },
+      },
+    });
     await this.prisma.datasetRun.update({
       where: { id: runId },
       data: {
@@ -191,5 +213,13 @@ export class DatasetRunExecutorService {
         completedAt: new Date(),
       },
     });
+    const ownerId = userId ?? meta?.dataset.userId;
+    if (ownerId) {
+      void this.webhooksService.emit(ownerId, 'dataset.run.failed', {
+        runId,
+        datasetId: meta?.datasetId,
+        promptId: meta?.promptId,
+      });
+    }
   }
 }

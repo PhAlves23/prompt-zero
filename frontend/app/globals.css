@@ -144,7 +144,41 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--primary) 30%, var(--muted)) var(--muted);
   }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    border-radius: 9999px;
+    background: var(--muted);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in oklch, var(--primary) 28%, var(--muted));
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklch, var(--primary) 42%, var(--muted));
+  }
+
+  .dark * {
+    scrollbar-color: color-mix(in oklch, var(--primary) 22%, var(--muted)) var(--muted);
+  }
+
+  .dark *::-webkit-scrollbar-thumb {
+    background: color-mix(in oklch, var(--primary) 22%, var(--muted));
+  }
+
+  .dark *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklch, var(--primary) 36%, var(--muted));
+  }
+
   body {
     @apply bg-background text-foreground;
   }

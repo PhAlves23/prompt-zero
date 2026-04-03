@@ -13,12 +13,18 @@ import {
   LLM_EXECUTIONS_TOTAL_METRIC,
   LLM_TOKENS_TOTAL_METRIC,
 } from '../metrics/metrics.constants';
+import { BillingService } from '../billing/billing.service';
+import { WorkspaceAccessService } from '../workspaces/workspace-access.service';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 describe('ExecutionsService', () => {
   let service: ExecutionsService;
 
   const prismaServiceMock = {
     prompt: {
+      findUnique: jest.fn(),
+    },
+    user: {
       findUnique: jest.fn(),
     },
     providerCredential: {
@@ -58,8 +64,25 @@ describe('ExecutionsService', () => {
     inc: jest.fn(),
   };
 
+  const billingServiceMock = {
+    assertWithinExecutionLimit: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const workspaceAccessMock = {
+    canAccessPrompt: jest.fn().mockResolvedValue(true),
+  };
+
+  const webhooksServiceMock = {
+    emit: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
+    prismaServiceMock.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      openaiApiKeyEnc: null,
+      anthropicApiKeyEnc: null,
+    } as never);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -83,6 +106,9 @@ describe('ExecutionsService', () => {
           provide: getToken(LLM_TOKENS_TOTAL_METRIC),
           useValue: llmTokensTotalMetricMock,
         },
+        { provide: BillingService, useValue: billingServiceMock },
+        { provide: WorkspaceAccessService, useValue: workspaceAccessMock },
+        { provide: WebhooksService, useValue: webhooksServiceMock },
       ],
     }).compile();
 
@@ -257,12 +283,12 @@ describe('ExecutionsService', () => {
       isTemplate: false,
       variables: [],
       versions: [{ id: 'version-1', versionNumber: 1 }],
-      user: {
-        id: 'user-1',
-        openaiApiKeyEnc: null,
-        anthropicApiKeyEnc: encryptedAnthropicKey,
-      },
     });
+    prismaServiceMock.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      openaiApiKeyEnc: null,
+      anthropicApiKeyEnc: encryptedAnthropicKey,
+    } as never);
     prismaServiceMock.providerCredential.findFirst.mockResolvedValue(null);
     llmServiceMock.execute.mockResolvedValue({
       output: 'Proposta gerada',

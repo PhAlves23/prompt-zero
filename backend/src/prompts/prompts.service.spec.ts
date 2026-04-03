@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { PromptsService } from './prompts.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { WorkspaceAccessService } from '../workspaces/workspace-access.service';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 describe('PromptsService', () => {
   let service: PromptsService;
@@ -36,6 +38,17 @@ describe('PromptsService', () => {
     execution: {
       count: jest.fn(),
     },
+  };
+
+  const workspaceAccessMock = {
+    getAccessibleWorkspaceIds: jest.fn().mockResolvedValue([]),
+    canAccessPrompt: jest.fn().mockResolvedValue(true),
+    getRoleInWorkspace: jest.fn(),
+    roleMeetsMinimum: jest.fn().mockReturnValue(true),
+  };
+
+  const webhooksServiceMock = {
+    emit: jest.fn(),
   };
 
   const prismaServiceMock = {
@@ -89,6 +102,8 @@ describe('PromptsService', () => {
       providers: [
         PromptsService,
         { provide: PrismaService, useValue: prismaServiceMock },
+        { provide: WorkspaceAccessService, useValue: workspaceAccessMock },
+        { provide: WebhooksService, useValue: webhooksServiceMock },
       ],
     }).compile();
 
@@ -187,22 +202,23 @@ describe('PromptsService', () => {
   });
 
   it('update cria nova versão quando content muda', async () => {
-    prismaServiceMock.prompt.findUnique.mockResolvedValue({
-      id: 'prompt-1',
-      userId: 'user-1',
-      content: 'Antigo conteúdo com mais de dez caracteres aqui.',
-      deletedAt: null,
-    });
+    prismaServiceMock.prompt.findFirst
+      .mockResolvedValueOnce({
+        id: 'prompt-1',
+        userId: 'user-1',
+        content: 'Antigo conteúdo com mais de dez caracteres aqui.',
+        deletedAt: null,
+        workspaceId: null,
+      })
+      .mockResolvedValueOnce({
+        ...fullPrompt,
+        content: 'Novo conteúdo com mais de dez caracteres aqui.',
+      });
     txMock.promptVersion.aggregate.mockResolvedValue({
       _max: { versionNumber: 1 },
     });
     txMock.promptVersion.create.mockResolvedValue({});
     txMock.prompt.update.mockResolvedValue({});
-
-    prismaServiceMock.prompt.findFirst.mockResolvedValue({
-      ...fullPrompt,
-      content: 'Novo conteúdo com mais de dez caracteres aqui.',
-    });
 
     await service.update('user-1', 'prompt-1', {
       content: 'Novo conteúdo com mais de dez caracteres aqui.',
@@ -219,18 +235,19 @@ describe('PromptsService', () => {
   it('update não cria versão quando content não muda', async () => {
     const same =
       'Mesmo conteúdo com mais de dez caracteres para o teste unitário.';
-    prismaServiceMock.prompt.findUnique.mockResolvedValue({
-      id: 'prompt-1',
-      userId: 'user-1',
-      content: same,
-      deletedAt: null,
-    });
+    prismaServiceMock.prompt.findFirst
+      .mockResolvedValueOnce({
+        id: 'prompt-1',
+        userId: 'user-1',
+        content: same,
+        deletedAt: null,
+        workspaceId: null,
+      })
+      .mockResolvedValueOnce({
+        ...fullPrompt,
+        content: same,
+      });
     txMock.prompt.update.mockResolvedValue({});
-
-    prismaServiceMock.prompt.findFirst.mockResolvedValue({
-      ...fullPrompt,
-      content: same,
-    });
 
     await service.update('user-1', 'prompt-1', {
       title: 'Só título',
@@ -241,11 +258,12 @@ describe('PromptsService', () => {
   });
 
   it('update lança ForbiddenException quando usuário não é dono', async () => {
-    prismaServiceMock.prompt.findUnique.mockResolvedValue({
+    prismaServiceMock.prompt.findFirst.mockResolvedValue({
       id: 'prompt-1',
       userId: 'outro',
       content: 'x',
       deletedAt: null,
+      workspaceId: null,
     });
 
     await expect(
@@ -254,10 +272,11 @@ describe('PromptsService', () => {
   });
 
   it('remove faz soft delete', async () => {
-    prismaServiceMock.prompt.findUnique.mockResolvedValue({
+    prismaServiceMock.prompt.findFirst.mockResolvedValue({
       id: 'prompt-1',
       userId: 'user-1',
       deletedAt: null,
+      workspaceId: null,
     });
     prismaServiceMock.prompt.update.mockResolvedValue({});
 
@@ -325,11 +344,12 @@ describe('PromptsService', () => {
   });
 
   it('syncTemplateVariables lança quando faltam variáveis detectadas', async () => {
-    prismaServiceMock.prompt.findUnique.mockResolvedValue({
+    prismaServiceMock.prompt.findFirst.mockResolvedValue({
       id: 'prompt-1',
       userId: 'user-1',
       content: 'Olá {{nome}} e {{cidade}}',
       deletedAt: null,
+      workspaceId: null,
     });
 
     await expect(
@@ -340,10 +360,11 @@ describe('PromptsService', () => {
   });
 
   it('removeVersion lança BadRequestException na última versão', async () => {
-    prismaServiceMock.prompt.findUnique.mockResolvedValue({
+    prismaServiceMock.prompt.findFirst.mockResolvedValue({
       id: 'prompt-1',
       userId: 'user-1',
       deletedAt: null,
+      workspaceId: null,
     });
     prismaServiceMock.promptVersion.findFirst.mockResolvedValue({ id: 'v1' });
     prismaServiceMock.$transaction.mockResolvedValueOnce([1, 0]);

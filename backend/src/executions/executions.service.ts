@@ -139,6 +139,14 @@ export class ExecutionsService {
         'error',
         Date.now() - startedAt,
       );
+      const message =
+        error instanceof Error ? error.message : 'execution_failed';
+      void this.webhooksService.emit(userId, 'execution.failed', {
+        promptId,
+        model: dto.model,
+        workspaceId: prompt.workspaceId ?? undefined,
+        error: message,
+      });
       throw error;
     }
 
@@ -194,6 +202,7 @@ export class ExecutionsService {
       executionId: execution.id,
       promptId,
       model: dto.model,
+      workspaceId: prompt.workspaceId ?? undefined,
     });
 
     return {

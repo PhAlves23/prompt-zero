@@ -261,30 +261,41 @@ export function PlaygroundPageClient({ dict, lang }: { dict: Dictionary; lang: L
   )
 
   return (
-    <div className="grid gap-4 px-4 lg:grid-cols-[minmax(200px,260px)_1fr] lg:px-6">
-      <Card className="h-fit lg:sticky lg:top-4">
-        <CardHeader className="pb-2">
+    <div className="grid gap-4 px-4 pb-4 lg:h-full lg:grid-cols-[minmax(200px,260px)_minmax(0,1fr)] lg:gap-4 lg:px-6 lg:pb-6 lg:pt-0">
+      <Card className="flex h-fit min-h-0 flex-col lg:h-full lg:max-h-full lg:shrink-0">
+        <CardHeader className="shrink-0 pb-2">
           <CardTitle className="text-sm font-medium">{d.historyTitle}</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-2">
+        <CardContent className="grid min-h-0 flex-1 gap-2 overflow-hidden lg:flex lg:flex-col">
           {historyEntries.length === 0 ? (
             <p className="text-muted-foreground text-xs">{d.historyEmpty}</p>
           ) : (
-            <ScrollArea className="h-[min(420px,50vh)] pr-2">
+            <ScrollArea className="h-[min(420px,50vh)] pr-2 lg:h-full lg:min-h-0 lg:flex-1">
               <ul className="grid gap-2">
                 {historyEntries.map((e) => (
-                  <li key={e.id} className="flex flex-col gap-1 rounded-md border p-2 text-xs">
+                  <li key={e.id} className="relative flex flex-col gap-1 rounded-md border p-2 text-xs">
                     <button
                       type="button"
-                      className="text-left font-medium hover:underline"
+                      className="absolute inset-0 z-0 rounded-md ring-offset-background hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       onClick={() => restoreHistory(e)}
-                    >
-                      {e.promptTitle || e.promptId.slice(0, 8)}…
-                    </button>
-                    <span className="text-muted-foreground">
+                      aria-label={`${d.historyTitle}: ${e.promptTitle || e.promptId}`}
+                    />
+                    <span className="pointer-events-none relative z-10 line-clamp-2 font-medium">
+                      {e.promptTitle || `${e.promptId.slice(0, 8)}…`}
+                    </span>
+                    <span className="pointer-events-none relative z-10 text-muted-foreground">
                       {formatDistanceToNow(new Date(e.savedAt), { addSuffix: true, locale: dateFnsLocale(lang) })}
                     </span>
-                    <Button type="button" variant="ghost" size="sm" className="h-7 self-start px-2 text-xs" onClick={() => removeEntry(e.id)}>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="relative z-10 h-7 self-start px-2 text-xs"
+                      onClick={(ev) => {
+                        ev.stopPropagation()
+                        removeEntry(e.id)
+                      }}
+                    >
                       {d.historyRemove}
                     </Button>
                   </li>
@@ -293,89 +304,93 @@ export function PlaygroundPageClient({ dict, lang }: { dict: Dictionary; lang: L
             </ScrollArea>
           )}
           {historyEntries.length > 0 ? (
-            <Button type="button" variant="outline" size="sm" onClick={clearAll}>
+            <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={clearAll}>
               {d.historyClear}
             </Button>
           ) : null}
         </CardContent>
       </Card>
 
-      <div className="grid gap-4">
-        <Card>
-          <CardHeader>
+      <div className="flex min-h-0 w-full min-w-0 flex-col gap-4 pb-4 lg:h-full lg:overflow-y-auto lg:pb-6 lg:pr-2">
+        <Card className="flex min-h-0 flex-col lg:flex-none">
+          <CardHeader className="shrink-0">
             <CardTitle>{d.title}</CardTitle>
             <p className="text-muted-foreground text-sm">{d.hintShortcut}</p>
           </CardHeader>
-          <CardContent className="grid gap-4">
-            <PromptSelector
-              promptId={promptId}
-              onPromptChange={(id, title) => {
-                setPromptId(id)
-                setPromptTitle(title)
-                setVariablesSeed(null)
-              }}
-              disabled={compare.isPending}
-              labels={{
-                field: d.promptField,
-                placeholder: d.promptPlaceholder,
-                empty: d.promptEmpty,
-                loading: d.promptLoading,
-              }}
-            />
-
-            {promptDetail?.isTemplate && promptVariables && promptVariables.length > 0 ? (
-              <PlaygroundTemplateVariablesHost
-                key={`${promptId}-${varsSignature}-${varsRemountKey}`}
-                variables={promptVariables}
-                seed={variablesSeed}
-                valuesRef={templateVarsRef}
+          <CardContent className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-none">
+            <div className="shrink-0 space-y-4">
+              <PromptSelector
+                promptId={promptId}
+                onPromptChange={(id, title) => {
+                  setPromptId(id)
+                  setPromptTitle(title)
+                  setVariablesSeed(null)
+                }}
                 disabled={compare.isPending}
-                labels={{ variablesTitle: d.variablesTitle, variablesHint: d.variablesHint }}
+                labels={{
+                  field: d.promptField,
+                  placeholder: d.promptPlaceholder,
+                  empty: d.promptEmpty,
+                  loading: d.promptLoading,
+                }}
               />
-            ) : null}
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={addVariant} disabled={compare.isPending || variants.length >= MAX_VARIANTS}>
-                {d.addVariant}
-              </Button>
-              <span className="text-muted-foreground text-xs">
-                {d.variantCount}: {variants.length}/{MAX_VARIANTS}
-              </span>
+              {promptDetail?.isTemplate && promptVariables && promptVariables.length > 0 ? (
+                <PlaygroundTemplateVariablesHost
+                  key={`${promptId}-${varsSignature}-${varsRemountKey}`}
+                  variables={promptVariables}
+                  seed={variablesSeed}
+                  valuesRef={templateVarsRef}
+                  disabled={compare.isPending}
+                  labels={{ variablesTitle: d.variablesTitle, variablesHint: d.variablesHint }}
+                />
+              ) : null}
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={addVariant} disabled={compare.isPending || variants.length >= MAX_VARIANTS}>
+                  {d.addVariant}
+                </Button>
+                <span className="text-muted-foreground text-xs">
+                  {d.variantCount}: {variants.length}/{MAX_VARIANTS}
+                </span>
+              </div>
             </div>
 
-            <div className="grid gap-4">
-              {variants.map((row, idx) => (
-                <Card key={row.id} className="border-dashed">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm">{d.variantLabel.replace("{n}", String(idx + 1))}</CardTitle>
-                    {variants.length > MIN_VARIANTS ? (
-                      <Button type="button" variant="ghost" size="sm" onClick={() => removeVariant(row.id)} disabled={compare.isPending}>
-                        {d.removeVariant}
-                      </Button>
-                    ) : null}
-                  </CardHeader>
-                  <CardContent className="grid gap-3">
-                    <ModelCombobox
-                      label={d.modelLabel}
-                      value={row.model}
-                      onChange={(m) => updateVariant(row.id, { model: m })}
-                      disabled={compare.isPending}
-                      placeholder={d.modelPlaceholder}
-                      emptyLabel={d.modelEmpty}
-                    />
-                    <AdvancedSettings
-                      idSuffix={row.id}
-                      values={row.advanced}
-                      onChange={(next) => updateVariant(row.id, { advanced: next })}
-                      disabled={compare.isPending}
-                      labels={advancedLabels}
-                    />
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="min-h-0 max-h-[min(28rem,55vh)] flex-1 space-y-4 overflow-y-auto pr-1 lg:max-h-none lg:flex-none lg:overflow-visible">
+              <div className="grid gap-4">
+                {variants.map((row, idx) => (
+                  <Card key={row.id} className="border-dashed">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm">{d.variantLabel.replace("{n}", String(idx + 1))}</CardTitle>
+                      {variants.length > MIN_VARIANTS ? (
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeVariant(row.id)} disabled={compare.isPending}>
+                          {d.removeVariant}
+                        </Button>
+                      ) : null}
+                    </CardHeader>
+                    <CardContent className="grid gap-3">
+                      <ModelCombobox
+                        label={d.modelLabel}
+                        value={row.model}
+                        onChange={(m) => updateVariant(row.id, { model: m })}
+                        disabled={compare.isPending}
+                        placeholder={d.modelPlaceholder}
+                        emptyLabel={d.modelEmpty}
+                      />
+                      <AdvancedSettings
+                        idSuffix={row.id}
+                        values={row.advanced}
+                        onChange={(next) => updateVariant(row.id, { advanced: next })}
+                        disabled={compare.isPending}
+                        labels={advancedLabels}
+                      />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
 
-            <Button type="button" className="cursor-pointer" disabled={!canRun} onClick={() => compare.mutate()}>
+            <Button type="button" className="shrink-0 cursor-pointer" disabled={!canRun} onClick={() => compare.mutate()}>
               {compare.isPending ? d.comparing : d.compare}
             </Button>
           </CardContent>

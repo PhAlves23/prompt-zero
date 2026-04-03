@@ -522,10 +522,14 @@ model AuditLog {
 model Webhook {
   id              String    @id @default(uuid())
   userId          String
+  name            String?
   url             String
   events          String[]
   secret          String
   isActive        Boolean   @default(true)
+  filters         Json?
+  retryCount      Int       @default(3)
+  timeoutMs       Int       @default(60000)
   lastTriggeredAt DateTime?
   failureCount    Int       @default(0)
   createdAt       DateTime  @default(now())
@@ -538,15 +542,17 @@ model Webhook {
 }
 
 model WebhookDelivery {
-  id           String    @id @default(uuid())
-  webhookId    String
-  event        String
-  payload      Json
-  statusCode   Int?
-  responseBody String?
-  attempts     Int       @default(1)
-  deliveredAt  DateTime?
-  createdAt    DateTime  @default(now())
+  id             String    @id @default(uuid())
+  webhookId      String
+  event          String
+  payload        Json
+  statusCode     Int?
+  responseBody   String?
+  requestHeaders Json?
+  errorMessage   String?
+  attempts       Int       @default(1)
+  deliveredAt    DateTime?
+  createdAt      DateTime  @default(now())
 
   webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
 

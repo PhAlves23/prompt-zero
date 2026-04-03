@@ -8,12 +8,14 @@ import { ListPromptsQueryDto } from './dto/list-prompts-query.dto';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { SyncTemplateVariablesDto } from './dto/sync-template-variables.dto';
 import { extractTemplateVariables } from '../common/utils/template.util';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 @Injectable()
 export class PromptsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly workspaceAccess: WorkspaceAccessService,
+    private readonly webhooksService: WebhooksService,
   ) {}
 
   async create(userId: string, dto: CreatePromptDto) {
@@ -51,6 +53,12 @@ export class PromptsService {
       });
 
       return prompt;
+    });
+
+    void this.webhooksService.emit(userId, 'prompt.created', {
+      promptId: created.id,
+      workspaceId: created.workspaceId,
+      title: dto.title,
     });
 
     return this.findOne(userId, created.id);
@@ -179,15 +187,33 @@ export class PromptsService {
       }
     });
 
+    const versionCreated = Boolean(
+      dto.content && dto.content !== prompt.content,
+    );
+    void this.webhooksService.emit(userId, 'prompt.updated', {
+      promptId,
+      workspaceId: prompt.workspaceId ?? undefined,
+    });
+    if (versionCreated) {
+      void this.webhooksService.emit(userId, 'prompt.version.created', {
+        promptId,
+      });
+    }
+
     return this.findOne(userId, promptId);
   }
 
   async remove(userId: string, promptId: string) {
-    await this.ensureCanEdit(userId, promptId);
+    const prompt = await this.ensureCanEdit(userId, promptId);
 
     await this.prisma.prompt.update({
       where: { id: promptId },
       data: { deletedAt: new Date() },
+    });
+
+    void this.webhooksService.emit(userId, 'prompt.deleted', {
+      promptId,
+      workspaceId: prompt.workspaceId ?? undefined,
     });
 
     return { deleted: true };
@@ -237,6 +263,11 @@ export class PromptsService {
       });
     });
 
+    void this.webhooksService.emit(userId, 'prompt.version.restored', {
+      promptId,
+      restoredFromVersionId: versionId,
+    });
+
     return this.findOne(userId, promptId);
   }
 
@@ -264,6 +295,11 @@ export class PromptsService {
 
     await this.prisma.promptVersion.delete({
       where: { id: versionId },
+    });
+
+    void this.webhooksService.emit(userId, 'prompt.version.deleted', {
+      promptId,
+      versionId,
     });
 
     return { deleted: true };
@@ -319,6 +355,10 @@ export class PromptsService {
           isTemplate: detectedVariables.length > 0,
         },
       });
+    });
+
+    void this.webhooksService.emit(userId, 'prompt.template_variables.synced', {
+      promptId,
     });
 
     return this.getTemplateVariables(userId, promptId);
@@ -405,6 +445,12 @@ export class PromptsService {
       }
 
       return copy;
+    });
+
+    void this.webhooksService.emit(userId, 'prompt.forked', {
+      forkedPromptId: forkedPrompt.id,
+      sourcePromptId: promptId,
+      workspaceId: forkedPrompt.workspaceId,
     });
 
     return this.findOne(userId, forkedPrompt.id);

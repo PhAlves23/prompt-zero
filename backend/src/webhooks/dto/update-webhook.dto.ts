@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
   IsBoolean,
@@ -11,22 +11,24 @@ import {
   Min,
 } from 'class-validator';
 
-export class CreateWebhookDto {
+export class UpdateWebhookDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  name?: string;
+  name?: string | null;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsUrl({ require_tld: false })
-  url!: string;
+  url?: string;
 
-  @ApiProperty({ type: [String], example: ['execution.completed'] })
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  events!: string[];
+  events?: string[];
 
-  @ApiPropertyOptional({ default: true })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
@@ -36,16 +38,16 @@ export class CreateWebhookDto {
   })
   @IsOptional()
   @IsObject()
-  filters?: Record<string, string>;
+  filters?: Record<string, string> | null;
 
-  @ApiPropertyOptional({ default: 3, minimum: 1, maximum: 10 })
+  @ApiPropertyOptional({ minimum: 1, maximum: 10 })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Max(10)
   retryCount?: number;
 
-  @ApiPropertyOptional({ default: 60000, minimum: 1000, maximum: 120000 })
+  @ApiPropertyOptional({ minimum: 1000, maximum: 120000 })
   @IsOptional()
   @IsInt()
   @Min(1000)
