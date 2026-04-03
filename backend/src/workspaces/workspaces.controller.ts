@@ -15,6 +15,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../common/interfaces/auth-user.interface';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
+import { InviteWorkspaceMemberDto } from './dto/invite-workspace-member.dto';
 
 @ApiTags('workspaces')
 @ApiBearerAuth()
@@ -49,5 +50,31 @@ export class WorkspacesController {
   @ApiOperation({ summary: 'Delete workspace' })
   remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.workspacesService.remove(user.sub, id);
+  }
+
+  @Get(':id/members')
+  @ApiOperation({ summary: 'List workspace members (admin+)' })
+  listMembers(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.workspacesService.listMembers(user.sub, id);
+  }
+
+  @Post(':id/members')
+  @ApiOperation({ summary: 'Invite user to workspace by email' })
+  inviteMember(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: InviteWorkspaceMemberDto,
+  ) {
+    return this.workspacesService.inviteMember(user.sub, id, dto);
+  }
+
+  @Delete(':id/members/:userId')
+  @ApiOperation({ summary: 'Remove member from workspace' })
+  removeMember(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('userId') memberUserId: string,
+  ) {
+    return this.workspacesService.removeMember(user.sub, id, memberUserId);
   }
 }

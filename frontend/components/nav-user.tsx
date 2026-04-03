@@ -117,14 +117,12 @@ export function NavUser({
                 <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />
                 {labels.settings}
               </DropdownMenuItem>
-              <DropdownMenuItem disabled className="data-disabled:opacity-100">
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.push(`/${lang}/settings?tab=billing`)}
+              >
                 <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} />
-                <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                  <span>{labels.billing}</span>
-                  <span className="shrink-0 text-xs font-normal text-muted-foreground">
-                    {labels.comingSoon}
-                  </span>
-                </span>
+                {labels.billing}
               </DropdownMenuItem>
               <DropdownMenuItem disabled className="data-disabled:opacity-100">
                 <HugeiconsIcon icon={Notification03Icon} strokeWidth={2} />

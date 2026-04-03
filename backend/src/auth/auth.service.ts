@@ -110,6 +110,130 @@ export class AuthService {
     return profile;
   }
 
+  async loginOrRegisterGoogle(profile: {
+    googleId: string;
+    email: string;
+    name: string;
+    avatarUrl?: string;
+  }) {
+    const existing = await this.usersService.findByEmail(profile.email);
+    if (existing) {
+      if (!existing.googleId) {
+        await this.prisma.user.update({
+          where: { id: existing.id },
+          data: { googleId: profile.googleId },
+        });
+      }
+      await this.syncOAuthAvatar(
+        existing.id,
+        existing.avatarUrl,
+        profile.avatarUrl,
+      );
+      return this.issueTokens(existing.id, existing.email);
+    }
+
+    const passwordHash = await bcrypt.hash(randomUUID() + randomUUID(), 10);
+    const user = await this.usersService.createUser({
+      name: profile.name,
+      email: profile.email,
+      passwordHash,
+      avatarUrl: profile.avatarUrl,
+    });
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { googleId: profile.googleId },
+    });
+    return this.issueTokens(user.id, user.email);
+  }
+
+  async loginOrRegisterGithub(profile: {
+    githubId: string;
+    email: string;
+    name: string;
+    avatarUrl?: string;
+  }) {
+    const byGithub = await this.prisma.user.findUnique({
+      where: { githubId: profile.githubId },
+    });
+    if (byGithub) {
+      await this.syncOAuthAvatar(
+        byGithub.id,
+        byGithub.avatarUrl,
+        profile.avatarUrl,
+      );
+      return this.issueTokens(byGithub.id, byGithub.email);
+    }
+
+    const existing = await this.usersService.findByEmail(profile.email);
+    if (existing) {
+      if (!existing.githubId) {
+        await this.prisma.user.update({
+          where: { id: existing.id },
+          data: { githubId: profile.githubId },
+        });
+      }
+      await this.syncOAuthAvatar(
+        existing.id,
+        existing.avatarUrl,
+        profile.avatarUrl,
+      );
+      return this.issueTokens(existing.id, existing.email);
+    }
+
+    const passwordHash = await bcrypt.hash(randomUUID() + randomUUID(), 10);
+    const user = await this.usersService.createUser({
+      name: profile.name,
+      email: profile.email,
+      passwordHash,
+      avatarUrl: profile.avatarUrl,
+    });
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { githubId: profile.githubId },
+    });
+    return this.issueTokens(user.id, user.email);
+  }
+
+  /**
+   * Atualiza avatar a partir do OAuth quando ainda não há upload próprio no MinIO.
+   */
+  private async syncOAuthAvatar(
+    userId: string,
+    currentAvatarUrl: string | null | undefined,
+    oauthAvatarUrl: string | undefined,
+  ): Promise<void> {
+    const next = oauthAvatarUrl?.trim();
+    if (!next) {
+      return;
+    }
+    if (this.isMinioUserAvatar(currentAvatarUrl)) {
+      return;
+    }
+    if (currentAvatarUrl === next) {
+      return;
+    }
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: next },
+    });
+  }
+
+  private isMinioUserAvatar(avatarUrl: string | null | undefined): boolean {
+    if (!avatarUrl) {
+      return false;
+    }
+    const bucket = this.configService.get<string>(
+      'MINIO_BUCKET_NAME',
+      'prompt-zero',
+    );
+    try {
+      const pathname = new URL(avatarUrl).pathname;
+      return pathname.includes(`/${bucket}/`) && pathname.includes('/avatars/');
+    } catch {
+      return false;
+    }
+  }
+
   private async issueTokens(
     userId: string,
     email: string,

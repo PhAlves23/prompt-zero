@@ -80,6 +80,27 @@ const buildSidebarData = (lang: string, user: SessionUser | null, guestFallback:
         <HugeiconsIcon icon={Database01Icon} strokeWidth={2} />
       ),
     },
+    {
+      title: "Datasets",
+      url: `/${lang}/datasets`,
+      icon: (
+        <HugeiconsIcon icon={Database01Icon} strokeWidth={2} />
+      ),
+    },
+    {
+      title: "Playground",
+      url: `/${lang}/playground`,
+      icon: (
+        <HugeiconsIcon icon={Menu01Icon} strokeWidth={2} />
+      ),
+    },
+    {
+      title: "Traces",
+      url: `/${lang}/traces`,
+      icon: (
+        <HugeiconsIcon icon={Compass01Icon} strokeWidth={2} />
+      ),
+    },
   ],
   navSecondary: [
     {
@@ -101,6 +122,34 @@ const buildSidebarData = (lang: string, user: SessionUser | null, guestFallback:
       url: `/${lang}/explore`,
       icon: (
         <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
+      ),
+    },
+    {
+      title: "Pricing",
+      url: `/${lang}/pricing`,
+      icon: (
+        <HugeiconsIcon icon={Compass01Icon} strokeWidth={2} />
+      ),
+    },
+    {
+      title: "Webhooks",
+      url: `/${lang}/settings/webhooks`,
+      icon: (
+        <HugeiconsIcon icon={File01Icon} strokeWidth={2} />
+      ),
+    },
+    {
+      title: "Audit",
+      url: `/${lang}/settings/audit`,
+      icon: (
+        <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />
+      ),
+    },
+    {
+      title: "Billing",
+      url: `/${lang}/settings?tab=billing`,
+      icon: (
+        <HugeiconsIcon icon={Settings05Icon} strokeWidth={2} />
       ),
     },
   ],
@@ -130,11 +179,18 @@ export function AppSidebar({ lang, user, dict, ...props }: AppSidebarProps) {
     { ...data.navMain[3], title: t.nav.tags },
     { ...data.navMain[4], title: t.nav.explore },
     { ...data.navMain[5], title: t.nav.experiments },
+    { ...data.navMain[6], title: t.nav.datasets },
+    { ...data.navMain[7], title: t.nav.playground },
+    { ...data.navMain[8], title: t.nav.traces },
   ]
   data.navSecondary = [
     { ...data.navSecondary[0], title: t.nav.settings },
     { ...data.navSecondary[1], title: t.nav.apiKeys },
     { ...data.navSecondary[2], title: t.nav.search },
+    { ...data.navSecondary[3], title: t.nav.pricing },
+    { ...data.navSecondary[4], title: t.nav.webhooks },
+    { ...data.navSecondary[5], title: t.nav.audit },
+    { ...data.navSecondary[6], title: t.nav.billing },
   ]
   const recentPrompts = recentPromptsQuery.data?.data ?? []
   const documentItems =

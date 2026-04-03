@@ -1,0 +1,17 @@
+{
+  "name": "@promptzero/sdk",
+  "version": "0.1.0",
+  "description": "JavaScript/TypeScript client for the PromptZero public API",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "keywords": ["promptzero", "llm", "prompts"],
+  "license": "MIT"
+}

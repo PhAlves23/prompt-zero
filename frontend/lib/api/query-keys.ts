@@ -19,6 +19,27 @@ export const queryKeys = {
     profile: ["settings", "profile"] as const,
     apiKeys: ["settings", "api-keys"] as const,
     providerCredentials: ["settings", "provider-credentials"] as const,
+    billingUsage: ["settings", "billing-usage"] as const,
+    evaluationCriteria: ["settings", "evaluation-criteria"] as const,
+    platformApiKeys: ["settings", "platform-api-keys"] as const,
+  },
+  datasets: {
+    list: ["datasets", "list"] as const,
+    detail: (id: string) => ["datasets", "detail", id] as const,
+  },
+  traces: {
+    list: ["traces", "list"] as const,
+    detail: (id: string) => ["traces", "detail", id] as const,
+  },
+  comments: {
+    prompt: (promptId: string) => ["comments", "prompt", promptId] as const,
+  },
+  audit: {
+    list: (query: string) => ["audit", "list", query] as const,
+  },
+  webhooks: {
+    list: ["webhooks", "list"] as const,
+    deliveries: (id: string) => ["webhooks", "deliveries", id] as const,
   },
   analytics: {
     overview: (period: string) => ["analytics", "overview", period] as const,

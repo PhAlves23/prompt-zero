@@ -49,8 +49,15 @@
       "tags": "Tags",
       "explore": "Explorar",
       "experiments": "Experimentos A/B",
+      "datasets": "Datasets",
+      "playground": "Playground",
+      "traces": "Trazas",
       "settings": "Configuración",
       "apiKeys": "Claves de API",
+      "billing": "Plan",
+      "webhooks": "Webhooks",
+      "audit": "Auditoría",
+      "pricing": "Precios",
       "getHelp": "Obtener ayuda",
       "search": "Buscar"
     },
@@ -236,7 +243,21 @@
         "emptyDescription": "Ejecuta el prompt para ver el historial de ejecuciones.",
         "listTitle": "Ejecuciones",
         "copyOutput": "Copiar output",
-        "noOutput": "Sin output"
+        "noOutput": "Sin output",
+        "judge": "Evaluar",
+        "judgeSelect": "Criterio",
+        "judgeRunning": "Evaluando…",
+        "judgeDone": "Puntuación: {score}",
+        "judgeError": "Error al evaluar",
+        "judgeNoCriteria": "Crea criterios en Configuración → Dev y evaluación."
+      },
+      "comments": {
+        "title": "Comentarios",
+        "placeholder": "Escribe un comentario. Menciona con @email@dominio.com",
+        "submit": "Comentar",
+        "loading": "Cargando comentarios…",
+        "empty": "Aún no hay comentarios.",
+        "reply": "Responder"
       }
     },
     "version": "Versión",
@@ -244,7 +265,11 @@
       "notFoundTitle": "Versión no encontrada",
       "notFoundDescription": "Verifica si la versión aún existe para este prompt.",
       "versionLabel": "Versión",
-      "restoreCta": "Restaurar esta versión"
+      "restoreCta": "Restaurar esta versión",
+      "diffTitle": "Diff vs. versión actual",
+      "diffHint": "Comparación línea a línea con el contenido actual del prompt.",
+      "diffRemoved": "Eliminado",
+      "diffAdded": "Añadido"
     },
     "list": {
       "searchPlaceholder": "Buscar por título",
@@ -344,7 +369,12 @@
       "submitting": "Iniciando…",
       "emailPlaceholder": "tu@empresa.com",
       "toastAuthFailed": "Falló la autenticación",
-      "toastSessionStarted": "Sesión iniciada"
+      "toastSessionStarted": "Sesión iniciada",
+      "googleContinue": "Continuar con Google",
+      "googleHint": "Requiere GOOGLE_CLIENT_ID en el backend.",
+      "githubContinue": "Continuar con GitHub",
+      "githubHint": "Requiere GITHUB_CLIENT_ID en el backend.",
+      "emailDivider": "o continúa con correo"
     },
     "registerForm": {
       "nameLabel": "Nombre",
@@ -352,6 +382,14 @@
       "submitting": "Creando…",
       "toastRegisterFailed": "Error al crear la cuenta",
       "toastRegisterSuccess": "Cuenta creada correctamente"
+    },
+    "oauthCallback": {
+      "pageTitle": "Completando el acceso",
+      "pageDescription": "Finalizando de forma segura el inicio de sesión con Google o GitHub.",
+      "working": "Iniciando sesión…",
+      "success": "Sesión iniciada",
+      "failed": "No se pudo completar el acceso",
+      "missingTokens": "Enlace de acceso no válido o caducado. Inténtalo de nuevo."
     }
   },
   "settings": {
@@ -364,7 +402,44 @@
     "pageTitle": "Configuración",
     "tabs": {
       "user": "Usuario",
-      "apiKeys": "Claves de API"
+      "apiKeys": "Claves de API",
+      "billing": "Plan y uso",
+      "developer": "Dev y evaluación"
+    },
+    "billingCard": {
+      "title": "Suscripción y uso",
+      "loading": "Cargando…",
+      "loadError": "Error al cargar el uso.",
+      "tier": "Plan",
+      "executions": "Ejecuciones en el período",
+      "limit": "Límite",
+      "upgradePro": "Suscribirse a Pro",
+      "upgradeTeam": "Suscribirse a Team",
+      "portal": "Portal de facturación (Stripe)",
+      "checkoutStarted": "Redirigiendo al checkout…",
+      "portalStarted": "Abriendo portal…"
+    },
+    "developerCard": {
+      "criteriaTitle": "Criterios LLM-as-judge",
+      "criteriaHint": "Usa {{output}} en el prompt del juez para la salida de la ejecución.",
+      "criteriaName": "Nombre",
+      "criteriaDescription": "Descripción (opcional)",
+      "criteriaPrompt": "Prompt del juez",
+      "criteriaSave": "Guardar criterio",
+      "criteriaCreated": "Criterio creado",
+      "criteriaError": "Error al crear criterio",
+      "criteriaList": "Criterios guardados",
+      "criteriaEmpty": "Aún no hay criterios.",
+      "loading": "Cargando…",
+      "apiKeysTitle": "Claves de API pública",
+      "apiKeysHint": "Envía el header X-PromptZero-Api-Key en POST /api/v1/public/prompts/:id/execute.",
+      "apiKeyCreate": "Generar nueva clave",
+      "apiKeyOnce": "Guarda esta clave — no se volverá a mostrar.",
+      "copy": "Copiar",
+      "apiKeyCreated": "Clave creada",
+      "apiKeyError": "Error al crear clave",
+      "apiKeyRevoke": "Revocar",
+      "apiKeyRevoked": "Clave revocada"
     },
     "profileCard": {
       "title": "Perfil del usuario",
@@ -609,7 +684,18 @@
     "emptyDescription": "Crea espacios de trabajo para organizar tus prompts.",
     "toastCreated": "Espacio de trabajo creado",
     "toastUpdated": "Espacio de trabajo actualizado",
-    "toastRemoved": "Espacio de trabajo eliminado"
+    "toastRemoved": "Espacio de trabajo eliminado",
+    "membersCta": "Miembros",
+    "membersTitle": "Miembros del espacio",
+    "inviteEmail": "Correo del usuario (debe estar registrado)",
+    "inviteRole": "Rol",
+    "inviteSubmit": "Añadir / actualizar",
+    "ownerLabel": "Propietario",
+    "removeMember": "Quitar",
+    "membersLoadError": "Error al cargar miembros.",
+    "inviteSuccess": "Miembro actualizado",
+    "inviteError": "Error al invitar (el usuario debe existir).",
+    "removeSuccess": "Miembro eliminado"
   },
   "tags": {
     "title": "Tags",
@@ -628,5 +714,78 @@
     "toastCreated": "Tag creada",
     "toastUpdated": "Tag actualizada",
     "toastRemoved": "Tag eliminada"
+  },
+  "pricingPage": {
+    "title": "Precios",
+    "subtitle": "Open source + SaaS. Self-host ilimitado en tu infra.",
+    "free": "Free",
+    "pro": "Pro",
+    "team": "Team",
+    "enterprise": "Enterprise",
+    "cta": "Gestionar en la cuenta",
+    "note": "Los importes son ejemplos del roadmap; configura Stripe en el backend."
+  },
+  "datasetsPage": {
+    "title": "Datasets",
+    "createTitle": "Nuevo dataset (CSV simple)",
+    "name": "Nombre",
+    "csvLabel": "CSV (1ª fila = columnas, coma)",
+    "importCsv": "Importar archivo CSV",
+    "importCsvSuccess": "CSV importado",
+    "importCsvError": "No se pudo leer el archivo",
+    "create": "Crear",
+    "runTitle": "Ejecución batch",
+    "promptId": "ID del prompt",
+    "run": "Ejecutar dataset",
+    "empty": "Aún no hay datasets.",
+    "rows": "filas",
+    "runs": "runs"
+  },
+  "playgroundPage": {
+    "title": "Playground",
+    "promptId": "ID del prompt",
+    "modelA": "Modelo A",
+    "modelB": "Modelo B",
+    "compare": "Comparar",
+    "resultOk": "OK",
+    "resultErr": "Error"
+  },
+  "tracesPage": {
+    "title": "Trazas",
+    "listEmpty": "Aún no hay trazas.",
+    "spans": "spans"
+  },
+  "traceDetailPage": {
+    "title": "Traza"
+  },
+  "webhooksPage": {
+    "title": "Webhooks",
+    "url": "URL",
+    "events": "Eventos (coma)",
+    "create": "Crear",
+    "deliveries": "Entregas",
+    "secretOnce": "Secreto (guárdalo ahora)",
+    "empty": "Sin webhooks."
+  },
+  "auditPage": {
+    "title": "Auditoría",
+    "empty": "Sin registros.",
+    "loading": "Cargando…",
+    "action": "Acción",
+    "resource": "Recurso",
+    "when": "Cuándo",
+    "ip": "IP",
+    "details": "Detalles",
+    "viewDetails": "Ver contexto",
+    "noDetails": "—",
+    "toggleContext": "Mostrar u ocultar contexto",
+    "contextEmpty": "No hay parámetros ni query guardados en este registro.",
+    "copyContext": "Copiar",
+    "copiedContext": "Copiado al portapapeles.",
+    "copyContextFailed": "No se pudo copiar.",
+    "actionCreate": "Crear",
+    "actionUpdate": "Actualizar",
+    "actionDelete": "Eliminar",
+    "actionOther": "Otra"
   }
 }

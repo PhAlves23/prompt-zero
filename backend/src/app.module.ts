@@ -14,6 +14,15 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { ExploreModule } from './explore/explore.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { ExperimentsModule } from './experiments/experiments.module';
+import { BillingModule } from './billing/billing.module';
+import { DatasetsModule } from './datasets/datasets.module';
+import { EvaluationModule } from './evaluation/evaluation.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
+import { PlatformApiModule } from './platform-api/platform-api.module';
+import { TracesModule } from './traces/traces.module';
+import { PlaygroundModule } from './playground/playground.module';
+import { CommentsModule } from './comments/comments.module';
+import { AuditModule } from './audit/audit.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import {
@@ -43,6 +52,15 @@ import { ObservabilityModule } from './observability/observability.module';
     ExploreModule,
     MetricsModule,
     ExperimentsModule,
+    BillingModule,
+    DatasetsModule,
+    EvaluationModule,
+    WebhooksModule,
+    PlatformApiModule,
+    TracesModule,
+    PlaygroundModule,
+    CommentsModule,
+    AuditModule,
     I18nModule.forRoot({
       fallbackLanguage: 'pt',
       fallbacks: {

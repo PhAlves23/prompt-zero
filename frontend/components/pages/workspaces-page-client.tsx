@@ -12,9 +12,15 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/u
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { bffFetch } from "@/lib/api/client"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { bffFetch, ClientHttpError } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
-import type { Workspace } from "@/lib/api/types"
+import type { Workspace, WorkspaceMembersResponse } from "@/lib/api/types"
 import type { Dictionary } from "@/app/[lang]/dictionaries"
 import { validationMessages } from "@/lib/zod-i18n"
 
@@ -32,6 +38,9 @@ export function WorkspacesPageClient({ dict }: { dict: Dictionary }) {
   const queryClient = useQueryClient()
   const schema = useMemo(() => createWorkspaceSchema(dict), [dict])
   const [editingWorkspaceId, setEditingWorkspaceId] = useState<string | null>(null)
+  const [membersWorkspaceId, setMembersWorkspaceId] = useState<string | null>(null)
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [inviteRole, setInviteRole] = useState<"viewer" | "editor" | "admin">("viewer")
   const form = useForm<FormValues>({
     defaultValues: {
       name: "",
@@ -48,6 +57,36 @@ export function WorkspacesPageClient({ dict }: { dict: Dictionary }) {
   const workspacesQuery = useQuery({
     queryKey: queryKeys.workspaces.list,
     queryFn: () => bffFetch<Workspace[]>("/workspaces"),
+  })
+
+  const membersQuery = useQuery({
+    queryKey: ["workspaces", "members", membersWorkspaceId] as const,
+    queryFn: () => bffFetch<WorkspaceMembersResponse>(`/workspaces/${membersWorkspaceId}/members`),
+    enabled: Boolean(membersWorkspaceId),
+  })
+
+  const inviteMember = useMutation({
+    mutationFn: () =>
+      bffFetch(`/workspaces/${membersWorkspaceId}/members`, {
+        method: "POST",
+        body: { email: inviteEmail.trim(), role: inviteRole },
+      }),
+    onSuccess: () => {
+      toast.success(dict.workspaces.inviteSuccess)
+      setInviteEmail("")
+      void queryClient.invalidateQueries({ queryKey: ["workspaces", "members", membersWorkspaceId] })
+    },
+    onError: (e) =>
+      toast.error(e instanceof ClientHttpError ? e.message : dict.workspaces.inviteError),
+  })
+
+  const removeMember = useMutation({
+    mutationFn: (userId: string) =>
+      bffFetch(`/workspaces/${membersWorkspaceId}/members/${userId}`, { method: "DELETE" }),
+    onSuccess: () => {
+      toast.success(dict.workspaces.removeSuccess)
+      void queryClient.invalidateQueries({ queryKey: ["workspaces", "members", membersWorkspaceId] })
+    },
   })
 
   const createWorkspace = useMutation({
@@ -213,6 +252,15 @@ export function WorkspacesPageClient({ dict }: { dict: Dictionary }) {
                           variant="outline"
                           className="cursor-pointer"
                           onClick={() => {
+                            setMembersWorkspaceId(workspace.id)
+                          }}
+                        >
+                          {dict.workspaces.membersCta}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="cursor-pointer"
+                          onClick={() => {
                             setEditingWorkspaceId(workspace.id)
                             editForm.reset({
                               name: workspace.name,
@@ -247,6 +295,63 @@ export function WorkspacesPageClient({ dict }: { dict: Dictionary }) {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={membersWorkspaceId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMembersWorkspaceId(null)
+            setInviteEmail("")
+          }
+        }}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{dict.workspaces.membersTitle}</DialogTitle>
+          </DialogHeader>
+          {membersQuery.isError ? <p className="text-sm text-destructive">{dict.workspaces.membersLoadError}</p> : null}
+          {membersQuery.data?.owner ? (
+            <p className="text-sm">
+              <span className="font-medium">{dict.workspaces.ownerLabel}:</span> {membersQuery.data.owner.name} (
+              {membersQuery.data.owner.email})
+            </p>
+          ) : null}
+          <ul className="grid gap-2 text-sm">
+            {membersQuery.data?.members.map((m) => (
+              <li key={m.id} className="flex items-center justify-between gap-2 rounded border p-2">
+                <span>
+                  {m.user.name} ({m.user.email}) — {m.role}
+                </span>
+                <Button type="button" variant="destructive" size="sm" className="cursor-pointer" onClick={() => removeMember.mutate(m.user.id)}>
+                  {dict.workspaces.removeMember}
+                </Button>
+              </li>
+            ))}
+          </ul>
+          <div className="grid gap-2 border-t pt-4">
+            <Label>{dict.workspaces.inviteEmail}</Label>
+            <Input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} type="email" />
+            <Label>{dict.workspaces.inviteRole}</Label>
+            <select
+              className="border-input bg-background h-9 rounded-md border px-2 text-sm"
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value as typeof inviteRole)}
+            >
+              <option value="viewer">viewer</option>
+              <option value="editor">editor</option>
+              <option value="admin">admin</option>
+            </select>
+            <Button
+              type="button"
+              className="w-fit cursor-pointer"
+              disabled={inviteMember.isPending || !inviteEmail.trim()}
+              onClick={() => inviteMember.mutate()}
+            >
+              {dict.workspaces.inviteSubmit}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

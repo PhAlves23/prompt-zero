@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AvatarUpload } from "@/components/ui/avatar-upload"
+import { SettingsBillingSection } from "@/components/settings/settings-billing-section"
+import { SettingsDeveloperSection } from "@/components/settings/settings-developer-section"
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
 import type { ApiKeyStatus, ProviderCredential, UserProfile } from "@/lib/api/types"
@@ -36,6 +38,9 @@ type ApiKeyValues = {
   openrouterApiKey?: string
 }
 type ProviderKeyName = "openai" | "anthropic" | "google" | "openrouter"
+
+const SETTINGS_TABS = ["user", "api-keys", "billing", "developer"] as const
+type SettingsTabValue = (typeof SETTINGS_TABS)[number]
 
 export function SettingsPageClient({ dict }: { dict: Dictionary }) {
   const queryClient = useQueryClient()
@@ -264,19 +269,29 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
     }
   }
 
+  const activeTab: SettingsTabValue = SETTINGS_TABS.includes(tab as SettingsTabValue)
+    ? (tab as SettingsTabValue)
+    : "user"
+
   return (
     <div className="grid gap-4 px-4 lg:px-6">
       <Tabs
-        value={tab === "api-keys" ? "api-keys" : "user"}
-        onValueChange={(nextTab) => setTab(nextTab)}
+        value={activeTab}
+        onValueChange={(nextTab) => void setTab(nextTab)}
         className="gap-4"
       >
-        <TabsList className="bg-muted">
+        <TabsList className="bg-muted flex-wrap">
           <TabsTrigger value="user" className="cursor-pointer">
             {dict.settings.tabs.user}
           </TabsTrigger>
           <TabsTrigger value="api-keys" className="cursor-pointer">
             {dict.settings.tabs.apiKeys}
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="cursor-pointer">
+            {dict.settings.tabs.billing}
+          </TabsTrigger>
+          <TabsTrigger value="developer" className="cursor-pointer">
+            {dict.settings.tabs.developer}
           </TabsTrigger>
         </TabsList>
 
@@ -474,6 +489,14 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
               <p className="text-sm text-destructive">{dict.settings.apiKeysCard.loadError}</p>
             ) : null}
           </div>
+        </TabsContent>
+
+        <TabsContent value="billing">
+          <SettingsBillingSection dict={dict} />
+        </TabsContent>
+
+        <TabsContent value="developer">
+          <SettingsDeveloperSection dict={dict} />
         </TabsContent>
       </Tabs>
     </div>

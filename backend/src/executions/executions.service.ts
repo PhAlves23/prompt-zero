@@ -15,7 +15,7 @@ import {
 } from '../common/utils/template.util';
 import { ListExecutionsQueryDto } from './dto/list-executions-query.dto';
 import { getEnvSecret } from '../common/utils/env.util';
-import { ProviderType, User } from '@prisma/client';
+import { ProviderType, User, WorkspaceRole } from '@prisma/client';
 import { ProviderPricingService } from './provider-pricing.service';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Counter, Histogram } from 'prom-client';
@@ -24,6 +24,9 @@ import {
   LLM_EXECUTIONS_TOTAL_METRIC,
   LLM_TOKENS_TOTAL_METRIC,
 } from '../metrics/metrics.constants';
+import { BillingService } from '../billing/billing.service';
+import { WorkspaceAccessService } from '../workspaces/workspace-access.service';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 @Injectable()
 export class ExecutionsService {
@@ -32,6 +35,9 @@ export class ExecutionsService {
     private readonly llmService: LlmService,
     private readonly configService: ConfigService,
     private readonly providerPricingService: ProviderPricingService,
+    private readonly billingService: BillingService,
+    private readonly workspaceAccess: WorkspaceAccessService,
+    private readonly webhooksService: WebhooksService,
     @InjectMetric(LLM_EXECUTIONS_TOTAL_METRIC)
     private readonly llmExecutionsTotal: Counter<string>,
     @InjectMetric(LLM_EXECUTION_DURATION_METRIC)
@@ -41,20 +47,33 @@ export class ExecutionsService {
   ) {}
 
   async executePrompt(userId: string, promptId: string, dto: ExecutePromptDto) {
+    await this.billingService.assertWithinExecutionLimit(userId);
+
     const prompt = await this.prisma.prompt.findUnique({
       where: { id: promptId },
       include: {
         versions: { orderBy: { versionNumber: 'desc' }, take: 1 },
         variables: true,
-        user: true,
       },
     });
 
     if (!prompt || prompt.deletedAt) {
       throw new NotFoundException('errors.promptNotFound');
     }
-    if (prompt.userId !== userId) {
+    const canRun = await this.workspaceAccess.canAccessPrompt(
+      userId,
+      prompt,
+      WorkspaceRole.viewer,
+    );
+    if (!canRun) {
       throw new ForbiddenException('errors.promptExecuteForbidden');
+    }
+
+    const actingUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!actingUser) {
+      throw new ForbiddenException('errors.userNotFound');
     }
 
     const templateVariables = extractTemplateVariables(prompt.content);
@@ -90,7 +109,7 @@ export class ExecutionsService {
     );
     const apiKey = this.resolveApiKey(
       provider,
-      prompt.user,
+      actingUser,
       credential?.apiKeyEnc,
     );
     const temperature = dto.temperature ?? 0.7;
@@ -171,6 +190,12 @@ export class ExecutionsService {
       },
     });
 
+    void this.webhooksService.emit(userId, 'execution.completed', {
+      executionId: execution.id,
+      promptId,
+      model: dto.model,
+    });
+
     return {
       output: llmResult.output,
       execution,
@@ -193,13 +218,17 @@ export class ExecutionsService {
   ) {
     const prompt = await this.prisma.prompt.findUnique({
       where: { id: promptId },
-      select: { id: true, userId: true, deletedAt: true },
     });
 
     if (!prompt || prompt.deletedAt) {
       throw new NotFoundException('errors.promptNotFound');
     }
-    if (prompt.userId !== userId) {
+    const canRead = await this.workspaceAccess.canAccessPrompt(
+      userId,
+      prompt,
+      WorkspaceRole.viewer,
+    );
+    if (!canRead) {
       throw new ForbiddenException('errors.promptForbidden');
     }
 

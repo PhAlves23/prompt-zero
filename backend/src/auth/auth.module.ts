@@ -1,14 +1,27 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { GoogleAuthController } from './google-auth.controller';
+import { GithubAuthController } from './github-auth.controller';
+import { SamlStubController } from './saml-stub.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
+import { GoogleStrategy } from './google.strategy';
+import { GithubStrategy } from './github.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import type { StringValue } from 'ms';
 import { getEnvSecret } from '../common/utils/env.util';
 import { PrismaModule } from '../prisma/prisma.module';
+
+const googleOAuthEnabled =
+  Boolean(process.env.GOOGLE_CLIENT_ID) &&
+  Boolean(process.env.GOOGLE_CLIENT_SECRET);
+
+const githubOAuthEnabled =
+  Boolean(process.env.GITHUB_CLIENT_ID) &&
+  Boolean(process.env.GITHUB_CLIENT_SECRET);
 
 @Module({
   imports: [
@@ -33,8 +46,18 @@ import { PrismaModule } from '../prisma/prisma.module';
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [
+    AuthController,
+    SamlStubController,
+    ...(googleOAuthEnabled ? [GoogleAuthController] : []),
+    ...(githubOAuthEnabled ? [GithubAuthController] : []),
+  ],
   exports: [AuthService],
-  providers: [AuthService, JwtStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    ...(googleOAuthEnabled ? [GoogleStrategy] : []),
+    ...(githubOAuthEnabled ? [GithubStrategy] : []),
+  ],
 })
 export class AuthModule {}

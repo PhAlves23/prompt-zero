@@ -34,8 +34,11 @@ import { queryKeys } from "@/lib/api/query-keys"
 import { runExecutionStream } from "@/lib/features/executions/stream-execution"
 import { formatDateTimeLocale } from "@/lib/format-datetime"
 import { cn } from "@/lib/utils"
+import { PromptCommentsSection } from "@/components/prompt-comments-section"
 import type {
+  EvaluationCriteria,
   Execution,
+  ExecutionEvaluation,
   ExperimentResults,
   ExperimentRunResult,
   PaginatedResult,
@@ -123,6 +126,8 @@ export function PromptDetailClient({
   const [abLastVariant, setAbLastVariant] = useState<"A" | "B" | null>(null)
   const [abLastOutput, setAbLastOutput] = useState("")
   const [openPromptTags, setOpenPromptTags] = useState(false)
+  const [selectedCriteriaId, setSelectedCriteriaId] = useState("")
+  const [judgingExecutionId, setJudgingExecutionId] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const lastExecuteProviderApiKeyRef = useRef(false)
 
@@ -151,6 +156,11 @@ export function PromptDetailClient({
   const executionsQuery = useQuery({
     queryKey: queryKeys.prompts.executions(promptId),
     queryFn: () => bffFetch<PaginatedResult<Execution>>(`/prompts/${promptId}/executions?page=1&limit=10`),
+  })
+
+  const evaluationCriteriaQuery = useQuery({
+    queryKey: queryKeys.settings.evaluationCriteria,
+    queryFn: () => bffFetch<EvaluationCriteria[]>("/evaluation/criteria"),
   })
 
   const promptsForExperimentQuery = useQuery({
@@ -260,6 +270,26 @@ export function PromptDetailClient({
       void queryClient.invalidateQueries({ queryKey: ["prompts", "list"] })
       router.push(`/${lang}/prompts`)
       router.refresh()
+    },
+  })
+
+  const judgeExecution = useMutation({
+    mutationFn: (executionId: string) =>
+      bffFetch<ExecutionEvaluation>("/evaluation/judge", {
+        method: "POST",
+        body: { executionId, criteriaId: selectedCriteriaId },
+      }),
+    onMutate: (executionId) => {
+      setJudgingExecutionId(executionId)
+    },
+    onSettled: () => {
+      setJudgingExecutionId(null)
+    },
+    onSuccess: (row) => {
+      toast.success(dict.prompts.detail.executions.judgeDone.replace("{score}", String(row.score)))
+    },
+    onError: (error) => {
+      toast.error(error instanceof ClientHttpError ? error.message : dict.prompts.detail.executions.judgeError)
     },
   })
 
@@ -1197,11 +1227,33 @@ export function PromptDetailClient({
         </CardContent>
       </Card>
 
+      <PromptCommentsSection promptId={promptId} lang={lang} dict={dict} />
+
       <Card>
         <CardHeader>
           <CardTitle>
             {dict.prompts.detail.executions.listTitle} ({executionsQuery.data?.data.length ?? 0})
           </CardTitle>
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:gap-3">
+            <label className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted-foreground">
+              <span className="shrink-0">{dict.prompts.detail.executions.judgeSelect}</span>
+              <select
+                className="border-input bg-background text-foreground max-w-full flex-1 rounded-md border px-2 py-1 text-sm"
+                value={selectedCriteriaId}
+                onChange={(e) => setSelectedCriteriaId(e.target.value)}
+              >
+                <option value="">—</option>
+                {evaluationCriteriaQuery.data?.map((cr) => (
+                  <option key={cr.id} value={cr.id}>
+                    {cr.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {!evaluationCriteriaQuery.data?.length ? (
+              <p className="text-xs text-muted-foreground">{dict.prompts.detail.executions.judgeNoCriteria}</p>
+            ) : null}
+          </div>
         </CardHeader>
         <CardContent className="space-y-2">
           {executionsQuery.isPending ? (
@@ -1211,21 +1263,35 @@ export function PromptDetailClient({
           ) : executionsQuery.data && executionsQuery.data.data.length > 0 ? (
             executionsQuery.data.data.map((execution) => (
               <div key={execution.id} className="rounded border p-3 text-sm">
-                <div className="mb-2 flex items-start justify-between gap-2">
+                <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0 max-w-[70%] truncate font-medium" title={execution.model}>
                     {execution.model}
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="cursor-pointer"
-                    disabled={!execution.output}
-                    onClick={() => copyExecutionOutput(execution.output)}
-                  >
-                    <Copy className="h-4 w-4" />
-                    {dict.prompts.detail.executions.copyOutput}
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="cursor-pointer"
+                      disabled={!selectedCriteriaId || !execution.output || judgingExecutionId !== null}
+                      onClick={() => judgeExecution.mutate(execution.id)}
+                    >
+                      {judgingExecutionId === execution.id
+                        ? dict.prompts.detail.executions.judgeRunning
+                        : dict.prompts.detail.executions.judge}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="cursor-pointer"
+                      disabled={!execution.output}
+                      onClick={() => copyExecutionOutput(execution.output)}
+                    >
+                      <Copy className="h-4 w-4" />
+                      {dict.prompts.detail.executions.copyOutput}
+                    </Button>
+                  </div>
                 </div>
                 <div className="max-h-32 overflow-y-auto whitespace-pre-wrap wrap-break-word text-muted-foreground">
                   {execution.output ?? dict.prompts.detail.executions.noOutput}

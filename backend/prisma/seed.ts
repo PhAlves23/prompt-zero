@@ -590,6 +590,20 @@ async function main() {
       },
     ],
   });
+
+  const allUsers = await prisma.user.findMany({ select: { id: true } });
+  for (const u of allUsers) {
+    await prisma.subscription.upsert({
+      where: { userId: u.id },
+      create: {
+        userId: u.id,
+        tier: 'free',
+        status: 'active',
+        usageLimitExecutions: 50_000,
+      },
+      update: {},
+    });
+  }
 }
 
 main()

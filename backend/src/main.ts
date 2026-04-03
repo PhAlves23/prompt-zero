@@ -46,7 +46,7 @@ if (tracingEnabled) {
 async function bootstrap() {
   try {
     console.log('📦 Creating NestJS application...');
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule, { rawBody: true });
     console.log('✅ NestJS application created');
 
     console.log('⚙️  Getting ConfigService...');

@@ -1,0 +1,18 @@
+# JavaScript / TypeScript SDK
+javascript/node_modules/
+javascript/*.tsbuildinfo
+
+# Python SDK
+python/**/__pycache__/
+python/**/*.py[cod]
+python/**/.pytest_cache/
+python/**/.mypy_cache/
+python/**/.ruff_cache/
+python/.venv/
+python/venv/
+python/dist/
+python/build/
+python/*.egg-info/
+
+# OS
+.DS_Store

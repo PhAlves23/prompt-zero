@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, WorkspaceRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { WorkspaceAccessService } from '../workspaces/workspace-access.service';
 import { CreatePromptDto } from './dto/create-prompt.dto';
 import { UpdatePromptDto } from './dto/update-prompt.dto';
 import { ListPromptsQueryDto } from './dto/list-prompts-query.dto';
@@ -10,7 +11,10 @@ import { extractTemplateVariables } from '../common/utils/template.util';
 
 @Injectable()
 export class PromptsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly workspaceAccess: WorkspaceAccessService,
+  ) {}
 
   async create(userId: string, dto: CreatePromptDto) {
     const workspaceId = await this.resolveWorkspaceId(userId, dto.workspaceId);
@@ -53,9 +57,14 @@ export class PromptsService {
   }
 
   async findAll(userId: string, query: ListPromptsQueryDto) {
+    const accessible =
+      await this.workspaceAccess.getAccessibleWorkspaceIds(userId);
     const where: Prisma.PromptWhereInput = {
-      userId,
       deletedAt: null,
+      OR: [
+        { userId },
+        ...(accessible.length ? [{ workspaceId: { in: accessible } }] : []),
+      ],
       ...(query.search
         ? {
             OR: [
@@ -102,8 +111,9 @@ export class PromptsService {
   }
 
   async findOne(userId: string, promptId: string) {
+    await this.ensureCanRead(userId, promptId);
     const prompt = await this.prisma.prompt.findFirst({
-      where: { id: promptId, userId, deletedAt: null },
+      where: { id: promptId, deletedAt: null },
       include: {
         tags: {
           include: {
@@ -125,16 +135,7 @@ export class PromptsService {
   }
 
   async update(userId: string, promptId: string, dto: UpdatePromptDto) {
-    const prompt = await this.prisma.prompt.findUnique({
-      where: { id: promptId },
-    });
-
-    if (!prompt || prompt.deletedAt) {
-      throw new NotFoundException('errors.promptNotFound');
-    }
-    if (prompt.userId !== userId) {
-      throw new ForbiddenException('errors.promptEditForbidden');
-    }
+    const prompt = await this.ensureCanEdit(userId, promptId);
     if (dto.tagIds) {
       await this.assertTagOwnership(userId, dto.tagIds);
     }
@@ -182,15 +183,7 @@ export class PromptsService {
   }
 
   async remove(userId: string, promptId: string) {
-    const prompt = await this.prisma.prompt.findUnique({
-      where: { id: promptId },
-    });
-    if (!prompt || prompt.deletedAt) {
-      throw new NotFoundException('errors.promptNotFound');
-    }
-    if (prompt.userId !== userId) {
-      throw new ForbiddenException('errors.promptRemoveForbidden');
-    }
+    await this.ensureCanEdit(userId, promptId);
 
     await this.prisma.prompt.update({
       where: { id: promptId },
@@ -201,7 +194,7 @@ export class PromptsService {
   }
 
   async listVersions(userId: string, promptId: string) {
-    await this.ensureOwnership(userId, promptId);
+    await this.ensureCanRead(userId, promptId);
     return this.prisma.promptVersion.findMany({
       where: { promptId },
       orderBy: { versionNumber: 'desc' },
@@ -209,7 +202,7 @@ export class PromptsService {
   }
 
   async getVersion(userId: string, promptId: string, versionId: string) {
-    await this.ensureOwnership(userId, promptId);
+    await this.ensureCanRead(userId, promptId);
     const version = await this.prisma.promptVersion.findFirst({
       where: { id: versionId, promptId },
     });
@@ -221,7 +214,7 @@ export class PromptsService {
   }
 
   async restoreVersion(userId: string, promptId: string, versionId: string) {
-    await this.ensureOwnership(userId, promptId);
+    await this.ensureCanEdit(userId, promptId);
     const version = await this.prisma.promptVersion.findFirst({
       where: { id: versionId, promptId },
     });
@@ -248,7 +241,7 @@ export class PromptsService {
   }
 
   async removeVersion(userId: string, promptId: string, versionId: string) {
-    await this.ensureOwnership(userId, promptId);
+    await this.ensureCanEdit(userId, promptId);
     const version = await this.prisma.promptVersion.findFirst({
       where: { id: versionId, promptId },
       select: { id: true },
@@ -277,7 +270,7 @@ export class PromptsService {
   }
 
   async getTemplateVariables(userId: string, promptId: string) {
-    await this.ensureOwnership(userId, promptId);
+    await this.ensureCanRead(userId, promptId);
     return this.prisma.templateVariable.findMany({
       where: { promptId },
       orderBy: { createdAt: 'asc' },
@@ -289,15 +282,7 @@ export class PromptsService {
     promptId: string,
     dto: SyncTemplateVariablesDto,
   ) {
-    const prompt = await this.prisma.prompt.findUnique({
-      where: { id: promptId },
-    });
-    if (!prompt || prompt.deletedAt) {
-      throw new NotFoundException('errors.promptNotFound');
-    }
-    if (prompt.userId !== userId) {
-      throw new ForbiddenException('errors.promptForbidden');
-    }
+    const prompt = await this.ensureCanEdit(userId, promptId);
 
     const detectedVariables = extractTemplateVariables(prompt.content);
     const providedNames = new Set(
@@ -425,24 +410,63 @@ export class PromptsService {
     return this.findOne(userId, forkedPrompt.id);
   }
 
-  private async ensureOwnership(userId: string, promptId: string) {
-    const prompt = await this.prisma.prompt.findUnique({
-      where: { id: promptId },
+  private async ensureCanRead(userId: string, promptId: string) {
+    const prompt = await this.prisma.prompt.findFirst({
+      where: { id: promptId, deletedAt: null },
     });
-    if (!prompt || prompt.deletedAt) {
+    if (!prompt) {
       throw new NotFoundException('errors.promptNotFound');
     }
-    if (prompt.userId !== userId) {
+    const ok = await this.workspaceAccess.canAccessPrompt(
+      userId,
+      prompt,
+      WorkspaceRole.viewer,
+    );
+    if (!ok) {
       throw new ForbiddenException('errors.promptForbidden');
     }
   }
 
+  private async ensureCanEdit(userId: string, promptId: string) {
+    const prompt = await this.prisma.prompt.findFirst({
+      where: { id: promptId, deletedAt: null },
+    });
+    if (!prompt) {
+      throw new NotFoundException('errors.promptNotFound');
+    }
+    if (prompt.userId === userId) {
+      return prompt;
+    }
+    if (!prompt.workspaceId) {
+      throw new ForbiddenException('errors.promptEditForbidden');
+    }
+    const role = await this.workspaceAccess.getRoleInWorkspace(
+      userId,
+      prompt.workspaceId,
+    );
+    if (!this.workspaceAccess.roleMeetsMinimum(role, WorkspaceRole.editor)) {
+      throw new ForbiddenException('errors.promptEditForbidden');
+    }
+    return prompt;
+  }
+
   private async resolveWorkspaceId(userId: string, workspaceId?: string) {
     if (workspaceId) {
-      const workspace = await this.prisma.workspace.findFirst({
-        where: { id: workspaceId, userId },
+      const workspace = await this.prisma.workspace.findUnique({
+        where: { id: workspaceId },
       });
       if (!workspace) {
+        throw new NotFoundException('errors.workspaceNotFound');
+      }
+      const role = await this.workspaceAccess.getRoleInWorkspace(
+        userId,
+        workspaceId,
+      );
+      const isOwner = workspace.userId === userId;
+      if (
+        !isOwner &&
+        !this.workspaceAccess.roleMeetsMinimum(role, WorkspaceRole.editor)
+      ) {
         throw new NotFoundException('errors.workspaceNotFound');
       }
       return workspace.id;

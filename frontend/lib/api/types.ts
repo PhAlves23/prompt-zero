@@ -227,3 +227,147 @@ export type ExperimentListItem = {
   percentA: number
   percentB: number
 }
+
+export type BillingUsage = {
+  tier: string
+  status: string
+  usageLimitExecutions: number
+  executionsThisPeriod: number
+  periodStart: string
+  periodEnd: string
+  stripeCustomerId: string | null
+  hasActivePaid: boolean
+}
+
+export type DatasetListItem = {
+  id: string
+  name: string
+  description: string | null
+  rowCount: number
+  createdAt: string
+  updatedAt: string
+  _count: { rows: number; runs: number }
+}
+
+export type DatasetDetail = DatasetListItem & {
+  rows: Array<{ id: string; rowIndex: number; variables: Record<string, unknown> }>
+}
+
+export type DatasetRunSummary = {
+  id: string
+  datasetId: string
+  promptId: string
+  status: string
+  completedAt: string | null
+  results: unknown
+  createdAt: string
+}
+
+export type TraceRunListItem = {
+  id: string
+  userId: string
+  name: string | null
+  source: string
+  createdAt: string
+  _count: { spans: number }
+}
+
+export type TraceSpan = {
+  id: string
+  traceRunId: string
+  parentId: string | null
+  name: string
+  startTime: string
+  endTime: string | null
+  attributes: Record<string, unknown> | null
+}
+
+export type TraceRunDetail = TraceRunListItem & {
+  spans: TraceSpan[]
+}
+
+export type AuditLogEntry = {
+  id: string
+  userId: string | null
+  action: string
+  resource: string
+  metadata: unknown
+  ipAddress: string | null
+  userAgent: string | null
+  timestamp: string
+}
+
+export type WebhookItem = {
+  id: string
+  url: string
+  events: string[]
+  isActive: boolean
+  lastTriggeredAt: string | null
+  failureCount: number
+  createdAt: string
+}
+
+export type WebhookDeliveryItem = {
+  id: string
+  webhookId: string
+  event: string
+  payload: unknown
+  statusCode: number | null
+  responseBody: string | null
+  attempts: number
+  deliveredAt: string | null
+  createdAt: string
+}
+
+export type PlatformApiKeyMeta = {
+  id: string
+  label: string | null
+  keyPrefix: string
+  createdAt: string
+  lastUsedAt: string | null
+}
+
+export type EvaluationCriteria = {
+  id: string
+  userId: string
+  name: string
+  description: string | null
+  prompt: string
+  scoreMin: number
+  scoreMax: number
+}
+
+export type ExecutionEvaluation = {
+  id: string
+  executionId: string
+  criteriaId: string
+  score: number
+  reasoning: string | null
+  judgeModel: string
+  createdAt: string
+}
+
+export type PromptComment = {
+  id: string
+  promptId: string
+  userId: string
+  content: string
+  parentId: string | null
+  createdAt: string
+  updatedAt: string
+  user: { id: string; name: string; email: string }
+  replies: PromptComment[]
+  mentions: Array<{ id: string; userId: string; user: { id: string; email: string } }>
+}
+
+export type WorkspaceMemberRow = {
+  id: string
+  role: string
+  invitedAt: string
+  user: { id: string; name: string; email: string }
+}
+
+export type WorkspaceMembersResponse = {
+  owner: { id: string; name: string; email: string } | null
+  members: WorkspaceMemberRow[]
+}

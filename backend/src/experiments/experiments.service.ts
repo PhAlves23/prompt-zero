@@ -6,9 +6,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { ExperimentStatus, ExperimentVariant, Prisma } from '@prisma/client';
+import {
+  ExperimentStatus,
+  ExperimentVariant,
+  Prisma,
+  WorkspaceRole,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ExecutionsService } from '../executions/executions.service';
+import { WorkspaceAccessService } from '../workspaces/workspace-access.service';
 import { CreateExperimentDto } from './dto/create-experiment.dto';
 import { VoteExperimentDto } from './dto/vote-experiment.dto';
 import { RunExperimentDto } from './dto/run-experiment.dto';
@@ -21,6 +27,7 @@ export class ExperimentsService {
     private readonly prisma: PrismaService,
     private readonly executionsService: ExecutionsService,
     private readonly redisService: RedisService,
+    private readonly workspaceAccess: WorkspaceAccessService,
   ) {}
 
   async createExperiment(userId: string, dto: CreateExperimentDto) {
@@ -28,11 +35,16 @@ export class ExperimentsService {
       throw new BadRequestException('errors.experimentPromptsMustDiffer');
     }
 
+    const accessible =
+      await this.workspaceAccess.getAccessibleWorkspaceIds(userId);
     const prompts = await this.prisma.prompt.findMany({
       where: {
         id: { in: [dto.promptAId, dto.promptBId] },
-        userId,
         deletedAt: null,
+        OR: [
+          { userId },
+          ...(accessible.length ? [{ workspaceId: { in: accessible } }] : []),
+        ],
       },
       select: { id: true },
     });
@@ -171,10 +183,18 @@ export class ExperimentsService {
         : experiment.promptBId;
 
     const prompt = await this.prisma.prompt.findFirst({
-      where: { id: promptId, userId, deletedAt: null },
+      where: { id: promptId, deletedAt: null },
       include: { variables: true },
     });
     if (!prompt) {
+      throw new NotFoundException('errors.promptNotFound');
+    }
+    const canRun = await this.workspaceAccess.canAccessPrompt(
+      userId,
+      prompt,
+      WorkspaceRole.viewer,
+    );
+    if (!canRun) {
       throw new NotFoundException('errors.promptNotFound');
     }
 

@@ -49,8 +49,15 @@
       "tags": "Tags",
       "explore": "Explore",
       "experiments": "A/B experiments",
+      "datasets": "Datasets",
+      "playground": "Playground",
+      "traces": "Traces",
       "settings": "Settings",
       "apiKeys": "API keys",
+      "billing": "Billing",
+      "webhooks": "Webhooks",
+      "audit": "Audit log",
+      "pricing": "Pricing",
       "getHelp": "Get help",
       "search": "Search"
     },
@@ -236,7 +243,21 @@
         "emptyDescription": "Run the prompt to see execution history.",
         "listTitle": "Executions",
         "copyOutput": "Copy output",
-        "noOutput": "No output"
+        "noOutput": "No output",
+        "judge": "Judge",
+        "judgeSelect": "Criteria",
+        "judgeRunning": "Judging…",
+        "judgeDone": "Score: {score}",
+        "judgeError": "Judge failed",
+        "judgeNoCriteria": "Create criteria in Settings → Dev & evaluation."
+      },
+      "comments": {
+        "title": "Comments",
+        "placeholder": "Write a comment. Mention with @email@domain.com",
+        "submit": "Comment",
+        "loading": "Loading comments…",
+        "empty": "No comments yet.",
+        "reply": "Reply"
       }
     },
     "version": "Version",
@@ -244,7 +265,11 @@
       "notFoundTitle": "Version not found",
       "notFoundDescription": "Check whether this version still exists for this prompt.",
       "versionLabel": "Version",
-      "restoreCta": "Restore this version"
+      "restoreCta": "Restore this version",
+      "diffTitle": "Diff vs. current version",
+      "diffHint": "Line-by-line comparison with the prompt’s current content.",
+      "diffRemoved": "Removed",
+      "diffAdded": "Added"
     },
     "list": {
       "searchPlaceholder": "Search by title",
@@ -344,7 +369,12 @@
       "submitting": "Signing in…",
       "emailPlaceholder": "you@company.com",
       "toastAuthFailed": "Authentication failed",
-      "toastSessionStarted": "Session started"
+      "toastSessionStarted": "Session started",
+      "googleContinue": "Continue with Google",
+      "googleHint": "Requires GOOGLE_CLIENT_ID on the backend.",
+      "githubContinue": "Continue with GitHub",
+      "githubHint": "Requires GITHUB_CLIENT_ID on the backend.",
+      "emailDivider": "or continue with email"
     },
     "registerForm": {
       "nameLabel": "Name",
@@ -352,6 +382,14 @@
       "submitting": "Creating…",
       "toastRegisterFailed": "Failed to create account",
       "toastRegisterSuccess": "Account created successfully"
+    },
+    "oauthCallback": {
+      "pageTitle": "Completing sign-in",
+      "pageDescription": "Securely finishing your Google or GitHub login.",
+      "working": "Signing you in…",
+      "success": "Session started",
+      "failed": "Could not complete sign-in",
+      "missingTokens": "Invalid or expired login link. Try again."
     }
   },
   "settings": {
@@ -364,7 +402,44 @@
     "pageTitle": "Settings",
     "tabs": {
       "user": "User",
-      "apiKeys": "API keys"
+      "apiKeys": "API keys",
+      "billing": "Plan & usage",
+      "developer": "Dev & evaluation"
+    },
+    "billingCard": {
+      "title": "Subscription & usage",
+      "loading": "Loading…",
+      "loadError": "Failed to load usage.",
+      "tier": "Plan",
+      "executions": "Executions this period",
+      "limit": "Limit",
+      "upgradePro": "Subscribe to Pro",
+      "upgradeTeam": "Subscribe to Team",
+      "portal": "Billing portal (Stripe)",
+      "checkoutStarted": "Redirecting to checkout…",
+      "portalStarted": "Opening portal…"
+    },
+    "developerCard": {
+      "criteriaTitle": "LLM-as-judge criteria",
+      "criteriaHint": "Use {{output}} in the judge prompt to refer to the execution output.",
+      "criteriaName": "Name",
+      "criteriaDescription": "Description (optional)",
+      "criteriaPrompt": "Judge prompt",
+      "criteriaSave": "Save criteria",
+      "criteriaCreated": "Criteria created",
+      "criteriaError": "Failed to create criteria",
+      "criteriaList": "Saved criteria",
+      "criteriaEmpty": "No criteria yet.",
+      "loading": "Loading…",
+      "apiKeysTitle": "Public API keys",
+      "apiKeysHint": "Send header X-PromptZero-Api-Key on POST /api/v1/public/prompts/:id/execute.",
+      "apiKeyCreate": "Generate new key",
+      "apiKeyOnce": "Save this key — it will not be shown again.",
+      "copy": "Copy",
+      "apiKeyCreated": "Key created",
+      "apiKeyError": "Failed to create key",
+      "apiKeyRevoke": "Revoke",
+      "apiKeyRevoked": "Key revoked"
     },
     "profileCard": {
       "title": "User profile",
@@ -609,7 +684,18 @@
     "emptyDescription": "Create workspaces to organize your prompts.",
     "toastCreated": "Workspace created",
     "toastUpdated": "Workspace updated",
-    "toastRemoved": "Workspace removed"
+    "toastRemoved": "Workspace removed",
+    "membersCta": "Members",
+    "membersTitle": "Workspace members",
+    "inviteEmail": "User email (must be registered)",
+    "inviteRole": "Role",
+    "inviteSubmit": "Add / update",
+    "ownerLabel": "Owner",
+    "removeMember": "Remove",
+    "membersLoadError": "Failed to load members.",
+    "inviteSuccess": "Member updated",
+    "inviteError": "Invite failed (user must exist).",
+    "removeSuccess": "Member removed"
   },
   "tags": {
     "title": "Tags",
@@ -628,5 +714,78 @@
     "toastCreated": "Tag created",
     "toastUpdated": "Tag updated",
     "toastRemoved": "Tag removed"
+  },
+  "pricingPage": {
+    "title": "Pricing",
+    "subtitle": "Open source + SaaS. Unlimited self-hosted on your infra.",
+    "free": "Free",
+    "pro": "Pro",
+    "team": "Team",
+    "enterprise": "Enterprise",
+    "cta": "Manage in account",
+    "note": "Amounts are roadmap examples; configure Stripe on the backend."
+  },
+  "datasetsPage": {
+    "title": "Datasets",
+    "createTitle": "New dataset (simple CSV)",
+    "name": "Name",
+    "csvLabel": "CSV (first row = columns, comma-separated)",
+    "importCsv": "Import CSV file",
+    "importCsvSuccess": "CSV imported",
+    "importCsvError": "Could not read the file",
+    "create": "Create",
+    "runTitle": "Batch run",
+    "promptId": "Prompt ID",
+    "run": "Run dataset",
+    "empty": "No datasets yet.",
+    "rows": "rows",
+    "runs": "runs"
+  },
+  "playgroundPage": {
+    "title": "Playground",
+    "promptId": "Prompt ID",
+    "modelA": "Model A",
+    "modelB": "Model B",
+    "compare": "Compare",
+    "resultOk": "OK",
+    "resultErr": "Error"
+  },
+  "tracesPage": {
+    "title": "Traces",
+    "listEmpty": "No traces ingested yet.",
+    "spans": "spans"
+  },
+  "traceDetailPage": {
+    "title": "Trace"
+  },
+  "webhooksPage": {
+    "title": "Webhooks",
+    "url": "URL",
+    "events": "Events (comma-separated)",
+    "create": "Create",
+    "deliveries": "Deliveries",
+    "secretOnce": "Secret (save now)",
+    "empty": "No webhooks."
+  },
+  "auditPage": {
+    "title": "Audit log",
+    "empty": "No entries.",
+    "loading": "Loading…",
+    "action": "Action",
+    "resource": "Resource",
+    "when": "When",
+    "ip": "IP",
+    "details": "Details",
+    "viewDetails": "View context",
+    "noDetails": "—",
+    "toggleContext": "Show or hide context",
+    "contextEmpty": "No route params or query were stored for this entry.",
+    "copyContext": "Copy",
+    "copiedContext": "Copied to clipboard.",
+    "copyContextFailed": "Could not copy.",
+    "actionCreate": "Create",
+    "actionUpdate": "Update",
+    "actionDelete": "Delete",
+    "actionOther": "Other"
   }
 }

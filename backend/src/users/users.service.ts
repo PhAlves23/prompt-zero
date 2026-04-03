@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User } from '@prisma/client';
+import { SubscriptionStatus, SubscriptionTier, User } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -18,10 +18,19 @@ export class UsersService {
     });
   }
 
-  createUser(data: { name: string; email: string; passwordHash: string }) {
+  createUser(data: {
+    name: string;
+    email: string;
+    passwordHash: string;
+    avatarUrl?: string | null;
+  }) {
+    const { avatarUrl, ...rest } = data;
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
-        data,
+        data: {
+          ...rest,
+          ...(avatarUrl != null && avatarUrl !== '' ? { avatarUrl } : {}),
+        },
       });
 
       await tx.workspace.create({
@@ -31,6 +40,15 @@ export class UsersService {
           color: '#6366F1',
           isDefault: true,
           userId: user.id,
+        },
+      });
+
+      await tx.subscription.create({
+        data: {
+          userId: user.id,
+          tier: SubscriptionTier.free,
+          status: SubscriptionStatus.active,
+          usageLimitExecutions: 50_000,
         },
       });
 

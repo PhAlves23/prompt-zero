@@ -3,6 +3,9 @@ import { ExecutionsService } from './executions.service';
 import { ExecutionsController } from './executions.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
+import { BillingModule } from '../billing/billing.module';
+import { WorkspacesModule } from '../workspaces/workspaces.module';
+import { WebhooksModule } from '../webhooks/webhooks.module';
 import { LlmService } from './llm.service';
 import { ProviderPricingService } from './provider-pricing.service';
 import {
@@ -17,7 +20,14 @@ import {
 } from '../metrics/metrics.constants';
 
 @Module({
-  imports: [PrismaModule, ConfigModule, MetricsModule],
+  imports: [
+    PrismaModule,
+    ConfigModule,
+    MetricsModule,
+    BillingModule,
+    WorkspacesModule,
+    WebhooksModule,
+  ],
   providers: [
     ExecutionsService,
     LlmService,
@@ -40,6 +50,6 @@ import {
     }),
   ],
   controllers: [ExecutionsController],
-  exports: [ExecutionsService],
+  exports: [ExecutionsService, LlmService],
 })
 export class ExecutionsModule {}

@@ -24,6 +24,7 @@ enum ProviderType {
   anthropic
   google
   openrouter
+  platform_api
 }
 
 enum ExperimentStatus {
@@ -36,6 +37,43 @@ enum ExperimentVariant {
   B
 }
 
+enum SubscriptionTier {
+  free
+  pro
+  team
+  enterprise
+}
+
+enum SubscriptionStatus {
+  active
+  canceled
+  past_due
+  trialing
+  incomplete
+  incomplete_expired
+  unpaid
+}
+
+enum DatasetRunStatus {
+  pending
+  running
+  completed
+  failed
+}
+
+enum WorkspaceRole {
+  owner
+  admin
+  editor
+  viewer
+}
+
+enum AuditAction {
+  create
+  update
+  delete
+}
+
 model User {
   id                 String   @id @default(uuid())
   name               String
@@ -45,6 +83,9 @@ model User {
   openaiApiKeyEnc    String?
   anthropicApiKeyEnc String?
   avatarUrl          String?
+  googleId           String?  @unique
+  githubId           String?  @unique
+  samlNameId         String?  @unique
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -55,6 +96,19 @@ model User {
   refreshSessions RefreshTokenSession[]
   providerCredentials ProviderCredential[]
   experiments PromptExperiment[]
+  subscription      Subscription?
+  usageMetrics      UsageMetric[]
+  datasets          Dataset[]
+  evaluationCriteria EvaluationCriteria[]
+  workspaceMembers  WorkspaceMember[]
+  workspaceInvitesSent WorkspaceMember[] @relation("WorkspaceInviter")
+  auditLogs         AuditLog[]
+  webhooks          Webhook[]
+  platformApiKeys   PlatformApiKey[]
+  traceRuns         TraceRun[]
+  comments          Comment[]
+  mentions          UserMention[]
+  invoices          Invoice[]
 }
 
 model Workspace {
@@ -69,8 +123,25 @@ model Workspace {
 
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   prompts Prompt[]
+  members WorkspaceMember[]
 
   @@unique([userId, name])
+  @@index([userId])
+}
+
+model WorkspaceMember {
+  id          String        @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(viewer)
+  invitedById String?
+  invitedAt   DateTime      @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inviter   User?     @relation("WorkspaceInviter", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId, userId])
   @@index([userId])
 }
 
@@ -102,6 +173,8 @@ model Prompt {
   experimentsAsB PromptExperiment[] @relation("PromptExperimentB")
   forkedFrom Prompt?            @relation("PromptFork", fields: [forkedFromId], references: [id], onDelete: SetNull)
   forks      Prompt[]           @relation("PromptFork")
+  comments   Comment[]
+  datasetRuns DatasetRun[]
 
   @@index([userId, deletedAt, updatedAt])
   @@index([workspaceId])
@@ -181,6 +254,7 @@ model Execution {
   promptId        String
   promptVersionId String
   userId          String
+  datasetRunId    String?
   createdAt       DateTime @default(now())
 
   prompt        Prompt        @relation(fields: [promptId], references: [id], onDelete: Cascade)
@@ -188,11 +262,14 @@ model Execution {
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   credential    ProviderCredential? @relation(fields: [credentialId], references: [id], onDelete: SetNull)
   experimentExposure PromptExperimentExposure?
+  datasetRun    DatasetRun?   @relation(fields: [datasetRunId], references: [id], onDelete: SetNull)
+  evaluations   ExecutionEvaluation[]
 
   @@index([userId, createdAt])
   @@index([promptId, createdAt])
   @@index([model, createdAt])
   @@index([provider, model, createdAt])
+  @@index([datasetRunId])
 }
 
 model PromptExperiment {
@@ -300,4 +377,252 @@ model ProviderModelPricing {
 
   @@index([provider, model, isActive])
   @@index([effectiveFrom, effectiveTo])
+}
+
+model Subscription {
+  id                     String             @id @default(uuid())
+  userId                 String             @unique
+  stripeCustomerId     String?            @unique
+  stripePriceId          String?
+  stripeSubscriptionId   String?            @unique
+  status                 SubscriptionStatus @default(active)
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean            @default(false)
+  tier                   SubscriptionTier   @default(free)
+  usageLimitExecutions   Int                @default(50000)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UsageMetric {
+  id          String   @id @default(uuid())
+  userId      String
+  metricType  String
+  value       Int
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, periodStart])
+}
+
+model Invoice {
+  id               String   @id @default(uuid())
+  userId           String
+  stripeInvoiceId  String   @unique
+  amountDue        Int
+  currency         String   @default("usd")
+  status           String
+  hostedInvoiceUrl String?
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Dataset {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  schema      Json?
+  rowCount    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rows DatasetRow[]
+  runs DatasetRun[]
+
+  @@index([userId])
+}
+
+model DatasetRow {
+  id             String  @id @default(uuid())
+  datasetId      String
+  rowIndex       Int
+  variables      Json
+  expectedOutput String?
+
+  dataset Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@unique([datasetId, rowIndex])
+}
+
+model DatasetRun {
+  id          String           @id @default(uuid())
+  datasetId   String
+  promptId    String
+  status      DatasetRunStatus @default(pending)
+  completedAt DateTime?
+  results     Json?
+  createdAt   DateTime         @default(now())
+
+  dataset    Dataset     @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  prompt     Prompt      @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  executions Execution[]
+
+  @@index([datasetId, createdAt])
+}
+
+model EvaluationCriteria {
+  id          String @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  prompt      String
+  scoreMin    Int    @default(1)
+  scoreMax    Int    @default(10)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluations  ExecutionEvaluation[]
+
+  @@index([userId])
+}
+
+model ExecutionEvaluation {
+  id          String   @id @default(uuid())
+  executionId String
+  criteriaId  String
+  score       Float
+  reasoning   String?
+  judgeModel  String
+  createdAt   DateTime @default(now())
+
+  execution Execution           @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  criteria  EvaluationCriteria @relation(fields: [criteriaId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+}
+
+model AuditLog {
+  id        String      @id @default(uuid())
+  userId    String?
+  action    AuditAction
+  resource  String
+  metadata  Json?
+  ipAddress String?
+  userAgent String?
+  timestamp DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, timestamp])
+  @@index([resource, timestamp])
+}
+
+model Webhook {
+  id              String    @id @default(uuid())
+  userId          String
+  url             String
+  events          String[]
+  secret          String
+  isActive        Boolean   @default(true)
+  lastTriggeredAt DateTime?
+  failureCount    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries  WebhookDelivery[]
+
+  @@index([userId])
+}
+
+model WebhookDelivery {
+  id           String    @id @default(uuid())
+  webhookId    String
+  event        String
+  payload      Json
+  statusCode   Int?
+  responseBody String?
+  attempts     Int       @default(1)
+  deliveredAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId, createdAt])
+}
+
+model PlatformApiKey {
+  id         String    @id @default(uuid())
+  userId     String
+  label      String?
+  keyHash    String
+  keyPrefix  String
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([keyPrefix])
+}
+
+model TraceRun {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String?
+  source    String   @default("langchain")
+  createdAt DateTime @default(now())
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  spans TraceSpan[]
+
+  @@index([userId, createdAt])
+}
+
+model TraceSpan {
+  id         String   @id @default(uuid())
+  traceRunId String
+  parentId   String?
+  name       String
+  startTime  DateTime
+  endTime    DateTime?
+  attributes Json?
+
+  traceRun TraceRun  @relation(fields: [traceRunId], references: [id], onDelete: Cascade)
+  parent   TraceSpan? @relation("SpanHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children TraceSpan[] @relation("SpanHierarchy")
+
+  @@index([traceRunId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  promptId  String
+  userId    String
+  content   String
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prompt   Prompt    @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentThread")
+  mentions UserMention[]
+
+  @@index([promptId, createdAt])
+}
+
+model UserMention {
+  id        String @id @default(uuid())
+  commentId String
+  userId    String
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
 }
