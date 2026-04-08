@@ -6,15 +6,20 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuthUser } from '../common/interfaces/auth-user.interface';
 import {
   AnalyticsQueryDto,
+  CacheAnalyticsQueryDto,
   TopPromptsQueryDto,
 } from './dto/analytics-query.dto';
+import { CacheAnalyticsService } from './cache-analytics.service';
 
 @ApiTags('analytics')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('analytics')
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    private readonly cacheAnalyticsService: CacheAnalyticsService,
+  ) {}
 
   @Get('overview')
   @ApiOperation({ summary: 'Summary metrics by period' })
@@ -66,6 +71,32 @@ export class AnalyticsController {
       user.sub,
       query.period,
       query.limit,
+    );
+  }
+
+  @Get('cache-stats')
+  @ApiOperation({ summary: 'Resumo de cache (hits, economia)' })
+  cacheStats(
+    @CurrentUser() user: AuthUser,
+    @Query() query: CacheAnalyticsQueryDto,
+  ) {
+    return this.cacheAnalyticsService.getCacheStats(
+      user.sub,
+      query.workspaceId,
+      query.period,
+    );
+  }
+
+  @Get('cache-stats-per-day')
+  @ApiOperation({ summary: 'Cache hit rate por dia' })
+  cacheStatsPerDay(
+    @CurrentUser() user: AuthUser,
+    @Query() query: CacheAnalyticsQueryDto,
+  ) {
+    return this.cacheAnalyticsService.getCacheStatsPerDay(
+      user.sub,
+      query.workspaceId,
+      query.period,
     );
   }
 }

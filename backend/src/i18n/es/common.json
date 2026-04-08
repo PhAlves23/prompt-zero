@@ -23,6 +23,8 @@
   "errors.openaiApiKeyNotConfigured": "La API key de OpenAI no está configurada para este usuario",
   "errors.anthropicApiKeyNotConfigured": "La API key de Anthropic no está configurada para este usuario",
   "errors.workspaceNotFound": "Workspace no encontrado",
+  "errors.workspaceForbidden": "Sin acceso a este workspace",
+  "errors.workspaceAdminRequired": "Acción reservada a administradores del workspace",
   "errors.defaultWorkspaceNotFound": "Workspace por defecto no encontrado",
   "errors.cannotRemoveDefaultWorkspace": "No es posible eliminar el workspace por defecto",
   "errors.tagNotFound": "Tag no encontrada",

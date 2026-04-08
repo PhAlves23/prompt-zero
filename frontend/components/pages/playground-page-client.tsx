@@ -3,7 +3,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { formatDistanceToNow } from "date-fns"
 import { enUS, es, ptBR } from "date-fns/locale"
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MutableRefObject,
+} from "react"
 import { toast } from "sonner"
 import { AdvancedSettings } from "@/components/playground/advanced-settings"
 import { ModelCombobox } from "@/components/playground/model-combobox"
@@ -14,6 +23,8 @@ import { PlaygroundVariablesForm } from "@/components/playground/variables-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useSidebar } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 import type { Dictionary } from "@/app/[lang]/dictionaries"
 
 type PlaygroundDictSlice = Dictionary["playgroundPage"]
@@ -88,9 +99,32 @@ function PlaygroundTemplateVariablesHost({
   )
 }
 
+const LG_MIN_WIDTH = 1024
+
 export function PlaygroundPageClient({ dict, lang }: { dict: Dictionary; lang: Locale }) {
   const d = dict.playgroundPage
   const qc = useQueryClient()
+  const { state: sidebarState, isMobile: sidebarMobile } = useSidebar()
+  const [isLgViewport, setIsLgViewport] = useState(false)
+
+  useLayoutEffect(() => {
+    const mq = window.matchMedia(`(min-width: ${LG_MIN_WIDTH}px)`)
+    const sync = () => setIsLgViewport(mq.matches)
+    sync()
+    mq.addEventListener("change", sync)
+    return () => mq.removeEventListener("change", sync)
+  }, [])
+
+  const dockHistoryPanel = isLgViewport && !sidebarMobile
+
+  const historyPanelStyle = useMemo((): CSSProperties | undefined => {
+    if (!dockHistoryPanel) return undefined
+    const left =
+      sidebarState === "collapsed"
+        ? "calc(0.5rem + 1.5rem)"
+        : "calc(var(--sidebar-width) + 1.5rem)"
+    return { left }
+  }, [dockHistoryPanel, sidebarState])
 
   const [promptId, setPromptId] = useState("")
   const [promptTitle, setPromptTitle] = useState("")
@@ -261,22 +295,39 @@ export function PlaygroundPageClient({ dict, lang }: { dict: Dictionary; lang: L
   )
 
   return (
-    <div className="grid gap-4 px-4 pb-4 lg:h-full lg:grid-cols-[minmax(200px,260px)_minmax(0,1fr)] lg:gap-4 lg:px-6 lg:pb-6 lg:pt-0">
-      <Card className="flex h-fit min-h-0 flex-col lg:h-full lg:max-h-full lg:shrink-0">
+    <div className="relative flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4 lg:gap-4 lg:overflow-hidden lg:px-6 lg:pb-6 lg:pt-0">
+      <Card
+        className={cn(
+          "flex h-fit min-h-0 flex-col max-lg:shrink-0",
+          dockHistoryPanel &&
+            "lg:fixed lg:top-(--header-height) lg:bottom-0 lg:z-30 lg:min-h-0 lg:w-[260px] lg:max-w-[min(260px,calc(100vw-2rem))] lg:overflow-hidden",
+        )}
+        style={historyPanelStyle}
+      >
         <CardHeader className="shrink-0 pb-2">
           <CardTitle className="text-sm font-medium">{d.historyTitle}</CardTitle>
         </CardHeader>
-        <CardContent className="grid min-h-0 flex-1 gap-2 overflow-hidden lg:flex lg:flex-col">
+        <CardContent
+          className={cn(
+            "grid min-h-0 flex-1 gap-2 overflow-hidden lg:flex lg:min-h-0 lg:flex-col",
+            dockHistoryPanel && "lg:min-h-0 lg:flex-1",
+          )}
+        >
           {historyEntries.length === 0 ? (
             <p className="text-muted-foreground text-xs">{d.historyEmpty}</p>
           ) : (
-            <ScrollArea className="h-[min(420px,50vh)] pr-2 lg:h-full lg:min-h-0 lg:flex-1">
+            <ScrollArea
+              className={cn(
+                "pr-2 max-lg:h-[min(420px,50vh)]",
+                dockHistoryPanel && "lg:min-h-0 lg:flex-1",
+              )}
+            >
               <ul className="grid gap-2">
                 {historyEntries.map((e) => (
-                  <li key={e.id} className="relative flex flex-col gap-1 rounded-md border p-2 text-xs">
+                  <li key={e.id} className="relative flex cursor-pointer flex-col gap-1 rounded-md border p-2 text-xs">
                     <button
                       type="button"
-                      className="absolute inset-0 z-0 rounded-md ring-offset-background hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="absolute inset-0 z-0 cursor-pointer rounded-md ring-offset-background hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       onClick={() => restoreHistory(e)}
                       aria-label={`${d.historyTitle}: ${e.promptTitle || e.promptId}`}
                     />
@@ -311,7 +362,7 @@ export function PlaygroundPageClient({ dict, lang }: { dict: Dictionary; lang: L
         </CardContent>
       </Card>
 
-      <div className="flex min-h-0 w-full min-w-0 flex-col gap-4 pb-4 lg:h-full lg:overflow-y-auto lg:pb-6 lg:pr-2">
+      <div className="flex min-h-0 w-full min-w-0 flex-col gap-4 overflow-y-auto pb-4 lg:min-h-0 lg:flex-1 lg:pl-[calc(260px+1rem)] lg:pr-2 lg:pb-6">
         <Card className="flex min-h-0 flex-col lg:flex-none">
           <CardHeader className="shrink-0">
             <CardTitle>{d.title}</CardTitle>

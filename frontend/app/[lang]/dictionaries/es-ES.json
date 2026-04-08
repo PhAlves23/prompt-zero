@@ -249,7 +249,8 @@
         "judgeRunning": "Evaluando…",
         "judgeDone": "Puntuación: {score}",
         "judgeError": "Error al evaluar",
-        "judgeNoCriteria": "Crea criterios en Configuración → Dev y evaluación."
+        "judgeNoCriteria": "Crea criterios en Configuración → Dev y evaluación.",
+        "cachedBadge": "Caché"
       },
       "comments": {
         "title": "Comentarios",
@@ -404,7 +405,36 @@
       "user": "Usuario",
       "apiKeys": "Claves de API",
       "billing": "Plan y uso",
+      "cache": "Caché LLM",
       "developer": "Dev y evaluación"
+    },
+    "cacheCard": {
+      "title": "Caché de respuestas",
+      "description": "Reutiliza respuestas idénticas en prompts de un workspace y reduce costes del proveedor LLM. Solo aplica a prompts asociados a un workspace.",
+      "workspaceLabel": "Workspace",
+      "workspacePlaceholder": "Selecciona un workspace",
+      "loadingWorkspaces": "Cargando workspaces…",
+      "noWorkspaces": "Crea un workspace para configurar la caché.",
+      "loadingConfig": "Cargando configuración…",
+      "loadConfigError": "Error al cargar la configuración de caché.",
+      "enabledLabel": "Habilitar caché",
+      "enabledHint": "Si está activo, ejecuciones con el mismo contenido y parámetros pueden responder desde Redis.",
+      "ttlLabel": "Tiempo de vida (TTL)",
+      "ttl1h": "1 hora",
+      "ttl24h": "24 horas",
+      "ttl7d": "7 días",
+      "ttl30d": "30 días",
+      "hitRate": "Tasa de aciertos",
+      "savings": "Coste evitado (estimado)",
+      "statsHits": "Ejecuciones desde caché",
+      "savedTokens": "Tokens (ejecuciones en caché)",
+      "invalidate": "Vaciar caché de este workspace",
+      "invalidating": "Vaciando…",
+      "toastUpdated": "Configuración de caché actualizada",
+      "toastError": "No se pudo actualizar la caché",
+      "toastInvalidated": "{count} entradas eliminadas de Redis",
+      "invalidateError": "Error al vaciar la caché",
+      "loadingStats": "Cargando estadísticas…"
     },
     "billingCard": {
       "title": "Suscripción y uso",
@@ -550,7 +580,8 @@
     "charts": {
       "executions": "Ejecuciones",
       "estimatedCost": "Costo estimado",
-      "abVotes": "Votos A/B"
+      "abVotes": "Votos A/B",
+      "cacheHitRate": "Tasa de acierto %"
     },
     "loadingSeries": "Cargando serie temporal…",
     "loadExecPerDayError": "Error al cargar ejecuciones por día.",
@@ -601,13 +632,23 @@
     "noAbRankingYet": "Sin ranking A/B todavía",
     "noAbRankingHint": "Aún no hay votos de experimento en el período seleccionado.",
     "tooltipVotes": "Votos",
-    "tooltipExperiments": "Experimentos"
+    "tooltipExperiments": "Experimentos",
+    "cacheSavingsTitle": "Ahorro con caché",
+    "cacheSavingsDesc": "Coste estimado evitado en ejecuciones servidas desde Redis",
+    "cacheHitRateTitle": "Tasa de acierto de caché",
+    "cacheHitRateDesc": "Porcentaje de ejecuciones servidas desde caché por día",
+    "loadingCacheStats": "Cargando métricas de caché…",
+    "loadCacheStatsError": "Error al cargar métricas de caché.",
+    "loadingCacheSeries": "Cargando serie de caché…",
+    "loadCacheSeriesError": "Error al cargar la tasa diaria.",
+    "noCacheSeries": "Sin datos de caché en el período"
   },
   "analytics": {
     "charts": {
       "executions": "Ejecuciones",
       "estimatedCost": "Costo",
-      "avgLatencyMs": "Latencia"
+      "avgLatencyMs": "Latencia",
+      "cacheHitRate": "Tasa de acierto %"
     },
     "loadingSeries": "Cargando serie de ejecuciones…",
     "loadExecError": "Error al cargar ejecuciones por día.",
@@ -640,7 +681,16 @@
     "noModelUsagePeriod": "Sin consumo de modelos en el período seleccionado.",
     "tokens": "Tokens",
     "executionsMetricDescription": "Total en el período {period}",
-    "tooltipTokens": "Tokens"
+    "tooltipTokens": "Tokens",
+    "cacheSavingsTitle": "Ahorro con caché",
+    "cacheSavingsDesc": "Coste estimado evitado en ejecuciones servidas desde Redis",
+    "cacheHitRateTitle": "Tasa de acierto de caché",
+    "cacheHitRateDesc": "Porcentaje de ejecuciones servidas desde caché por día",
+    "loadingCacheStats": "Cargando métricas de caché…",
+    "loadCacheStatsError": "Error al cargar métricas de caché.",
+    "loadingCacheSeries": "Cargando serie de caché…",
+    "loadCacheSeriesError": "Error al cargar la tasa diaria.",
+    "noCacheSeries": "Sin datos de caché en el período"
   },
   "explore": {
     "common": {

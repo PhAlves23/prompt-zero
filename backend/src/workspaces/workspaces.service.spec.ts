@@ -36,7 +36,9 @@ describe('WorkspacesService', () => {
     const result = await service.findAll('user-1');
 
     expect(prismaServiceMock.workspace.findMany).toHaveBeenCalledWith({
-      where: { userId: 'user-1' },
+      where: {
+        OR: [{ userId: 'user-1' }, { members: { some: { userId: 'user-1' } } }],
+      },
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
     });
     expect(result).toHaveLength(1);

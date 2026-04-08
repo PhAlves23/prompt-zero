@@ -16,6 +16,7 @@ import {
 import { BillingService } from '../billing/billing.service';
 import { WorkspaceAccessService } from '../workspaces/workspace-access.service';
 import { WebhooksService } from '../webhooks/webhooks.service';
+import { CacheService } from '../cache/cache.service';
 
 describe('ExecutionsService', () => {
   let service: ExecutionsService;
@@ -76,6 +77,15 @@ describe('ExecutionsService', () => {
     emit: jest.fn(),
   };
 
+  const cacheServiceMock = {
+    getWorkspaceCacheConfig: jest
+      .fn()
+      .mockResolvedValue({ enabled: false, ttlSeconds: 86400 }),
+    generateContentHash: jest.fn().mockReturnValue('content-hash'),
+    getCachedExecution: jest.fn().mockResolvedValue(null),
+    setCachedExecution: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
     prismaServiceMock.user.findUnique.mockResolvedValue({
@@ -109,6 +119,7 @@ describe('ExecutionsService', () => {
         { provide: BillingService, useValue: billingServiceMock },
         { provide: WorkspaceAccessService, useValue: workspaceAccessMock },
         { provide: WebhooksService, useValue: webhooksServiceMock },
+        { provide: CacheService, useValue: cacheServiceMock },
       ],
     }).compile();
 
@@ -317,5 +328,59 @@ describe('ExecutionsService', () => {
         model: 'claude-3-5-sonnet',
       }),
     );
+  });
+
+  it('deve usar Redis cache e não chamar LLM em hit com workspace e cache habilitado', async () => {
+    const encryptedKey = encryptText('openai-key', 'dev-encryption-secret');
+
+    cacheServiceMock.getWorkspaceCacheConfig.mockResolvedValueOnce({
+      enabled: true,
+      ttlSeconds: 3600,
+    });
+    cacheServiceMock.getCachedExecution.mockResolvedValueOnce({
+      output: 'Resposta em cache',
+      inputTokens: 10,
+      outputTokens: 20,
+      estimatedCost: 0.000123,
+      cachedAt: Date.now(),
+      provider: ProviderType.openai,
+      model: 'gpt-4o-mini',
+    });
+
+    prismaServiceMock.prompt.findUnique.mockResolvedValue({
+      id: 'prompt-1',
+      userId: 'user-1',
+      workspaceId: 'ws-1',
+      deletedAt: null,
+      content: 'Olá',
+      isTemplate: false,
+      variables: [],
+      versions: [{ id: 'version-1', versionNumber: 1 }],
+    });
+    prismaServiceMock.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      openaiApiKeyEnc: encryptedKey,
+      anthropicApiKeyEnc: null,
+    } as never);
+    prismaServiceMock.providerCredential.findFirst.mockResolvedValue(null);
+    prismaServiceMock.execution.create.mockResolvedValue({ id: 'exec-cache' });
+
+    await service.executePrompt('user-1', 'prompt-1', {
+      model: 'gpt-4o-mini',
+    });
+
+    expect(llmServiceMock.execute).not.toHaveBeenCalled();
+    expect(cacheServiceMock.setCachedExecution).not.toHaveBeenCalled();
+    expect(prismaServiceMock.execution.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- nested jest matcher
+        data: expect.objectContaining({
+          fromCache: true,
+          cacheKey: 'content-hash',
+          output: 'Resposta em cache',
+        }),
+      }),
+    );
+    expect(llmTokensTotalMetricMock.inc).not.toHaveBeenCalled();
   });
 });

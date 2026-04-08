@@ -249,7 +249,8 @@
         "judgeRunning": "Judging…",
         "judgeDone": "Score: {score}",
         "judgeError": "Judge failed",
-        "judgeNoCriteria": "Create criteria in Settings → Dev & evaluation."
+        "judgeNoCriteria": "Create criteria in Settings → Dev & evaluation.",
+        "cachedBadge": "Cached"
       },
       "comments": {
         "title": "Comments",
@@ -404,7 +405,36 @@
       "user": "User",
       "apiKeys": "API keys",
       "billing": "Plan & usage",
+      "cache": "LLM cache",
       "developer": "Dev & evaluation"
+    },
+    "cacheCard": {
+      "title": "Response cache",
+      "description": "Reuse identical responses for prompts in a workspace and cut LLM provider costs. Only applies to prompts linked to a workspace.",
+      "workspaceLabel": "Workspace",
+      "workspacePlaceholder": "Select a workspace",
+      "loadingWorkspaces": "Loading workspaces…",
+      "noWorkspaces": "Create a workspace to configure cache.",
+      "loadingConfig": "Loading configuration…",
+      "loadConfigError": "Failed to load cache settings.",
+      "enabledLabel": "Enable cache",
+      "enabledHint": "When on, identical content and parameters may be served from Redis.",
+      "ttlLabel": "Time to live (TTL)",
+      "ttl1h": "1 hour",
+      "ttl24h": "24 hours",
+      "ttl7d": "7 days",
+      "ttl30d": "30 days",
+      "hitRate": "Hit rate",
+      "savings": "Avoided cost (estimated)",
+      "statsHits": "Cached executions",
+      "savedTokens": "Tokens (cached runs)",
+      "invalidate": "Clear cache for this workspace",
+      "invalidating": "Clearing…",
+      "toastUpdated": "Cache settings updated",
+      "toastError": "Could not update cache",
+      "toastInvalidated": "{count} Redis entries removed",
+      "invalidateError": "Failed to clear cache",
+      "loadingStats": "Loading statistics…"
     },
     "billingCard": {
       "title": "Subscription & usage",
@@ -550,7 +580,8 @@
     "charts": {
       "executions": "Executions",
       "estimatedCost": "Estimated cost",
-      "abVotes": "A/B votes"
+      "abVotes": "A/B votes",
+      "cacheHitRate": "Hit rate %"
     },
     "loadingSeries": "Loading time series…",
     "loadExecPerDayError": "Failed to load executions per day.",
@@ -601,13 +632,23 @@
     "noAbRankingYet": "No A/B ranking yet",
     "noAbRankingHint": "No experiment votes in selected period yet.",
     "tooltipVotes": "Votes",
-    "tooltipExperiments": "Experiments"
+    "tooltipExperiments": "Experiments",
+    "cacheSavingsTitle": "Cache savings",
+    "cacheSavingsDesc": "Estimated cost avoided on Redis-served executions",
+    "cacheHitRateTitle": "Cache hit rate",
+    "cacheHitRateDesc": "Share of executions served from cache per day",
+    "loadingCacheStats": "Loading cache metrics…",
+    "loadCacheStatsError": "Failed to load cache metrics.",
+    "loadingCacheSeries": "Loading cache series…",
+    "loadCacheSeriesError": "Failed to load daily hit rate.",
+    "noCacheSeries": "No cache data in this period"
   },
   "analytics": {
     "charts": {
       "executions": "Executions",
       "estimatedCost": "Cost",
-      "avgLatencyMs": "Latency"
+      "avgLatencyMs": "Latency",
+      "cacheHitRate": "Hit rate %"
     },
     "loadingSeries": "Loading executions series…",
     "loadExecError": "Failed to load executions per day.",
@@ -640,7 +681,16 @@
     "noModelUsagePeriod": "No model usage in selected period.",
     "tokens": "Tokens",
     "executionsMetricDescription": "Total in period {period}",
-    "tooltipTokens": "Tokens"
+    "tooltipTokens": "Tokens",
+    "cacheSavingsTitle": "Cache savings",
+    "cacheSavingsDesc": "Estimated cost avoided on Redis-served executions",
+    "cacheHitRateTitle": "Cache hit rate",
+    "cacheHitRateDesc": "Share of executions served from cache per day",
+    "loadingCacheStats": "Loading cache metrics…",
+    "loadCacheStatsError": "Failed to load cache metrics.",
+    "loadingCacheSeries": "Loading cache series…",
+    "loadCacheSeriesError": "Failed to load daily hit rate.",
+    "noCacheSeries": "No cache data in this period"
   },
   "explore": {
     "common": {

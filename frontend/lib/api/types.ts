@@ -79,6 +79,8 @@ export type Execution = {
   totalTokens: number | null
   estimatedCost: number | null
   createdAt: string
+  fromCache?: boolean
+  cacheKey?: string | null
 }
 
 export type PlaygroundCompareMeta = {
@@ -127,6 +129,30 @@ export type Workspace = {
   description: string | null
   createdAt: string
   updatedAt: string
+}
+
+export type WorkspaceCacheConfig = {
+  workspaceId: string
+  cacheEnabled: boolean
+  cacheTtlSeconds: number
+}
+
+export type CacheStats = {
+  period: "7d" | "30d" | "90d"
+  total: number
+  hits: number
+  misses: number
+  hitRate: number
+  savedCost: number
+  savedTokens: number
+}
+
+export type CacheStatsPerDay = {
+  day: string
+  total: number
+  hits: number
+  misses: number
+  hitRate: number
 }
 
 export type ProviderCredential = {

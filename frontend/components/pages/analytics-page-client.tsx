@@ -1,7 +1,17 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from "recharts"
 import { parseAsString, useQueryState } from "nuqs"
 import { useEffect, useMemo } from "react"
 import type { Dictionary } from "@/app/[lang]/dictionaries"
@@ -16,6 +26,8 @@ import type {
   AnalyticsExecutionsPerDay,
   AnalyticsOverview,
   AnalyticsTopPrompt,
+  CacheStats,
+  CacheStatsPerDay,
 } from "@/lib/api/types"
 import { useUiStore } from "@/stores/ui-store"
 
@@ -62,6 +74,16 @@ export function AnalyticsPageClient({ dict, lang }: { dict: Dictionary; lang: st
       }) satisfies ChartConfig,
     [t.charts.estimatedCost, t.charts.avgLatencyMs],
   )
+  const cacheHitChartConfig = useMemo(
+    () =>
+      ({
+        hitRate: {
+          label: t.charts.cacheHitRate,
+          color: "var(--chart-2)",
+        },
+      }) satisfies ChartConfig,
+    [t.charts.cacheHitRate],
+  )
 
   const overviewQuery = useQuery({
     queryKey: queryKeys.analytics.overview(periodValue),
@@ -79,6 +101,15 @@ export function AnalyticsPageClient({ dict, lang }: { dict: Dictionary; lang: st
   const topPromptsQuery = useQuery({
     queryKey: queryKeys.analytics.topPrompts(periodValue, 5),
     queryFn: () => bffFetch<AnalyticsTopPrompt[]>(`/analytics/top-prompts?period=${periodValue}&limit=5`),
+  })
+  const cacheStatsQuery = useQuery({
+    queryKey: queryKeys.analytics.cacheStats(periodValue),
+    queryFn: () => bffFetch<CacheStats>(`/analytics/cache-stats?period=${periodValue}`),
+  })
+  const cacheStatsPerDayQuery = useQuery({
+    queryKey: queryKeys.analytics.cacheStatsPerDay(periodValue),
+    queryFn: () =>
+      bffFetch<CacheStatsPerDay[]>(`/analytics/cache-stats-per-day?period=${periodValue}`),
   })
 
   const avgTokensPerExecution =
@@ -233,6 +264,96 @@ export function AnalyticsPageClient({ dict, lang }: { dict: Dictionary; lang: st
                 <EmptyHeader>
                   <EmptyTitle>{t.noRankedPrompts}</EmptyTitle>
                   <EmptyDescription>{t.runToRank}</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t.cacheSavingsTitle}</CardTitle>
+            <CardDescription>{t.cacheSavingsDesc}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {cacheStatsQuery.isPending ? (
+              <p className="text-sm text-muted-foreground">{t.loadingCacheStats}</p>
+            ) : cacheStatsQuery.isError ? (
+              <p className="text-sm text-destructive">{t.loadCacheStatsError}</p>
+            ) : (
+              <div className="grid gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">{t.charts.cacheHitRate}</p>
+                  <p className="text-2xl font-semibold">
+                    {cacheStatsQuery.data?.hitRate ?? 0}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t.costLabel}</p>
+                  <p className="text-xl font-semibold">
+                    {formatCurrency(cacheStatsQuery.data?.savedCost ?? 0, lang)}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {cacheStatsQuery.data?.hits ?? 0} / {cacheStatsQuery.data?.total ?? 0}{" "}
+                  {t.shortExec}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="xl:col-span-2">
+          <CardHeader>
+            <CardTitle>{t.cacheHitRateTitle}</CardTitle>
+            <CardDescription>{t.cacheHitRateDesc}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {cacheStatsPerDayQuery.isPending ? (
+              <p className="text-sm text-muted-foreground">{t.loadingCacheSeries}</p>
+            ) : cacheStatsPerDayQuery.isError ? (
+              <p className="text-sm text-destructive">{t.loadCacheSeriesError}</p>
+            ) : cacheStatsPerDayQuery.data && cacheStatsPerDayQuery.data.length > 0 ? (
+              <ChartContainer config={cacheHitChartConfig} className="aspect-auto h-[240px] w-full">
+                <LineChart data={cacheStatsPerDayQuery.data}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="day"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    minTickGap={24}
+                    tickFormatter={(value) =>
+                      new Date(value).toLocaleDateString(lang, { day: "2-digit", month: "2-digit" })
+                    }
+                  />
+                  <YAxis tickLine={false} axisLine={false} width={40} domain={[0, 100]} />
+                  <ChartTooltip
+                    cursor={false}
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={(value) =>
+                          new Date(value).toLocaleDateString(lang, { day: "2-digit", month: "long" })
+                        }
+                      />
+                    }
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="hitRate"
+                    stroke="var(--color-hitRate)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ChartContainer>
+            ) : (
+              <Empty className="border">
+                <EmptyHeader>
+                  <EmptyTitle>{t.noCacheSeries}</EmptyTitle>
+                  <EmptyDescription>{t.runToGenerateData}</EmptyDescription>
                 </EmptyHeader>
               </Empty>
             )}

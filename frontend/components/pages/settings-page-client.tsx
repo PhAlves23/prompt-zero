@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AvatarUpload } from "@/components/ui/avatar-upload"
 import { SettingsBillingSection } from "@/components/settings/settings-billing-section"
+import { SettingsCacheSection } from "@/components/settings/settings-cache-section"
 import { SettingsDeveloperSection } from "@/components/settings/settings-developer-section"
 import { bffFetch } from "@/lib/api/client"
 import { queryKeys } from "@/lib/api/query-keys"
@@ -39,7 +40,7 @@ type ApiKeyValues = {
 }
 type ProviderKeyName = "openai" | "anthropic" | "google" | "openrouter"
 
-const SETTINGS_TABS = ["user", "api-keys", "billing", "developer"] as const
+const SETTINGS_TABS = ["user", "api-keys", "billing", "cache", "developer"] as const
 type SettingsTabValue = (typeof SETTINGS_TABS)[number]
 
 export function SettingsPageClient({ dict }: { dict: Dictionary }) {
@@ -290,6 +291,9 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
           <TabsTrigger value="billing" className="cursor-pointer">
             {dict.settings.tabs.billing}
           </TabsTrigger>
+          <TabsTrigger value="cache" className="cursor-pointer">
+            {dict.settings.tabs.cache}
+          </TabsTrigger>
           <TabsTrigger value="developer" className="cursor-pointer">
             {dict.settings.tabs.developer}
           </TabsTrigger>
@@ -493,6 +497,10 @@ export function SettingsPageClient({ dict }: { dict: Dictionary }) {
 
         <TabsContent value="billing">
           <SettingsBillingSection dict={dict} />
+        </TabsContent>
+
+        <TabsContent value="cache">
+          <SettingsCacheSection dict={dict} />
         </TabsContent>
 
         <TabsContent value="developer">

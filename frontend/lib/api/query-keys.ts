@@ -15,6 +15,11 @@ export const queryKeys = {
   workspaces: {
     list: ["workspaces", "list"] as const,
   },
+  cache: {
+    config: (workspaceId: string) => ["cache", "config", workspaceId] as const,
+    stats: (workspaceId: string, period: string) =>
+      ["cache", "stats", workspaceId, period] as const,
+  },
   settings: {
     profile: ["settings", "profile"] as const,
     apiKeys: ["settings", "api-keys"] as const,
@@ -53,6 +58,10 @@ export const queryKeys = {
     abHistory: (period: string) => ["analytics", "ab-history", period] as const,
     abRanking: (period: string, limit: number) =>
       ["analytics", "ab-ranking", period, limit] as const,
+    cacheStats: (period: string, workspaceId?: string) =>
+      ["analytics", "cache-stats", period, workspaceId ?? "all"] as const,
+    cacheStatsPerDay: (period: string, workspaceId?: string) =>
+      ["analytics", "cache-stats-per-day", period, workspaceId ?? "all"] as const,
   },
   explore: {
     list: (query: string) => ["explore", "list", query] as const,

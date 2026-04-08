@@ -249,7 +249,8 @@
         "judgeRunning": "Julgando…",
         "judgeDone": "Nota: {score}",
         "judgeError": "Falha ao julgar",
-        "judgeNoCriteria": "Crie critérios em Configurações → Dev & avaliação."
+        "judgeNoCriteria": "Crie critérios em Configurações → Dev & avaliação.",
+        "cachedBadge": "Cache"
       },
       "comments": {
         "title": "Comentários",
@@ -404,7 +405,36 @@
       "user": "Usuário",
       "apiKeys": "Chaves de API",
       "billing": "Plano e uso",
+      "cache": "Cache LLM",
       "developer": "Dev & avaliação"
+    },
+    "cacheCard": {
+      "title": "Cache de respostas",
+      "description": "Reutilize respostas idênticas em prompts de um workspace e reduza custos com o provedor LLM. Aplica-se apenas a prompts associados a um workspace.",
+      "workspaceLabel": "Workspace",
+      "workspacePlaceholder": "Selecione um workspace",
+      "loadingWorkspaces": "Carregando workspaces…",
+      "noWorkspaces": "Crie um workspace para configurar o cache.",
+      "loadingConfig": "Carregando configuração…",
+      "loadConfigError": "Falha ao carregar configuração de cache.",
+      "enabledLabel": "Habilitar cache",
+      "enabledHint": "Quando ativo, execuções com o mesmo conteúdo e parâmetros podem retornar do Redis.",
+      "ttlLabel": "Tempo de vida (TTL)",
+      "ttl1h": "1 hora",
+      "ttl24h": "24 horas",
+      "ttl7d": "7 dias",
+      "ttl30d": "30 dias",
+      "hitRate": "Taxa de acertos (hit rate)",
+      "savings": "Custo evitado (estimado)",
+      "statsHits": "Execuções do cache",
+      "savedTokens": "Tokens (execuções em cache)",
+      "invalidate": "Limpar cache deste workspace",
+      "invalidating": "Limpando…",
+      "toastUpdated": "Configuração de cache atualizada",
+      "toastError": "Não foi possível atualizar o cache",
+      "toastInvalidated": "{count} entradas removidas do Redis",
+      "invalidateError": "Falha ao limpar cache",
+      "loadingStats": "Carregando estatísticas…"
     },
     "billingCard": {
       "title": "Assinatura e uso",
@@ -550,7 +580,8 @@
     "charts": {
       "executions": "Execuções",
       "estimatedCost": "Custo estimado",
-      "abVotes": "Votos A/B"
+      "abVotes": "Votos A/B",
+      "cacheHitRate": "Hit rate %"
     },
     "loadingSeries": "Carregando série temporal…",
     "loadExecPerDayError": "Falha ao carregar execuções por dia.",
@@ -601,13 +632,23 @@
     "noAbRankingYet": "Sem ranking A/B ainda",
     "noAbRankingHint": "Ainda não há votos de experimento no período selecionado.",
     "tooltipVotes": "Votos",
-    "tooltipExperiments": "Experimentos"
+    "tooltipExperiments": "Experimentos",
+    "cacheSavingsTitle": "Economia com cache",
+    "cacheSavingsDesc": "Custo estimado evitado em execuções servidas do Redis",
+    "cacheHitRateTitle": "Hit rate do cache",
+    "cacheHitRateDesc": "Percentual de execuções atendidas pelo cache por dia",
+    "loadingCacheStats": "Carregando métricas de cache…",
+    "loadCacheStatsError": "Falha ao carregar métricas de cache.",
+    "loadingCacheSeries": "Carregando série de cache…",
+    "loadCacheSeriesError": "Falha ao carregar hit rate por dia.",
+    "noCacheSeries": "Sem dados de cache no período"
   },
   "analytics": {
     "charts": {
       "executions": "Execuções",
       "estimatedCost": "Custo",
-      "avgLatencyMs": "Latência"
+      "avgLatencyMs": "Latência",
+      "cacheHitRate": "Hit rate %"
     },
     "loadingSeries": "Carregando série de execuções…",
     "loadExecError": "Falha ao carregar execuções por dia.",
@@ -640,7 +681,16 @@
     "noModelUsagePeriod": "Sem consumo de modelos no período selecionado.",
     "tokens": "Tokens",
     "executionsMetricDescription": "Total no período {period}",
-    "tooltipTokens": "Tokens"
+    "tooltipTokens": "Tokens",
+    "cacheSavingsTitle": "Economia com cache",
+    "cacheSavingsDesc": "Custo estimado evitado em execuções servidas do Redis",
+    "cacheHitRateTitle": "Hit rate do cache",
+    "cacheHitRateDesc": "Percentual de execuções atendidas pelo cache por dia",
+    "loadingCacheStats": "Carregando métricas de cache…",
+    "loadCacheStatsError": "Falha ao carregar métricas de cache.",
+    "loadingCacheSeries": "Carregando série de cache…",
+    "loadCacheSeriesError": "Falha ao carregar hit rate por dia.",
+    "noCacheSeries": "Sem dados de cache no período"
   },
   "explore": {
     "common": {

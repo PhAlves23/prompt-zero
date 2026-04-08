@@ -8,6 +8,7 @@ import { useMemo, useRef, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { z } from "zod/v4"
 import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -1264,8 +1265,15 @@ export function PromptDetailClient({
             executionsQuery.data.data.map((execution) => (
               <div key={execution.id} className="rounded border p-3 text-sm">
                 <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0 max-w-[70%] truncate font-medium" title={execution.model}>
-                    {execution.model}
+                  <div className="flex min-w-0 max-w-[70%] flex-wrap items-center gap-2">
+                    <span className="truncate font-medium" title={execution.model}>
+                      {execution.model}
+                    </span>
+                    {execution.fromCache ? (
+                      <Badge variant="secondary" className="shrink-0 text-xs">
+                        {dict.prompts.detail.executions.cachedBadge}
+                      </Badge>
+                    ) : null}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Button

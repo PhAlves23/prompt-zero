@@ -10,6 +10,15 @@ export class AnalyticsQueryDto {
   period?: string;
 }
 
+export class CacheAnalyticsQueryDto extends AnalyticsQueryDto {
+  @ApiPropertyOptional({
+    description: 'Filtrar por workspace (opcional)',
+  })
+  @IsOptional()
+  @IsString({ message: i18nValidationMessage('validation.isString') })
+  workspaceId?: string;
+}
+
 export class TopPromptsQueryDto extends AnalyticsQueryDto {
   @ApiPropertyOptional({ default: 5 })
   @Type(() => Number)

@@ -23,6 +23,7 @@ import { TracesModule } from './traces/traces.module';
 import { PlaygroundModule } from './playground/playground.module';
 import { CommentsModule } from './comments/comments.module';
 import { AuditModule } from './audit/audit.module';
+import { CacheModule } from './cache/cache.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import {
@@ -61,6 +62,7 @@ import { ObservabilityModule } from './observability/observability.module';
     PlaygroundModule,
     CommentsModule,
     AuditModule,
+    CacheModule,
     I18nModule.forRoot({
       fallbackLanguage: 'pt',
       fallbacks: {

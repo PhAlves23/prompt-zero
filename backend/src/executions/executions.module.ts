@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { BillingModule } from '../billing/billing.module';
 import { WorkspacesModule } from '../workspaces/workspaces.module';
 import { WebhooksModule } from '../webhooks/webhooks.module';
+import { CacheModule } from '../cache/cache.module';
 import { LlmService } from './llm.service';
 import { ProviderPricingService } from './provider-pricing.service';
 import {
@@ -27,6 +28,7 @@ import {
     BillingModule,
     WorkspacesModule,
     WebhooksModule,
+    CacheModule,
   ],
   providers: [
     ExecutionsService,

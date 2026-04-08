@@ -27,6 +27,7 @@ import {
 import { BillingService } from '../billing/billing.service';
 import { WorkspaceAccessService } from '../workspaces/workspace-access.service';
 import { WebhooksService } from '../webhooks/webhooks.service';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class ExecutionsService {
@@ -38,6 +39,7 @@ export class ExecutionsService {
     private readonly billingService: BillingService,
     private readonly workspaceAccess: WorkspaceAccessService,
     private readonly webhooksService: WebhooksService,
+    private readonly cacheService: CacheService,
     @InjectMetric(LLM_EXECUTIONS_TOTAL_METRIC)
     private readonly llmExecutionsTotal: Counter<string>,
     @InjectMetric(LLM_EXECUTION_DURATION_METRIC)
@@ -101,6 +103,11 @@ export class ExecutionsService {
       ? applyTemplateVariables(prompt.content, providedVariables)
       : prompt.content;
 
+    const latestVersion = prompt.versions[0];
+    if (!latestVersion) {
+      throw new NotFoundException('errors.promptVersionNotFound');
+    }
+
     const provider = this.resolveProvider(dto.model, dto.provider);
     const credential = await this.resolveCredential(
       userId,
@@ -117,64 +124,114 @@ export class ExecutionsService {
     const topP = dto.topP ?? 0.95;
     const topK = dto.topK ?? 40;
 
-    const startedAt = Date.now();
-    let llmResult: Awaited<ReturnType<LlmService['execute']>>;
-    try {
-      llmResult = await this.llmService.execute({
-        provider,
-        apiKey,
+    const cacheConfig = await this.cacheService.getWorkspaceCacheConfig(
+      prompt.workspaceId,
+    );
+    const cacheEligible =
+      Boolean(prompt.workspaceId) &&
+      cacheConfig.enabled &&
+      cacheConfig.ttlSeconds > 0;
+
+    let contentHash: string | null = null;
+    if (cacheEligible && prompt.workspaceId) {
+      contentHash = this.cacheService.generateContentHash({
+        promptContent: finalPrompt,
+        variables: providedVariables,
         model: dto.model,
-        prompt: finalPrompt,
+        provider,
         temperature,
         maxTokens,
         topP,
         topK,
-        baseUrl: credential?.baseUrl,
-        organizationId: credential?.organizationId,
+        credentialId: credential?.id,
       });
-    } catch (error) {
-      this.recordExecutionMetrics(
-        provider,
-        dto.model,
-        'error',
-        Date.now() - startedAt,
-      );
-      const message =
-        error instanceof Error ? error.message : 'execution_failed';
-      void this.webhooksService.emit(userId, 'execution.failed', {
-        promptId,
-        model: dto.model,
-        workspaceId: prompt.workspaceId ?? undefined,
-        error: message,
-      });
-      throw error;
     }
 
-    const latencyMs = Date.now() - startedAt;
-    this.recordExecutionMetrics(provider, dto.model, 'success', latencyMs);
-    const totalTokens = llmResult.inputTokens + llmResult.outputTokens;
-    this.llmTokensTotal.inc(
-      { provider, model: dto.model, type: 'input' },
-      llmResult.inputTokens,
-    );
-    this.llmTokensTotal.inc(
-      { provider, model: dto.model, type: 'output' },
-      llmResult.outputTokens,
-    );
-    this.llmTokensTotal.inc(
-      { provider, model: dto.model, type: 'total' },
-      totalTokens,
-    );
-    const { estimatedCost, pricingSource } = await this.calculateEstimatedCost(
-      provider,
-      dto.model,
-      llmResult.inputTokens,
-      llmResult.outputTokens,
-    );
+    const cachedResult =
+      cacheEligible && prompt.workspaceId && contentHash
+        ? await this.cacheService.getCachedExecution(
+            prompt.workspaceId,
+            contentHash,
+          )
+        : null;
 
-    const latestVersion = prompt.versions[0];
-    if (!latestVersion) {
-      throw new NotFoundException('errors.promptVersionNotFound');
+    const fromCache = Boolean(cachedResult);
+
+    let llmResult: Awaited<ReturnType<LlmService['execute']>>;
+    let latencyMs: number;
+    let estimatedCost: number;
+    let pricingSource: 'dynamic' | 'fallback' | 'cached';
+
+    if (fromCache && cachedResult) {
+      llmResult = {
+        output: cachedResult.output,
+        inputTokens: cachedResult.inputTokens,
+        outputTokens: cachedResult.outputTokens,
+      };
+      latencyMs = 0;
+      estimatedCost = cachedResult.estimatedCost;
+      pricingSource = 'cached';
+      this.recordExecutionMetrics(provider, dto.model, 'success', latencyMs);
+    } else {
+      const startedAt = Date.now();
+      try {
+        llmResult = await this.llmService.execute({
+          provider,
+          apiKey,
+          model: dto.model,
+          prompt: finalPrompt,
+          temperature,
+          maxTokens,
+          topP,
+          topK,
+          baseUrl: credential?.baseUrl,
+          organizationId: credential?.organizationId,
+        });
+      } catch (error) {
+        this.recordExecutionMetrics(
+          provider,
+          dto.model,
+          'error',
+          Date.now() - startedAt,
+        );
+        const message =
+          error instanceof Error ? error.message : 'execution_failed';
+        void this.webhooksService.emit(userId, 'execution.failed', {
+          promptId,
+          model: dto.model,
+          workspaceId: prompt.workspaceId ?? undefined,
+          error: message,
+        });
+        throw error;
+      }
+
+      latencyMs = Date.now() - startedAt;
+      this.recordExecutionMetrics(provider, dto.model, 'success', latencyMs);
+      const costResult = await this.calculateEstimatedCost(
+        provider,
+        dto.model,
+        llmResult.inputTokens,
+        llmResult.outputTokens,
+      );
+      estimatedCost = costResult.estimatedCost;
+      pricingSource = costResult.pricingSource;
+    }
+
+    const totalTokens = llmResult.inputTokens + llmResult.outputTokens;
+
+    if (!fromCache) {
+      this.llmTokensTotal.inc(
+        { provider, model: dto.model, type: 'input' },
+        llmResult.inputTokens,
+      );
+      this.llmTokensTotal.inc(
+        { provider, model: dto.model, type: 'output' },
+        llmResult.outputTokens,
+      );
+      this.llmTokensTotal.inc(
+        { provider, model: dto.model, type: 'total' },
+        totalTokens,
+      );
     }
 
     const execution = await this.prisma.execution.create({
@@ -195,8 +252,27 @@ export class ExecutionsService {
         promptId,
         promptVersionId: latestVersion.id,
         userId,
+        fromCache,
+        cacheKey: contentHash,
       },
     });
+
+    if (!fromCache && cacheEligible && prompt.workspaceId && contentHash) {
+      void this.cacheService.setCachedExecution(
+        prompt.workspaceId,
+        contentHash,
+        {
+          output: llmResult.output,
+          inputTokens: llmResult.inputTokens,
+          outputTokens: llmResult.outputTokens,
+          estimatedCost,
+          cachedAt: Date.now(),
+          provider,
+          model: dto.model,
+        },
+        cacheConfig.ttlSeconds,
+      );
+    }
 
     void this.webhooksService.emit(userId, 'execution.completed', {
       executionId: execution.id,
